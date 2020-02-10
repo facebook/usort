@@ -1,0 +1,88 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+import enum
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Sequence, Set
+
+from .stdlibs import STDLIB_TOP_LEVEL_NAMES
+
+
+# TODO these numbers are meaningless, use strings or auto?
+class Category(enum.Enum):
+    FUTURE = "future"
+    STANDARD_LIBRARY = "standard_library"
+    FIRST_PARTY = "first_party"
+    THIRD_PARTY = "third_party"
+
+
+@dataclass
+class Config:
+    known_future: Set[str] = field(default_factory=lambda: {"__future__"})
+    known_first_party: Set[str] = field(default_factory=set)
+    known_third_party: Set[str] = field(default_factory=set)
+    known_standard_library: Set[str] = field(
+        default_factory=STDLIB_TOP_LEVEL_NAMES.copy
+    )
+
+    # These names are vaguely for compatibility with isort; however while it has
+    # separate sections for "current project" and "explicitly local", these are
+    # handled differently as "first_party".
+    categories: Sequence[Category] = (
+        Category.FUTURE,
+        Category.STANDARD_LIBRARY,
+        Category.THIRD_PARTY,
+        Category.FIRST_PARTY,
+    )
+    default_section: Category = Category.THIRD_PARTY
+
+    @classmethod
+    def find(cls, filename: Path) -> "Config":
+        # absolute path
+        # look up some number of steps
+        # TODO read pyproject.toml
+        return cls()
+
+    def update_from_flags(
+        self,
+        known_first_party: str,
+        known_third_party: str,
+        known_standard_library: str,
+        categories: str,
+        default_section: str,
+    ) -> None:
+        if known_first_party:
+            self.known_first_party.update(known_first_party.split(","))
+        if known_third_party:
+            self.known_third_party.update(known_third_party.split(","))
+        if known_standard_library:
+            self.known_standard_library.update(known_standard_library.split(","))
+        if categories:
+            self.categories = [Category(x) for x in categories.split(",")]
+        if default_section:
+            self.default_section = Category(default_section)
+
+    def category(self, dotted_import: str) -> Category:
+        """
+        Given a piece of an import string, return its category for this config.
+
+        You can pass in ".foo" or "pkg.foo.bar" or just "os" and it should
+        categorize.
+        """
+        first_part = dotted_import.split(".")[0]
+        if first_part == "":
+            # relative import
+            return Category.FIRST_PARTY
+        elif first_part in self.known_future:
+            return Category.FUTURE
+        elif first_part in self.known_first_party:
+            return Category.FIRST_PARTY
+        elif first_part in self.known_standard_library:
+            return Category.STANDARD_LIBRARY
+        elif first_part in self.known_third_party:
+            return Category.THIRD_PARTY
+        else:
+            return self.default_section
