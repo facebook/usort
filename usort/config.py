@@ -7,6 +7,7 @@ import enum
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Sequence, Set
+import toml
 
 from .stdlibs import STDLIB_TOP_LEVEL_NAMES
 
@@ -41,10 +42,43 @@ class Config:
 
     @classmethod
     def find(cls, filename: Path) -> "Config":
-        # absolute path
-        # look up some number of steps
-        # TODO read pyproject.toml
-        return cls()
+        rv = cls()
+
+        # TODO This logic should be split out to a separate project, as it's
+        # reusable and deserves a number of tests to get right.  Can probably
+        # also stop once finding a .hg, .git, etc
+        p = filename
+        while True:
+            if p.is_dir():
+                candidate = p / "pyproject.toml"
+                if candidate.exists():
+                    rv.update_from_config(candidate)
+                    break
+
+            # Stop on root (hopefully works on Windows)
+            if p.parent == p:
+                break
+            # Stop on different volume
+            if p.exists() and p.stat().st_dev != p.parent.stat().st_dev:
+                break
+
+            p = p.parent
+
+        return rv
+
+    def update_from_config(self, toml_path: Path) -> None:
+        conf = toml.loads(toml_path.read_text())
+        tbl = conf.get("tool", {}).get("usort", {})
+        if "known_first_party" in tbl:
+            self.known_first_party.update(tbl["known_first_party"])
+        if "known_third_party" in tbl:
+            self.known_third_party.update(tbl["known_third_party"])
+        if "known_standard_party" in tbl:
+            self.known_standard_party.update(tbl["known_standard_party"])
+        if "categories" in tbl:
+            self.categories = [Category(x) for x in tbl["categories"]]
+        if "default_section" in tbl:
+            self.default_section = Category(tbl["default_section"])
 
     def update_from_flags(
         self,
