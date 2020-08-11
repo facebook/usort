@@ -84,6 +84,7 @@ def format(diff: bool, check: bool, filenames: List[str]) -> None:
             except Exception as e:
                 print(repr(e))
                 rc |= 1
+                continue
             if diff:
                 echo_color_unified_diff(data, result, pf.as_posix())
             elif check:
