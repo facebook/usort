@@ -74,8 +74,8 @@ class Config:
             self.known_first_party.update(tbl["known_first_party"])
         if "known_third_party" in tbl:
             self.known_third_party.update(tbl["known_third_party"])
-        if "known_standard_party" in tbl:
-            self.known_standard_party.update(tbl["known_standard_party"])
+        if "known_standard_library" in tbl:
+            self.known_standard_library.update(tbl["known_standard_library"])
         if "categories" in tbl:
             self.categories = [Category(x) for x in tbl["categories"]]
         if "default_section" in tbl:

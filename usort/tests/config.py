@@ -6,7 +6,7 @@ from usort.config import Category, Config
 
 
 class ConfigTest(unittest.TestCase):
-    def test_third_party(self):
+    def test_third_party(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             # Defaults should not know about this module.
             # This is a silly value for default_category but this makes it more
