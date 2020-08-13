@@ -60,4 +60,4 @@ $ tox -p all
 
 # License
 
-usort is MIT licensed, as found in the LICENSE file.
+μsort is MIT licensed, as found in the LICENSE file.
