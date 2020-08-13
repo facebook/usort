@@ -1,0 +1,9 @@
+black==19.10b0
+coverage==4.5.4
+flake8==3.7.9
+isort==4.3.21
+mypy==0.750
+tox==3.14.1
+twine==3.1.1
+volatile==2.1.0
+wheel==0.33.6
