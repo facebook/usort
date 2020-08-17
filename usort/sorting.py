@@ -205,10 +205,14 @@ def is_sortable_import(stmt: cst.CSTNode) -> bool:
 
 
 def usort_string(data: str, config: Config) -> str:
-    # Intended for unittesting
     mod = try_parse(data=data.encode(), path="<test>")
     blocks = sortable_blocks(mod, config=config)
+
+    # The module's body is already a list, but that's an implementation detail we
+    # shouldn't rely on.  This code should eventually be run as a visitor, and
+    # with_changes is the right thing to do in that case.
+    body = list(mod.body)
     for b in blocks:
         sorted_stmts = sorted(b.stmts)
-        mod.body[b.start_idx : b.end_idx] = [s.node for s in sorted_stmts]
-    return mod.code  # type: ignore
+        body[b.start_idx : b.end_idx] = [s.node for s in sorted_stmts]
+    return mod.with_changes(body=body).code  # type: ignore

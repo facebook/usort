@@ -30,7 +30,7 @@ def try_parse(path: Path, data: Optional[bytes] = None,) -> cst.Module:
     if data is None:
         data = path.read_bytes()
 
-    for version in cst.KNOWN_PYTHON_VERSION_STRINGS:
+    for version in cst.KNOWN_PYTHON_VERSION_STRINGS[::-1]:
         try:
             mod = cst.parse_module(
                 data, cst.PartialParserConfig(python_version=version)

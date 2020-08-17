@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import sys
+import time
 from pathlib import Path
 from typing import List
 
@@ -60,8 +61,9 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> None:
 @main.command()
 @click.option("--diff", is_flag=True)
 @click.option("--check", is_flag=True)
+@click.option("--show-time", is_flag=True)
 @click.argument("filenames", nargs=-1)
-def format(diff: bool, check: bool, filenames: List[str]) -> None:
+def format(diff: bool, check: bool, show_time: bool, filenames: List[str]) -> None:
     """
     This is intended to sort nodes separated by barriers, and that's it.
     We don't format them (aside from moving comments).  Black does the rest.
@@ -73,13 +75,17 @@ def format(diff: bool, check: bool, filenames: List[str]) -> None:
     rc = 0
     for f in filenames:
         pf = Path(f)
-        config = Config.find(pf)
+        t0 = time.time()
         if pf.is_dir():
-            files = walk(pf, "*.py")
+            files = list(walk(pf, "*.py"))
         else:
             files = [pf]
+        if show_time:
+            print(f"walk {f} {time.time() - t0}")
 
         for pf in files:
+            t0 = time.time()
+            config = Config.find(pf.parent)
             try:
                 data = pf.read_text()
                 result = usort_string(data, config)
@@ -87,6 +93,10 @@ def format(diff: bool, check: bool, filenames: List[str]) -> None:
                 print(repr(e))
                 rc |= 1
                 continue
+
+            if show_time:
+                print(f"sort {pf} {time.time() - t0}")
+
             if diff:
                 echo_color_unified_diff(data, result, pf.as_posix())
             elif check:
