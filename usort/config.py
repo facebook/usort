@@ -65,6 +65,30 @@ class Config:
 
             p = p.parent
 
+        # Infer first-party top-level names; this only works for the common case of
+        # a single package, but not multiple, or modules (pure-python or extensions).
+        # In those cases, you should explicitly set `known_first_party` in the config.
+        #
+        # This code as-is should work for something like running against a site-packages
+        # dir, but if we broaden to support multiple top-level names, it would find too
+        # much.
+        p = filename
+        while True:
+            # Stop on root (hopefully works on Windows)
+            if p.parent == p:
+                break
+            # Stop on different volume
+            if p.exists() and p.stat().st_dev != p.parent.stat().st_dev:
+                break
+
+            if (p.parent / "__init__.py").exists():
+                p = p.parent
+            else:
+                break
+
+        if (p / "__init__.py").exists():
+            rv.known_first_party.add(p.name)
+
         return rv
 
     def update_from_config(self, toml_path: Path) -> None:
