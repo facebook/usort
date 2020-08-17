@@ -48,3 +48,9 @@ known_third_party = ["psutil", "cocoa"]
 
             conf = Config.find(f)
             self.assertEqual({"b"}, conf.known_first_party)
+            conf = Config.find(f.parent)  # c
+            self.assertEqual({"b"}, conf.known_first_party)
+            conf = Config.find(f.parent.parent)  # b
+            self.assertEqual({"b"}, conf.known_first_party)
+            conf = Config.find(Path("/"))
+            self.assertEqual(set(), conf.known_first_party)
