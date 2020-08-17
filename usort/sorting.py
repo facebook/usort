@@ -177,6 +177,12 @@ def sortable_blocks(mod: cst.Module, config: Config) -> List[SortableBlock]:
 
 def is_sortable_import(stmt: cst.CSTNode) -> bool:
     if isinstance(stmt, cst.SimpleStatementLine):
+        com = stmt.trailing_whitespace.comment
+        if com:
+            com_str = com.value.replace(" ", "")
+            if com_str.startswith("#usort:skip") or com_str.startswith("#isort:skip"):
+                return False
+
         # N.b. `body` is a list, because the SimpleStatementLine might have
         # semicolons.  We only look at the first, which is probably the most
         # dangerous thing in here.

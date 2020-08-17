@@ -7,7 +7,7 @@ import unittest
 
 import libcst as cst
 
-from ..sorting import Config, SortableImport
+from ..sorting import Config, SortableImport, is_sortable_import
 
 
 class SortableImportTest(unittest.TestCase):
@@ -78,3 +78,12 @@ class SortableImportTest(unittest.TestCase):
         self.assertEqual(".", imp.first_module)
         self.assertEqual("a", imp.first_dotted_import)
         self.assertEqual({"b"}, imp.imported_names)
+
+
+class IsSortableTest(unittest.TestCase):
+    def test_is_sortable(self) -> None:
+        self.assertTrue(is_sortable_import(cst.parse_statement("import a")))
+        self.assertTrue(is_sortable_import(cst.parse_statement("from a import b")))
+        self.assertFalse(
+            is_sortable_import(cst.parse_statement("import a  # isort: skip"))
+        )
