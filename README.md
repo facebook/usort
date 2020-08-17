@@ -19,7 +19,7 @@ import b
 ```
 
 For this, we detect two sortable blocks because of an intervening non-import
-statement.
+statement.  Lines with `# usort:skip` or `# isort:skip` will also split blocks.
 
 
 # Usage
