@@ -42,3 +42,14 @@ known_third_party = ["psutil", "cocoa"]
             conf = Config.find(Path(d) / "foo")
             self.assertEqual({"psutil", "cocoa"}, conf.known_third_party)
             self.assertEqual(Category.THIRD_PARTY, conf.category("psutil.cpu_times"))
+
+    def test_first_party_root_finding(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "a" / "b" / "c").mkdir(parents=True)
+            (Path(d) / "a" / "b" / "__init__.py").write_text("")
+            (Path(d) / "a" / "b" / "c" / "__init__.py").write_text("from b import zzz")
+
+            f = Path(d) / "a" / "b" / "c" / "__init__"
+
+            conf = Config.find(f)
+            self.assertEqual({"b"}, conf.known_first_party)

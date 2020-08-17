@@ -46,7 +46,9 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> None:
             sorted_stmts = sorted(b.stmts)
             if debug:
                 for s in b.stmts:
-                    print(f"    {sorted_stmts.index(s)} {s}")
+                    print(
+                        f"    {sorted_stmts.index(s)} {s} ({s.config.category(s.first_module)})"
+                    )
             else:
                 print("Formatted:")
                 print("[[[")
