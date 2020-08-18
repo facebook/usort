@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import List, Optional, Set
 
 import libcst as cst
@@ -44,7 +45,11 @@ class SortableImport:
     imported_names: Set[str] = field(default_factory=set, compare=False)
 
     def __post_init__(self) -> None:
-        ndots = len(self.first_module) - len(self.first_module.lstrip("."))
+        if not self.first_module.startswith("."):
+            ndots = 0
+        else:
+            # replicate ... sorting before .. before ., but after absolute
+            ndots = 100 - (len(self.first_module) - len(self.first_module.lstrip(".")))
         assert isinstance(self.node, cst.SimpleStatementLine)
         self.sort_key = SortKey(
             # TODO this will raise on missing category
@@ -52,8 +57,7 @@ class SortableImport:
                 self.config.category(self.first_module)
             ),
             is_from_import=isinstance(self.node.body[0], cst.ImportFrom),
-            # replicate ... sorting before .. before .
-            ndots=-ndots,
+            ndots=ndots,
         )
 
     @classmethod
@@ -205,14 +209,14 @@ def is_sortable_import(stmt: cst.CSTNode) -> bool:
 
 
 def usort_string(data: str, config: Config) -> str:
-    mod = try_parse(data=data.encode(), path="<test>")
+    mod = try_parse(data=data.encode(), path=Path("<test>"))
     blocks = sortable_blocks(mod, config=config)
 
     # The module's body is already a list, but that's an implementation detail we
     # shouldn't rely on.  This code should eventually be run as a visitor, and
     # with_changes is the right thing to do in that case.
-    body = list(mod.body)
+    body: List[cst.CSTNode] = list(mod.body)
     for b in blocks:
         sorted_stmts = sorted(b.stmts)
         body[b.start_idx : b.end_idx] = [s.node for s in sorted_stmts]
-    return mod.with_changes(body=body).code  # type: ignore
+    return mod.with_changes(body=body).code

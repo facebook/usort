@@ -10,7 +10,7 @@ from ..config import Config
 from ..sorting import SortableImport, usort_string
 from ..util import try_parse
 
-DEFAULT_CONFIG = Config()
+DEFAULT_CONFIG = Config(known_first_party={"fp"})
 
 
 class BasicOrderingTest(unittest.TestCase):
@@ -123,6 +123,8 @@ import a as b
         # Test that 'from .. import b' comes before 'from ..a import foo'
         self.assertEqual(
             """\
+import fp
+from fp import z
 from .. import b
 from ..a import foo
 from . import d
@@ -133,6 +135,8 @@ from .c import e
 from ..a import foo
 from .. import b
 from . import d
+from fp import z
+import fp
 from .c import e
 """,
                 DEFAULT_CONFIG,
