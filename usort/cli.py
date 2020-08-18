@@ -12,8 +12,8 @@ import click
 from moreorless.click import echo_color_unified_diff
 
 from .config import Config
-from .sorting import sortable_blocks, try_parse, usort_string
-from .util import walk
+from .sorting import sortable_blocks, usort_string
+from .util import try_parse, walk
 
 
 @click.group()
