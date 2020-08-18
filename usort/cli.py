@@ -15,8 +15,14 @@ from .config import Config
 from .sorting import sortable_blocks, usort_string
 from .util import try_parse, walk
 
+try:
+    from .version import version as __version__  # type: ignore
+except ImportError:
+    __version__ = "dev"
+
 
 @click.group()
+@click.version_option(__version__)
 def main() -> None:
     pass
 
