@@ -11,14 +11,10 @@ from typing import List
 import click
 from moreorless.click import echo_color_unified_diff
 
+from . import __version__
 from .config import Config
 from .sorting import sortable_blocks, usort_string
 from .util import try_parse, walk
-
-try:
-    from .version import version as __version__  # type: ignore
-except ImportError:
-    __version__ = "dev"
 
 
 @click.group()
