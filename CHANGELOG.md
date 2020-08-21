@@ -1,4 +1,4 @@
-## next
+## 0.5.0a2
 
 * Automatic finding of first-party dirs
 * Skip entries marked `# usort:skip` or `#isort:skip`
