@@ -7,6 +7,10 @@ venv:
 	source .venv/bin/activate && make setup
 	@echo 'run `source .venv/bin/activate` to use virtualenv'
 
+.PHONY: clean
+clean:
+	rm -rf dist html
+
 # The rest of these are intended to be run within the venv, where python points
 # to whatever was used to set up the venv.
 
@@ -14,6 +18,9 @@ venv:
 setup:
 	python -m pip install -Ur requirements-dev.txt
 	python -m pip install -Ur requirements.txt
+
+html: usort/*.py docs/* docs/*/* *.md
+	sphinx-build -b html docs html
 
 .PHONY: test
 test:
