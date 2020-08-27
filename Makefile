@@ -1,17 +1,11 @@
 PYTHON?=python
 SOURCES=usort setup.py
 
-.venv:
+.PHONY: venv
+venv:
 	$(PYTHON) -m venv .venv
 	source .venv/bin/activate && make setup
 	@echo 'run `source .venv/bin/activate` to use virtualenv'
-
-.PHONY: venv
-venv: .venv
-
-.PHONY: html
-html: .venv
-	.venv/bin/sphinx-build -b html docs html
 
 .PHONY: clean
 clean:
@@ -45,6 +39,10 @@ lint:
 	python -m black --check $(SOURCES)
 	python -m flake8 $(SOURCES)
 	mypy --strict usort
+
+.PHONY: html
+html:
+	sphinx-build -b html docs html
 
 .PHONY: release
 release:
