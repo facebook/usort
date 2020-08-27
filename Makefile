@@ -1,17 +1,11 @@
 PYTHON?=python
 SOURCES=usort setup.py
 
-.venv:
+.PHONY: venv
+venv:
 	$(PYTHON) -m venv .venv
 	source .venv/bin/activate && make setup
 	@echo 'run `source .venv/bin/activate` to use virtualenv'
-
-.PHONY: venv
-venv: .venv
-
-.PHONY: html
-html: .venv
-	.venv/bin/sphinx-build -b html docs html
 
 .PHONY: clean
 clean:
@@ -52,6 +46,10 @@ lint:
 	    die "Missing copyright in $$filename"; \
 	  done < <( git ls-tree -r --name-only HEAD | grep ".py$$" )'
 
+
+.PHONY: html
+html:
+	sphinx-build -b html docs html
 
 .PHONY: release
 release:
