@@ -14,7 +14,7 @@ div.facebook-badges a {
     border: none;
 }
 
-div.facebook-badges a:hover {
+div.facebook a, div.facebook a:hover, div.facebook-badges a:hover {
     color: #777;
     border: none;
 }
