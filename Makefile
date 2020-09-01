@@ -7,6 +7,14 @@ venv:
 	source .venv/bin/activate && make setup
 	@echo 'run `source .venv/bin/activate` to use virtualenv'
 
+.PHONY: clean
+clean:
+	rm -rf dist html
+
+.PHONY: distclean
+distclean:
+	rm -rf .venv
+
 # The rest of these are intended to be run within the venv, where python points
 # to whatever was used to set up the venv.
 
@@ -31,6 +39,10 @@ lint:
 	python -m black --check $(SOURCES)
 	python -m flake8 $(SOURCES)
 	mypy --strict usort
+
+.PHONY: html
+html:
+	sphinx-build -b html docs html
 
 .PHONY: release
 release:

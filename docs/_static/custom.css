@@ -1,0 +1,20 @@
+div.facebook {
+    margin-top: 24px;
+}
+
+div.facebook-badges {
+    margin-top: 12px;
+    margin-bottom: 10px;
+}
+
+div.facebook-badges a {
+    color: #bbb;
+    text-decoration: none;
+    font-size: 24px;
+    border: none;
+}
+
+div.facebook a, div.facebook a:hover, div.facebook-badges a:hover {
+    color: #777;
+    border: none;
+}
