@@ -31,41 +31,31 @@ from bar import bar
 from .main import main
 ```
 
-Blocks are inferred from a number of real world conditions, including non-import
-statements:
+Blocks are inferred from a number of real world conditions, including any intermediate
+statements between imports:
 
 ```py
 import warnings
 warnings.filterwarnings(...)
 
-from foo import foo  # noqa
-import bar
+import re
+import sys
 ```
 
-In this case, µsort detects two blocks–separated by the call to `filterwarnings()`–
+In this case, µsort detects two blocks–separated by the call to `filterwarnings()`,
 and will only sort imports inside of each block. Running µsort on this code
-will generate the following output:
-
-```py
-import warnings
-warnings.filterwarnings(...)
-
-import bar
-from foo import foo  # noqa
-```
+will generate no changes, because each block is already sorted.
 
 Blocks can also be explicitly created using the `# usort:skip` directive, or with
-`# isort:skip` for compatibility with existing codebases.
-
-See the [User Guide][] for more details about how blocks are detected,
-and how sorting is performed.
+`# isort:skip` for compatibility with existing codebases. See the [User Guide][]
+for more details about how blocks are detected, and how sorting is performed.
 
 
 ## Install
 
 µsort requires Python 3.6 or newer to run. Install µsort with:
 
-```sh
+```shell-session
 $ pip install usort
 ```
 
@@ -74,58 +64,15 @@ $ pip install usort
 
 To format one or more files or directories in-place:
 
-```sh
+```shell-session
 $ usort format <path> [<path> ...]
 ```
 
 To generate a diff of changes without modifying files, the `--diff` flag can be used:
 
-```sh
+```shell-session
 $ usort format --diff <path>
 ```
-
-
-## Debugging
-
-If µsort behavior is unexpected, or you would like to see where blocks are detected,
-you can use the `list-imports` command:
-
-```
-$ usort list-imports <path>
-test.py 2 blocks:
-  body[0:2]
-Formatted:
-[[[
-import foo
-from bar import bar
-]]]
-  body[3:4]
-Formatted:
-[[[
-
-import sys
-]]]
-```
-
-The `--debug` flag will also provide categories and sorting information for each block.
-
-
-## Tests
-
-Run
-
-```
-$ make venv
-$ . .venv/bin/activate
-$ make test
-```
-
-or
-
-```
-$ tox -p all
-```
-
 
 # License
 
