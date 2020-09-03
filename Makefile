@@ -22,6 +22,7 @@ distclean:
 setup:
 	python -m pip install -Ur requirements-dev.txt
 	python -m pip install -Ur requirements.txt
+	python -m pip install -e .
 
 .PHONY: test
 test:
