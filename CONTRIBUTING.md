@@ -1,10 +1,10 @@
-# Contributing to usort
+# Contributing to µsort
 We want to make contributing to this project as easy and transparent as
 possible.
 
 ## Getting Started
 
-usort requires Python 3.6 or newer. [pyenv][] can help install and manage
+µsort requires Python 3.6 or newer. [pyenv][] can help install and manage
 multiple versions of Python.
 
 Clone the repository and set up your local workspace:
@@ -17,7 +17,7 @@ $ source .venv/bin/activate
 (usort) $
 ```
 
-This will create a virtualenv, install dependencies, and set up usort as
+This will create a virtualenv, install dependencies, and set up µsort as
 an editable package in the virtualenv. This enables running the `usort` command
 from your workspace while activated.
 
@@ -38,7 +38,7 @@ $ tox -p all
 
 ## Documentation
 
-usort uses [Sphinx][] for building documentation, and all documentation is
+µsort uses [Sphinx][] for building documentation, and all documentation is
 stored in the `docs/` directory at the root of the repository. If you are not
 familiar with writing reStructuredText, there is a good
 [reStructuredText primer][rst] in the Sphinx documentation.
@@ -50,7 +50,7 @@ in your browser of choice to make sure your changes have rendered correctly:
 (usort) $ make html
 ...
 
-(usort) $ open html/index.html
+(usort) $ python -m webbrowser "file://$PWD/html/index.html"
 ```
 
 
@@ -79,7 +79,7 @@ disclosure of security bugs. In those cases, please go through the process
 outlined on that page and do not file a public issue.
 
 ## License
-By contributing to usort, you agree that your contributions will be licensed
+By contributing to µsort, you agree that your contributions will be licensed
 under the [LICENSE][] file in the root directory of this source tree.
 
 

@@ -7,7 +7,7 @@
 [![license](https://img.shields.io/pypi/l/usort.svg)](https://github.com/facebookexperimental/usort/blob/main/LICENSE)
 [![code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-μsort is a safe, minimal import sorter. It's primary goal is to make no "dangerous"
+μsort is a safe, minimal import sorter. Its primary goal is to make no "dangerous"
 changes to code, and to make no changes on code style. This is achieved by detecting
 distinct "blocks" of imports that are the most likely to be safely interchangeable, and
 only reordering imports within these blocks without altering formatting. Code style
@@ -46,9 +46,12 @@ In this case, µsort detects two blocks–separated by the call to `filterwarnin
 and will only sort imports inside of each block. Running µsort on this code
 will generate no changes, because each block is already sorted.
 
-Blocks can also be explicitly created using the `# usort:skip` directive, or with
-`# isort:skip` for compatibility with existing codebases. See the [User Guide][]
-for more details about how blocks are detected, and how sorting is performed.
+Imports can be excluded from blocks using the `# usort:skip` directive, or with
+`# isort:skip` for compatibility with existing codebases. µsort will leave
+these imports unchanged, and treat them as block separators.
+
+See the [User Guide][] for more details about how blocks are detected,
+and how sorting is performed.
 
 
 ## Install

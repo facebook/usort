@@ -31,18 +31,24 @@ Statements
 ^^^^^^^^^^
 
 Any non-import statement positioned between imports will create an implicit
-block. This allows µsort to automatically preserve use of modules that must
-happen before other imports, such as filtering warnings::
+block separator. This allows µsort to automatically preserve use of modules
+that must happen before other imports, such as filtering warnings or debug
+logging::
 
     import warnings
     warnings.filterwarnings(...)  # <-- implicit block separator
 
     import noisy_module
 
+    print("in between imports")  # <-- implicit block separator
+
+    import other_module
+
 Shadowed Imports
 ^^^^^^^^^^^^^^^^
 
-Any import that shadows a previous import will create an implicit block::
+Any import that shadows a previous import will create an implicit block
+separator::
 
     import foo as os
     import os  # <-- implicit block separator
@@ -51,7 +57,7 @@ Star Imports
 ^^^^^^^^^^^^
 
 Star imports, which can potentially shadow or be shadowed by any other import,
-will also create implicit blocks::
+will also create implicit block separators::
 
     import foo
 
