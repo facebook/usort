@@ -79,7 +79,7 @@ $ usort format --diff <path>
 
 # License
 
-μsort is MIT licensed, as found in the [`LICENSE`][] file.
+μsort is MIT licensed, as found in the [LICENSE][] file.
 
-[`LICENSE`]: https://github.com/facebookexperimental/usort/tree/main/LICENSE
+[LICENSE]: https://github.com/facebookexperimental/usort/tree/main/LICENSE
 [User Guide]: https://usort.readthedocs.io/
