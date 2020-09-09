@@ -56,7 +56,10 @@ autodoc_default_options = {
 autodoc_member_order = "groupwise"
 
 highlight_language = "python3"
-intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "stdlib_list": ("https://python-stdlib-list.readthedocs.io/en/latest/", None),
+}
 master_doc = "index"
 
 # -- Options for HTML output -------------------------------------------------

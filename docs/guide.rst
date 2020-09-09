@@ -1,8 +1,117 @@
 User Guide
 ==========
 
+The µsort command line interface is the primary method for sorting imports
+in your Python modules. Installing µsort can be done via ``pip``:
+
+.. code-block:: shell-session
+
+    $ pip install usort
+
+To format one or more files or directories in-place:
+
+.. code-block:: shell-session
+
+    $ usort format <path> [<path> ...]
+
+To generate a diff of changes without modifying files:
+
+.. code-block:: shell-session
+
+    $ usort format --diff <path> [<path> ...]
+
+µsort can also be used to validate formatting as part of CI:
+
+.. code-block:: shell-session
+
+    $ usort format --check <path> [<path> ...]
+
+
+Sorting
+-------
+
+µsort follows a few simple steps when sorting imports in a module:
+
+1. Look for all import statements in the module
+2. Group these statements into "blocks" of sortable imports
+   (See `Import Blocks`_ for details)
+3. Reorder import statements within each block
+4. Normalize whitespace between imports as needed
+
+When ordering imports within a block, µsort categorizes the imports by source
+into four major categories for imports, prioritized following common community
+standards:
+
+* :mod:`__future__` imports:
+* Standard library modules (from CPython):
+* Third-party modules (external imports)
+* First-party modules (internal, local, or relative imports)
+
+Within each category, imports are sorted first by "style" of import statement:
+
+* "basic" imports (``import foo``)
+* "from" imports (``from foo import bar``)
+
+And lastly, imports of the same style are sorted lexicographically by source
+module name, and then by name of element being imported.
+
+Altogether, this will result each block of imports sorted roughly according
+to this example, for a module in the namespace :mod:`something`::
+
+    # future imports
+    from __future__ import annotations
+
+    # standard library
+    import re
+    import sys
+    from datetime import date, datetime, timedelta
+    from pathlib import Path
+
+    # third-party
+    import requests
+    from attr import dataclasses
+    from honesty.api import download_many
+
+    # first-party
+    from something import other_function, some_function
+    from . import some_module
+    from .other_module import some_name, that_thing
+
+
 Configuration
 -------------
+
+µsort shouldn't require configuration for most projects, but offers some basic
+options to customize sorting behaviors:
+
+* :attr:`known_standard_library: Set[str]`: A set of module names to treat
+  as part of the standard library. This is added to the set of modules listed
+  in the `stdlib_list <https://python-stdlib-list.readthedocs.io/en/latest/index.html>`_ package.
+
+* :attr:`known_third_party: Set[str]`: A set of module names to treat as
+  third-party modules.
+
+* :attr:`known_first_party: Set[str]`: A set of module names to treat as
+  first-party modules.
+
+* :attr:`default_section: str`: Which category should be used for unrecognized
+  module names. Valid values include ``"future"``, ``"standard_library"``,
+  ``"third_party"``, and ``"first_party"``. Defaults to ``"third_party"``.
+
+:file:`pyproject.toml`
+^^^^^^^^^^^^^^^^^^^^^^
+
+The preferred method of configuring µsort is in your project's
+:file:`pyproject.toml`, in the ``tool.usort`` section:
+
+.. code-block:: toml
+
+    [tool.usort]
+    known_first_party = ["something", "something_else"]
+
+When run, µsort will look for the "nearest" :file:`pyproject.toml` to the
+current working directory, looking upwards until the project root is found,
+or until the root of the filesystem is reached.
 
 
 Import Blocks
@@ -15,7 +124,7 @@ Comment Directives
 ^^^^^^^^^^^^^^^^^^
 
 Comments with special directives create explicit blocks, separated by the line
-containing the directives::
+containing the directives, which will remain unchanged::
 
     import math
 
