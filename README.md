@@ -60,4 +60,7 @@ $ tox -p all
 
 # License
 
-μsort is MIT licensed, as found in the LICENSE file.
+μsort is copyright [Tim Hatch, Facebook](), and licensed under
+the MIT license.  I am providing code in this repository to you under an open
+source license.  This is my personal repository; the license you receive to
+my code is from me and not from my employer. See the `LICENSE` file for details.
