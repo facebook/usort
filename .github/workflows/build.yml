@@ -2,7 +2,8 @@ name: Build
 on:
   push:
     branches:
-      - master
+      - main
+      - tmp-*
     tags:
       - v*
   pull_request:
