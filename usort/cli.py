@@ -19,7 +19,7 @@ from .util import try_parse
 @click.group()
 @click.version_option(__version__, "--version", "-V")
 @click.option("--benchmark", is_flag=True, help="Output benchmark timing info")
-def main() -> None:
+def main(benchmark: bool) -> None:
     pass
 
 
@@ -115,7 +115,7 @@ def diff(filenames: List[str]) -> None:
 
 @main.command()
 @click.argument("filenames", nargs=-1)
-def format(show_time: bool, filenames: List[str]) -> None:
+def format(filenames: List[str]) -> None:
     """
     Format one or more paths
 
@@ -137,6 +137,7 @@ def format(show_time: bool, filenames: List[str]) -> None:
             if result.error:
                 click.echo(f"Error on {result.path}: {result.error!r}")
                 return_code |= 1
+                continue
 
             if result.content != result.output:
                 click.echo(f"Sorted {result.path}")
