@@ -3,14 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import Iterable, List, Optional, Set
 
 import libcst as cst
 
 from .config import Config
-from .util import try_parse
+from .util import try_parse, walk
 
 
 def with_dots(x: cst.CSTNode) -> str:
@@ -220,3 +221,55 @@ def usort_string(data: str, config: Config) -> str:
         sorted_stmts = sorted(b.stmts)
         body[b.start_idx : b.end_idx] = [s.node for s in sorted_stmts]
     return mod.with_changes(body=body).code
+
+
+def usort_stdin() -> bool:
+    """
+    Read file contents from stdin, format it, and write the resulting file to stdout
+
+    In case of error during sorting, no output will be written to stdout, and the
+    exception will be written to stderr instead.
+
+    Returns True if formatting succeeded, otherwise False
+    """
+    try:
+        config = Config.find()
+        data = sys.stdin.read()
+        result = usort_string(data, config)
+        sys.stdout.write(result)
+        return True
+
+    except Exception as e:
+        sys.stderr.write(repr(e))
+        return False
+
+
+@dataclass
+class Result:
+    path: Path
+    content: str
+    output: str
+    error: Optional[Exception] = None
+
+
+def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
+    """
+    For a given path, format it, or any .py files in it, and yield Result objects
+    """
+    files: Iterable[Path]
+    if path.is_dir():
+        files = walk(path, "*.py")
+    else:
+        files = [path]
+
+    for f in files:
+        try:
+            config = Config.find(f.parent)
+            data = f.read_text()
+            output = usort_string(data, config)
+            if write:
+                f.write_text(output)
+            yield Result(f, data, output)
+
+        except Exception as e:
+            yield Result(f, data, "", e)
