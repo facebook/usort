@@ -41,11 +41,7 @@ lint:
 	python -m flake8 $(SOURCES)
 	mypy --strict usort
 	@#
-	@/bin/bash -c 'die() { echo "$$1"; exit 1; }; \
-	  while read filename; do \
-	  grep -q "Copyright (c) Facebook" "$$filename" || \
-	    die "Missing copyright in $$filename"; \
-	  done < <( git ls-tree -r --name-only HEAD | grep ".py$$" )'
+	@/bin/bash check_copyright.sh
 
 
 .PHONY: html
