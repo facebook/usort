@@ -143,6 +143,41 @@ from .c import e
             ),
         )
 
+    def test_non_module_imports(self) -> None:
+        self.assertEqual(
+            """\
+if True:
+    import a
+    import b
+
+def func():
+    import c
+    import d
+    if True:
+        import e
+        import f
+        pass
+        import a
+""",
+            usort_string(
+                """\
+if True:
+    import b
+    import a
+
+def func():
+    import d
+    import c
+    if True:
+        import f
+        import e
+        pass
+        import a
+""",
+                DEFAULT_CONFIG,
+            ),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
