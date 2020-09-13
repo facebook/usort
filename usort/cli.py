@@ -58,7 +58,7 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> int:
         config = Config.find(Path(f))
         mod = try_parse(Path(f))
         try:
-            blocks = sortable_blocks(mod, config)
+            blocks = sortable_blocks(mod.body, config)
         except Exception as e:
             print("Exception", f, e)
             continue
