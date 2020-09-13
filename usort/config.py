@@ -3,43 +3,47 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import enum
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Sequence, Set
+from typing import Dict, NewType, Optional, Sequence
 
 import toml
 
 from .stdlibs import STDLIB_TOP_LEVEL_NAMES
 
+Category = NewType("Category", str)
 
-# TODO these numbers are meaningless, use strings or auto?
-class Category(enum.Enum):
-    FUTURE = "future"
-    STANDARD_LIBRARY = "standard_library"
-    FIRST_PARTY = "first_party"
-    THIRD_PARTY = "third_party"
+CAT_FUTURE = Category("future")
+CAT_STANDARD_LIBRARY = Category("standard_library")
+CAT_FIRST_PARTY = Category("first_party")
+CAT_THIRD_PARTY = Category("third_party")
+
+
+def known_factory() -> Dict[str, Category]:
+    known = {}
+    for name in STDLIB_TOP_LEVEL_NAMES:
+        known[name] = CAT_STANDARD_LIBRARY
+
+    # This is also in the stdlib list, so this override comes last...
+    known["__future__"] = CAT_FUTURE
+
+    return known
 
 
 @dataclass
 class Config:
-    known_future: Set[str] = field(default_factory=lambda: {"__future__"})
-    known_first_party: Set[str] = field(default_factory=set)
-    known_third_party: Set[str] = field(default_factory=set)
-    known_standard_library: Set[str] = field(
-        default_factory=STDLIB_TOP_LEVEL_NAMES.copy
-    )
+    known: Dict[str, Category] = field(default_factory=known_factory)
 
     # These names are vaguely for compatibility with isort; however while it has
     # separate sections for "current project" and "explicitly local", these are
     # handled differently as "first_party".
     categories: Sequence[Category] = (
-        Category.FUTURE,
-        Category.STANDARD_LIBRARY,
-        Category.THIRD_PARTY,
-        Category.FIRST_PARTY,
+        CAT_FUTURE,
+        CAT_STANDARD_LIBRARY,
+        CAT_THIRD_PARTY,
+        CAT_FIRST_PARTY,
     )
-    default_section: Category = Category.THIRD_PARTY
+    default_section: Category = CAT_THIRD_PARTY
 
     @classmethod
     def find(cls, filename: Optional[Path] = None) -> "Config":
@@ -95,23 +99,37 @@ class Config:
                 break
 
         if (p / "__init__.py").exists():
-            rv.known_first_party.add(p.name)
+            rv.known[p.name] = CAT_FIRST_PARTY
 
         return rv
 
     def update_from_config(self, toml_path: Path) -> None:
         conf = toml.loads(toml_path.read_text())
         tbl = conf.get("tool", {}).get("usort", {})
-        if "known_first_party" in tbl:
-            self.known_first_party.update(tbl["known_first_party"])
-        if "known_third_party" in tbl:
-            self.known_third_party.update(tbl["known_third_party"])
-        if "known_standard_library" in tbl:
-            self.known_standard_library.update(tbl["known_standard_library"])
+
         if "categories" in tbl:
             self.categories = [Category(x) for x in tbl["categories"]]
         if "default_section" in tbl:
             self.default_section = Category(tbl["default_section"])
+
+        for cat, names in tbl.get("known", {}).items():
+            typed_cat = Category(cat)
+            if cat not in self.categories:
+                raise ValueError(f"Known set for {cat} without it having an order")
+
+            for name in names:
+                self.known[name] = typed_cat
+
+        # "legacy" options
+        for cat, option in [
+            (CAT_FIRST_PARTY, "known_first_party"),
+            (CAT_THIRD_PARTY, "known_third_party"),
+            (CAT_STANDARD_LIBRARY, "known_standard_library"),
+        ]:
+            if option in tbl:
+                for name in tbl[option]:
+                    # TODO validate (no dots or whitespace, etc)
+                    self.known[name] = cat
 
     def update_from_flags(
         self,
@@ -121,16 +139,19 @@ class Config:
         categories: str,
         default_section: str,
     ) -> None:
-        if known_first_party:
-            self.known_first_party.update(known_first_party.split(","))
-        if known_third_party:
-            self.known_third_party.update(known_third_party.split(","))
-        if known_standard_library:
-            self.known_standard_library.update(known_standard_library.split(","))
         if categories:
             self.categories = [Category(x) for x in categories.split(",")]
         if default_section:
             self.default_section = Category(default_section)
+
+        for cat, option in [
+            (CAT_FIRST_PARTY, known_first_party),
+            (CAT_THIRD_PARTY, known_third_party),
+            (CAT_STANDARD_LIBRARY, known_standard_library),
+        ]:
+            for name in option.split(","):
+                # TODO validate (no dots or whitespace, etc)
+                self.known[name] = cat
 
     def category(self, dotted_import: str) -> Category:
         """
@@ -142,14 +163,8 @@ class Config:
         first_part = dotted_import.split(".")[0]
         if first_part == "":
             # relative import
-            return Category.FIRST_PARTY
-        elif first_part in self.known_future:
-            return Category.FUTURE
-        elif first_part in self.known_first_party:
-            return Category.FIRST_PARTY
-        elif first_part in self.known_standard_library:
-            return Category.STANDARD_LIBRARY
-        elif first_part in self.known_third_party:
-            return Category.THIRD_PARTY
+            return CAT_FIRST_PARTY
+        elif first_part in self.known:
+            return self.known[first_part]
         else:
             return self.default_section

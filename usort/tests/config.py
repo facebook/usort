@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from usort.config import Category, Config
+from usort.config import CAT_FIRST_PARTY, CAT_FUTURE, CAT_THIRD_PARTY, Config
 
 
 class ConfigTest(unittest.TestCase):
@@ -23,9 +23,10 @@ default_section = "future"
 """
             )
             conf = Config.find(Path(d))
-            self.assertEqual(set(), conf.known_third_party)
-            self.assertEqual(Category.FUTURE, conf.category("psutil.cpu_times"))
+            self.assertNotIn("psutil", conf.known)
+            self.assertEqual(CAT_FUTURE, conf.category("psutil.cpu_times"))
 
+            # "legacy" naming
             (Path(d) / "pyproject.toml").write_text(
                 """\
 [tool.usort]
@@ -35,13 +36,28 @@ known_third_party = ["psutil", "cocoa"]
             )
 
             conf = Config.find(Path(d))
-            self.assertEqual({"psutil", "cocoa"}, conf.known_third_party)
-            self.assertEqual(Category.THIRD_PARTY, conf.category("psutil.cpu_times"))
+            self.assertEqual(CAT_THIRD_PARTY, conf.known["cocoa"])
+            self.assertEqual(CAT_THIRD_PARTY, conf.known["psutil"])
+            self.assertEqual(CAT_THIRD_PARTY, conf.category("psutil.cpu_times"))
 
             # Works even on invalid children
             conf = Config.find(Path(d) / "foo")
-            self.assertEqual({"psutil", "cocoa"}, conf.known_third_party)
-            self.assertEqual(Category.THIRD_PARTY, conf.category("psutil.cpu_times"))
+            self.assertEqual(CAT_THIRD_PARTY, conf.known["cocoa"])
+            self.assertEqual(CAT_THIRD_PARTY, conf.known["psutil"])
+            self.assertEqual(CAT_THIRD_PARTY, conf.category("psutil.cpu_times"))
+
+            # New naming
+            (Path(d) / "pyproject.toml").write_text(
+                """\
+[tool.usort]
+default_section = "future"
+[tool.usort.known]
+third_party = ["psutil", "cocoa"]
+"""
+            )
+
+            new_conf = Config.find(Path(d))
+            self.assertEqual(conf, new_conf)
 
     def test_first_party_root_finding(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -52,10 +68,46 @@ known_third_party = ["psutil", "cocoa"]
             f = Path(d) / "a" / "b" / "c" / "__init__"
 
             conf = Config.find(f)
-            self.assertEqual({"b"}, conf.known_first_party)
+            self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
             conf = Config.find(f.parent)  # c
-            self.assertEqual({"b"}, conf.known_first_party)
+            self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
             conf = Config.find(f.parent.parent)  # b
-            self.assertEqual({"b"}, conf.known_first_party)
+            self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
             conf = Config.find(Path("/"))
-            self.assertEqual(set(), conf.known_first_party)
+            self.assertNotIn("b", conf.known)
+
+    def test_new_category_names(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "pyproject.toml").write_text(
+                """\
+[tool.usort]
+categories = ["future", "standard_library", "numpy", "third_party", "first_party"]
+[tool.usort.known]
+numpy = ["numpy", "pandas"]
+"""
+            )
+            conf = Config.find(Path(d) / "sample.py")
+            self.assertEqual("numpy", conf.known["pandas"])
+
+    def test_new_category_names_invalid(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "pyproject.toml").write_text(
+                """\
+[tool.usort.known]
+foo = ["numpy", "pandas"]
+"""
+            )
+            with self.assertRaisesRegex(ValueError, "Known set for foo"):
+                Config.find(Path(d) / "sample.py")
+
+    def test_from_flags(self) -> None:
+        conf = Config()
+        conf.update_from_flags(
+            known_first_party="a,b",
+            known_third_party="",
+            known_standard_library="",
+            categories="",
+            default_section="",
+        )
+        self.assertEqual(CAT_FIRST_PARTY, conf.known["a"])
+        self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
