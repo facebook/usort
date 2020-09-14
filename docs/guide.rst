@@ -18,13 +18,13 @@ To generate a diff of changes without modifying files:
 
 .. code-block:: shell-session
 
-    $ usort format --diff <path> [<path> ...]
+    $ usort diff <path> [<path> ...]
 
 µsort can also be used to validate formatting as part of CI:
 
 .. code-block:: shell-session
 
-    $ usort format --check <path> [<path> ...]
+    $ usort check <path> [<path> ...]
 
 
 Sorting
