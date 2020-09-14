@@ -121,7 +121,7 @@ import os
                 result = runner.invoke(main, ["format", "."])
 
         self.assertEqual(
-            "Error on sample.py: Exception('No version could parse <test>')\n",
+            "Error on sample.py: Exception('No version could parse sample.py')\n",
             result.output.replace(",)", ")"),
         )
         self.assertEqual(result.exit_code, 1)

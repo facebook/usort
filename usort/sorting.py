@@ -209,8 +209,11 @@ def is_sortable_import(stmt: cst.CSTNode) -> bool:
         return False
 
 
-def usort_string(data: str, config: Config) -> str:
-    mod = try_parse(data=data.encode(), path=Path("<test>"))
+def usort_string(data: str, config: Config, path: Optional[Path] = None) -> str:
+    if path is None:
+        path = Path("<data>")
+
+    mod = try_parse(data=data.encode(), path=path)
     blocks = sortable_blocks(mod, config=config)
 
     # The module's body is already a list, but that's an implementation detail we
@@ -235,7 +238,7 @@ def usort_stdin() -> bool:
     try:
         config = Config.find()
         data = sys.stdin.read()
-        result = usort_string(data, config)
+        result = usort_string(data, config, Path("<stdin>"))
         sys.stdout.write(result)
         return True
 
@@ -266,7 +269,7 @@ def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
         try:
             config = Config.find(f.parent)
             data = f.read_text()
-            output = usort_string(data, config)
+            output = usort_string(data, config, f)
             if write:
                 f.write_text(output)
             yield Result(f, data, output)

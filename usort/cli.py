@@ -4,8 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 import sys
+from functools import wraps
 from pathlib import Path
-from typing import List
+from typing import Any, Callable, List
 
 import click
 from moreorless.click import echo_color_unified_diff
@@ -13,21 +14,40 @@ from moreorless.click import echo_color_unified_diff
 from . import __version__
 from .config import Config
 from .sorting import sortable_blocks, usort_path, usort_stdin
-from .util import try_parse
+from .util import print_timings, try_parse
+
+BENCHMARK = False
+
+
+def usort_command(fn: Callable[..., int]) -> Callable[..., None]:
+    """
+    Run wrapped command, print timings if --benchmark, and exit with return code
+    """
+
+    @wraps(fn)
+    def wrapper(*args: Any, **kwargs: Any) -> None:
+        exit_code = fn(*args, **kwargs) or 0
+        if BENCHMARK:
+            print_timings(click.echo)
+        sys.exit(exit_code)
+
+    return wrapper
 
 
 @click.group()
 @click.version_option(__version__, "--version", "-V")
 @click.option("--benchmark", is_flag=True, help="Output benchmark timing info")
 def main(benchmark: bool) -> None:
-    pass
+    global BENCHMARK
+    BENCHMARK = benchmark
 
 
 @main.command()
 @click.option("--multiples", is_flag=True, help="Only show files with multiple blocks")
 @click.option("--debug", is_flag=True, help="Show internal information")
 @click.argument("filenames", nargs=-1)
-def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> None:
+@usort_command
+def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> int:
     """
     Troubleshoot sorting behavior and show import blocks
     """
@@ -63,10 +83,13 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> None:
                     print(mod.code_for_node(s.node), end="")
                 print("]]]")
 
+    return 0
+
 
 @main.command()
 @click.argument("filenames", nargs=-1)
-def check(filenames: List[str]) -> None:
+@usort_command
+def check(filenames: List[str]) -> int:
     """
     Check imports for one or more path
     """
@@ -85,12 +108,13 @@ def check(filenames: List[str]) -> None:
                 click.echo(f"Would sort {result.path}")
                 return_code |= 2
 
-    sys.exit(return_code)
+    return return_code
 
 
 @main.command()
 @click.argument("filenames", nargs=-1)
-def diff(filenames: List[str]) -> None:
+@usort_command
+def diff(filenames: List[str]) -> int:
     """
     Output diff of changes for one or more path
     """
@@ -110,12 +134,13 @@ def diff(filenames: List[str]) -> None:
                     result.content, result.output, result.path.as_posix()
                 )
 
-    sys.exit(return_code)
+    return return_code
 
 
 @main.command()
 @click.argument("filenames", nargs=-1)
-def format(filenames: List[str]) -> None:
+@usort_command
+def format(filenames: List[str]) -> int:
     """
     Format one or more paths
 
@@ -142,7 +167,7 @@ def format(filenames: List[str]) -> None:
             if result.content != result.output:
                 click.echo(f"Sorted {result.path}")
 
-    sys.exit(return_code)
+    return return_code
 
 
 if __name__ == "__main__":
