@@ -71,10 +71,16 @@ To format one or more files or directories in-place:
 $ usort format <path> [<path> ...]
 ```
 
-To generate a diff of changes without modifying files, the `--diff` flag can be used:
+To generate a diff of changes without modifying files:
 
 ```shell-session
-$ usort format --diff <path>
+$ usort diff <path>
+```
+
+To just validate that files are formatted correctly, like during CI:
+
+```shell-session
+$ usort check <path>
 ```
 
 # License

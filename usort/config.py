@@ -6,7 +6,7 @@
 import enum
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Sequence, Set
+from typing import Optional, Sequence, Set
 
 import toml
 
@@ -42,13 +42,17 @@ class Config:
     default_section: Category = Category.THIRD_PARTY
 
     @classmethod
-    def find(cls, filename: Path) -> "Config":
+    def find(cls, filename: Optional[Path] = None) -> "Config":
         rv = cls()
 
         # TODO This logic should be split out to a separate project, as it's
         # reusable and deserves a number of tests to get right.  Can probably
         # also stop once finding a .hg, .git, etc
-        p = filename
+        if filename is None:
+            p = Path.cwd()
+        else:
+            p = filename
+
         while True:
             if p.is_dir():
                 candidate = p / "pyproject.toml"
@@ -72,7 +76,11 @@ class Config:
         # This code as-is should work for something like running against a site-packages
         # dir, but if we broaden to support multiple top-level names, it would find too
         # much.
-        p = filename
+        if filename is None:
+            p = Path.cwd()
+        else:
+            p = filename
+
         while True:
             # Stop on root (hopefully works on Windows)
             if p.parent == p:

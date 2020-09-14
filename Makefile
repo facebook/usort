@@ -40,8 +40,7 @@ lint:
 	python -m black --check $(SOURCES)
 	python -m flake8 $(SOURCES)
 	mypy --strict usort
-	@#
-	@/bin/bash check_copyright.sh
+	/bin/bash check_copyright.sh
 
 
 .PHONY: html

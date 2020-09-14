@@ -4,30 +4,53 @@
 # LICENSE file in the root directory of this source tree.
 
 import sys
-import time
+from functools import wraps
 from pathlib import Path
-from typing import List
+from typing import Any, Callable, List
 
 import click
 from moreorless.click import echo_color_unified_diff
 
 from . import __version__
 from .config import Config
-from .sorting import sortable_blocks, usort_string
-from .util import try_parse, walk
+from .sorting import sortable_blocks, usort_path, usort_stdin
+from .util import print_timings, try_parse
+
+BENCHMARK = False
+
+
+def usort_command(fn: Callable[..., int]) -> Callable[..., None]:
+    """
+    Run wrapped command, print timings if --benchmark, and exit with return code
+    """
+
+    @wraps(fn)
+    def wrapper(*args: Any, **kwargs: Any) -> None:
+        exit_code = fn(*args, **kwargs) or 0
+        if BENCHMARK:
+            print_timings(click.echo)
+        sys.exit(exit_code)
+
+    return wrapper
 
 
 @click.group()
-@click.version_option(__version__)
-def main() -> None:
-    pass
+@click.version_option(__version__, "--version", "-V")
+@click.option("--benchmark", is_flag=True, help="Output benchmark timing info")
+def main(benchmark: bool) -> None:
+    global BENCHMARK
+    BENCHMARK = benchmark
 
 
 @main.command()
 @click.option("--multiples", is_flag=True, help="Only show files with multiple blocks")
 @click.option("--debug", is_flag=True, help="Show internal information")
 @click.argument("filenames", nargs=-1)
-def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> None:
+@usort_command
+def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> int:
+    """
+    Troubleshoot sorting behavior and show import blocks
+    """
     # This is used to debug the sort keys on the various lines, and understand
     # where the barriers are that produce different blocks.
 
@@ -50,7 +73,8 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> None:
             if debug:
                 for s in b.stmts:
                     print(
-                        f"    {sorted_stmts.index(s)} {s} ({s.config.category(s.first_module)})"
+                        f"    {sorted_stmts.index(s)} {s} "
+                        f"({s.config.category(s.first_module)})"
                     )
             else:
                 print("Formatted:")
@@ -59,14 +83,67 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> None:
                     print(mod.code_for_node(s.node), end="")
                 print("]]]")
 
+    return 0
+
 
 @main.command()
-@click.option("--diff", is_flag=True)
-@click.option("--check", is_flag=True)
-@click.option("--show-time", is_flag=True)
 @click.argument("filenames", nargs=-1)
-def format(diff: bool, check: bool, show_time: bool, filenames: List[str]) -> None:
+@usort_command
+def check(filenames: List[str]) -> int:
     """
+    Check imports for one or more path
+    """
+    if not filenames:
+        raise click.ClickException("Provide some filenames")
+
+    return_code = 0
+    for f in filenames:
+        path = Path(f)
+        for result in usort_path(path, write=False):
+            if result.error:
+                click.echo(f"Error on {result.path}: {result.error!r}")
+                return_code |= 1
+
+            if result.content != result.output:
+                click.echo(f"Would sort {result.path}")
+                return_code |= 2
+
+    return return_code
+
+
+@main.command()
+@click.argument("filenames", nargs=-1)
+@usort_command
+def diff(filenames: List[str]) -> int:
+    """
+    Output diff of changes for one or more path
+    """
+    if not filenames:
+        raise click.ClickException("Provide some filenames")
+
+    return_code = 0
+    for f in filenames:
+        path = Path(f)
+        for result in usort_path(path, write=False):
+            if result.error:
+                click.echo(f"Error on {result.path}: {result.error!r}")
+                return_code |= 1
+
+            if result.content != result.output:
+                echo_color_unified_diff(
+                    result.content, result.output, result.path.as_posix()
+                )
+
+    return return_code
+
+
+@main.command()
+@click.argument("filenames", nargs=-1)
+@usort_command
+def format(filenames: List[str]) -> int:
+    """
+    Format one or more paths
+
     This is intended to sort nodes separated by barriers, and that's it.
     We don't format them (aside from moving comments).  Black does the rest.
     When in doubt leave lines alone.
@@ -74,42 +151,23 @@ def format(diff: bool, check: bool, show_time: bool, filenames: List[str]) -> No
     if not filenames:
         raise click.ClickException("Provide some filenames")
 
-    rc = 0
-    for f in filenames:
-        pf = Path(f)
-        t0 = time.time()
-        if pf.is_dir():
-            files = list(walk(pf, "*.py"))
-        else:
-            files = [pf]
-        if show_time:
-            print(f"walk {f} {time.time() - t0}")
+    if filenames[0].strip() == "-":
+        success = usort_stdin()
+        return 0 if success else 1
 
-        for pf in files:
-            t0 = time.time()
-            config = Config.find(pf.parent)
-            try:
-                data = pf.read_text()
-                result = usort_string(data, config)
-            except Exception as e:
-                print(repr(e))
-                rc |= 1
+    return_code = 0
+    for f in filenames:
+        path = Path(f)
+        for result in usort_path(path, write=True):
+            if result.error:
+                click.echo(f"Error on {result.path}: {result.error!r}")
+                return_code |= 1
                 continue
 
-            if show_time:
-                print(f"sort {pf} {time.time() - t0}")
+            if result.content != result.output:
+                click.echo(f"Sorted {result.path}")
 
-            if diff:
-                echo_color_unified_diff(data, result, pf.as_posix())
-            elif check:
-                if data != result:
-                    rc |= 2
-                    print(f"Would sort {pf}")
-            elif result != data:
-                print(f"Sorted {pf}")
-                pf.write_text(result)
-
-    sys.exit(rc)
+    return return_code
 
 
 if __name__ == "__main__":
