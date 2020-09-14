@@ -153,7 +153,7 @@ def format(filenames: List[str]) -> int:
 
     if filenames[0].strip() == "-":
         success = usort_stdin()
-        sys.exit(0 if success else 1)
+        return 0 if success else 1
 
     return_code = 0
     for f in filenames:

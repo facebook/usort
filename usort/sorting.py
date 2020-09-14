@@ -235,6 +235,9 @@ def usort_stdin() -> bool:
 
     Returns True if formatting succeeded, otherwise False
     """
+    if sys.stdin.isatty():
+        print("Warning: stdin is a tty", file=sys.stderr)
+
     try:
         config = Config.find()
         data = sys.stdin.read()
