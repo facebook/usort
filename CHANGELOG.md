@@ -3,6 +3,9 @@
 * Added support for formatting stdin with `usort format -`
 * Moved diff/check functionality into separate `diff` and `check` commands
 * Replaced `usort format --show-time` with `usort --benchmark` framework
+* Added custom section names
+* Includes sphinx docs
+* Corrects missing `toml` dep
 
 ## 0.5.0a2
 

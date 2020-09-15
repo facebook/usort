@@ -82,7 +82,8 @@ Configuration
 -------------
 
 µsort shouldn't require configuration for most projects, but offers some basic
-options to customize sorting behaviors:
+options to customize sorting behaviors.  When using flags, only a few are
+available:
 
 * :attr:`known_standard_library: Set[str]`: A set of module names to treat
   as part of the standard library. This is added to the set of modules listed
@@ -102,12 +103,20 @@ options to customize sorting behaviors:
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The preferred method of configuring µsort is in your project's
-:file:`pyproject.toml`, in the ``tool.usort`` section:
+:file:`pyproject.toml`, in the ``tool.usort`` section.  When you use this
+configuration, you may also come up with new category names::
 
 .. code-block:: toml
 
     [tool.usort]
-    known_first_party = ["something", "something_else"]
+    categories = [
+        "future", "standard_library", numpy", "third_party", "first_party"
+    ]
+    default_section = "third_party"
+
+    [tool.usort.known]
+    numpy = ["numpy", "pandas"]
+    first_party = ["something"]
 
 When run, µsort will look for the "nearest" :file:`pyproject.toml` to the
 current working directory, looking upwards until the project root is found,

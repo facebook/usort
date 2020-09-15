@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -10,7 +11,7 @@ from ..config import Config
 from ..sorting import SortableImport, usort_string
 from ..util import try_parse
 
-DEFAULT_CONFIG = Config(known_first_party={"fp"})
+DEFAULT_CONFIG = Config()
 
 
 class BasicOrderingTest(unittest.TestCase):
@@ -35,7 +36,7 @@ class BasicOrderingTest(unittest.TestCase):
             )
             for x in items_in_order
         ]
-        self.assertEqual(nodes, sorted(nodes))
+        self.assertSequenceEqual(nodes, sorted(nodes))
 
 
 class UsortStringFunctionalTest(unittest.TestCase):
@@ -142,6 +143,36 @@ from .c import e
                 DEFAULT_CONFIG,
             ),
         )
+
+    def test_customized_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "pyproject.toml").write_text(
+                """\
+[tool.usort]
+categories = ["future", "standard_library", "numpy", "third_party", "first_party"]
+[tool.usort.known]
+numpy = ["numpy", "pandas"]
+"""
+            )
+            sample = Path(d) / "sample.py"
+            conf = Config.find(sample)
+            self.assertEqual(
+                """\
+import os
+import numpy as np
+import aaa
+from . import foo
+""",
+                usort_string(
+                    """\
+import os
+from . import foo
+import numpy as np
+import aaa
+""",
+                    conf,
+                ),
+            )
 
 
 if __name__ == "__main__":
