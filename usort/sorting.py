@@ -6,7 +6,7 @@
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, List, Optional, Set
+from typing import Iterable, List, Optional, Sequence, Set
 
 import libcst as cst
 
@@ -147,15 +147,16 @@ class SortableBlock:
     imported_names: Set[str] = field(default_factory=set)
 
 
-# TODO can this generalize to functions as well?
-def sortable_blocks(mod: cst.Module, config: Config) -> List[SortableBlock]:
+def sortable_blocks(
+    body: Sequence[cst.BaseStatement], config: Config
+) -> List[SortableBlock]:
     # Finds blocks of imports separated by barriers (non-import statements, or
     # dangerous imports).  We will only sort within a block, and only when there
     # are no duplicate names.
 
     ret: List[SortableBlock] = []
     cur: Optional[SortableBlock] = None
-    for i, stmt in enumerate(mod.body):
+    for i, stmt in enumerate(body):
         # print(stmt)
         # TODO support known_side_effect_modules or so
         if is_sortable_import(stmt):
@@ -214,16 +215,9 @@ def usort_string(data: str, config: Config, path: Optional[Path] = None) -> str:
         path = Path("<data>")
 
     mod = try_parse(data=data.encode(), path=path)
-    blocks = sortable_blocks(mod, config=config)
-
-    # The module's body is already a list, but that's an implementation detail we
-    # shouldn't rely on.  This code should eventually be run as a visitor, and
-    # with_changes is the right thing to do in that case.
-    body: List[cst.CSTNode] = list(mod.body)
-    for b in blocks:
-        sorted_stmts = sorted(b.stmts)
-        body[b.start_idx : b.end_idx] = [s.node for s in sorted_stmts]
-    return mod.with_changes(body=body).code
+    tr = ImportSortingTransformer(config)
+    new_mod = mod.visit(tr)
+    return new_mod.code
 
 
 def usort_stdin() -> bool:
@@ -279,3 +273,30 @@ def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
 
         except Exception as e:
             yield Result(f, data, "", e)
+
+
+class ImportSortingTransformer(cst.CSTTransformer):
+    def __init__(self, config: Config) -> None:
+        self.config = config
+
+    def leave_Module(
+        self, original_node: cst.Module, updated_node: cst.Module
+    ) -> cst.Module:
+        blocks = sortable_blocks(updated_node.body, config=self.config)
+        body: List[cst.CSTNode] = list(updated_node.body)
+
+        for b in blocks:
+            sorted_stmts = sorted(b.stmts)
+            body[b.start_idx : b.end_idx] = [s.node for s in sorted_stmts]
+        return updated_node.with_changes(body=body)
+
+    def leave_IndentedBlock(
+        self, original_node: cst.IndentedBlock, updated_node: cst.IndentedBlock
+    ) -> cst.IndentedBlock:
+        blocks = sortable_blocks(updated_node.body, config=self.config)
+        body: List[cst.CSTNode] = list(updated_node.body)
+
+        for b in blocks:
+            sorted_stmts = sorted(b.stmts)
+            body[b.start_idx : b.end_idx] = [s.node for s in sorted_stmts]
+        return updated_node.with_changes(body=body)
