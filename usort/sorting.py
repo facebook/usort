@@ -130,8 +130,8 @@ class SortableImport:
             assert first_dotted_import is not None
             return cls(
                 node=node,
-                first_module=first_module,
-                first_dotted_import=first_dotted_import,
+                first_module=first_module.lower(),
+                first_dotted_import=first_dotted_import.lower(),
                 imported_names=set(names),
                 config=config,
             )

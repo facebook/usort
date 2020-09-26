@@ -33,6 +33,13 @@ class SortableImportTest(unittest.TestCase):
         self.assertEqual("os.path", imp.first_dotted_import)
         self.assertEqual({"os"}, imp.imported_names)
 
+        imp = SortableImport.from_node(
+            cst.parse_statement("import IPython.core"), Config()
+        )
+        self.assertEqual("ipython.core", imp.first_module)
+        self.assertEqual("ipython.core", imp.first_dotted_import)
+        self.assertEqual({"IPython"}, imp.imported_names)
+
     def test_from_node_ImportFrom(self) -> None:
         imp = SortableImport.from_node(cst.parse_statement("from a import b"), Config())
         self.assertEqual("a", imp.first_module)
