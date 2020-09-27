@@ -2,3 +2,4 @@ LibCST>=0.3.6
 stdlib-list>=0.7.0
 moreorless>=0.3.0
 toml>=0.10.0
+tuber == 0.5.0

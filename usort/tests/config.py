@@ -22,7 +22,7 @@ class ConfigTest(unittest.TestCase):
 default_section = "future"
 """
             )
-            conf = Config.find(Path(d))
+            conf = Config.find(Path(d) / "foo.py")
             self.assertNotIn("psutil", conf.known)
             self.assertEqual(CAT_FUTURE, conf.category("psutil.cpu_times"))
 
@@ -35,13 +35,7 @@ known_third_party = ["psutil", "cocoa"]
 """
             )
 
-            conf = Config.find(Path(d))
-            self.assertEqual(CAT_THIRD_PARTY, conf.known["cocoa"])
-            self.assertEqual(CAT_THIRD_PARTY, conf.known["psutil"])
-            self.assertEqual(CAT_THIRD_PARTY, conf.category("psutil.cpu_times"))
-
-            # Works even on invalid children
-            conf = Config.find(Path(d) / "foo")
+            conf = Config.find(Path(d) / "foo.py")
             self.assertEqual(CAT_THIRD_PARTY, conf.known["cocoa"])
             self.assertEqual(CAT_THIRD_PARTY, conf.known["psutil"])
             self.assertEqual(CAT_THIRD_PARTY, conf.category("psutil.cpu_times"))
@@ -56,7 +50,7 @@ third_party = ["psutil", "cocoa"]
 """
             )
 
-            new_conf = Config.find(Path(d))
+            new_conf = Config.find(Path(d) / "foo.py")
             self.assertEqual(conf, new_conf)
 
     def test_first_party_root_finding(self) -> None:
@@ -67,13 +61,13 @@ third_party = ["psutil", "cocoa"]
 
             f = Path(d) / "a" / "b" / "c" / "__init__"
 
-            conf = Config.find(f)
+            conf = Config.find(f).with_first_party(f)
             self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
-            conf = Config.find(f.parent)  # c
+            conf = Config.find(f.parent).with_first_party(f.parent)  # c
             self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
-            conf = Config.find(f.parent.parent)  # b
+            conf = Config.find(f.parent.parent).with_first_party(f.parent)  # b
             self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
-            conf = Config.find(Path("/"))
+            conf = Config.find(Path("/")).with_first_party(Path("/"))
             self.assertNotIn("b", conf.known)
 
     def test_new_category_names(self) -> None:

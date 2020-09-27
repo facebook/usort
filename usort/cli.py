@@ -55,7 +55,7 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> int:
     # where the barriers are that produce different blocks.
 
     for f in filenames:
-        config = Config.find(Path(f))
+        config = Config.find(Path(f)).with_first_party(Path(f))
         mod = try_parse(Path(f))
         try:
             blocks = sortable_blocks(mod.body, config)

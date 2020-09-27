@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Dict, NewType, Optional, Sequence
 
 import toml
+import tuber
 
 from .stdlibs import STDLIB_TOP_LEVEL_NAMES
 
@@ -44,35 +45,32 @@ class Config:
         CAT_FIRST_PARTY,
     )
     default_section: Category = CAT_THIRD_PARTY
+    toml_path: Optional[Path] = None
 
     @classmethod
-    def find(cls, filename: Optional[Path] = None) -> "Config":
+    def find(
+        cls, filename: Optional[Path] = None, config_name: str = "pyproject.toml"
+    ) -> "Config":
         rv = cls()
 
-        # TODO This logic should be split out to a separate project, as it's
-        # reusable and deserves a number of tests to get right.  Can probably
-        # also stop once finding a .hg, .git, etc
-        if filename is None:
-            p = Path.cwd()
-        else:
-            p = filename
+        # tuber stops on repo root indicators (like .hg or .git) but also on the name
+        # we're looking for -- pyproject.toml.  If this was a little more configurable,
+        # we'd tell it the name we're looking for, just in case that's customized by our
+        # caller.
+        try:
+            if filename is not None:
+                filename = filename.parent
+            root = tuber.get_root(filename)
+        except tuber.RootException:
+            return rv
 
-        while True:
-            if p.is_dir():
-                candidate = p / "pyproject.toml"
-                if candidate.exists():
-                    rv.update_from_config(candidate)
-                    break
+        candidate = root / config_name
+        if candidate.exists():
+            rv.toml_path = candidate
+            rv.update_from_config(candidate)
+        return rv
 
-            # Stop on root (hopefully works on Windows)
-            if p.parent == p:
-                break
-            # Stop on different volume
-            if p.exists() and p.stat().st_dev != p.parent.stat().st_dev:
-                break
-
-            p = p.parent
-
+    def with_first_party(self, filename: Path) -> "Config":
         # Infer first-party top-level names; this only works for the common case of
         # a single package, but not multiple, or modules (pure-python or extensions).
         # In those cases, you should explicitly set `known_first_party` in the config.
@@ -80,11 +78,11 @@ class Config:
         # This code as-is should work for something like running against a site-packages
         # dir, but if we broaden to support multiple top-level names, it would find too
         # much.
-        if filename is None:
-            p = Path.cwd()
-        else:
-            p = filename
 
+        p = filename.parent
+
+        # TODO this should stop when it gets to self.toml_path, because otherwise this
+        # duplicates some of the logic from tuber.
         while True:
             # Stop on root (hopefully works on Windows)
             if p.parent == p:
@@ -99,9 +97,9 @@ class Config:
                 break
 
         if (p / "__init__.py").exists():
-            rv.known[p.name] = CAT_FIRST_PARTY
+            self.known[p.name] = CAT_FIRST_PARTY
 
-        return rv
+        return self
 
     def update_from_config(self, toml_path: Path) -> None:
         conf = toml.loads(toml_path.read_text())
