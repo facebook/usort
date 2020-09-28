@@ -126,6 +126,7 @@ import a as b
             """\
 import fp
 from fp import z
+
 from .. import b
 from ..a import foo
 from . import d
@@ -159,8 +160,11 @@ numpy = ["numpy", "pandas"]
             self.assertEqual(
                 """\
 import os
+
 import numpy as np
+
 import aaa
+
 from . import foo
 """,
                 usort_string(
@@ -204,6 +208,35 @@ def func():
         import e
         pass
         import a
+""",
+                DEFAULT_CONFIG,
+            ),
+        )
+
+    def test_whitespace_between_sections(self) -> None:
+        self.assertEqual(
+            """\
+from __future__ import division
+from __future__ import unicode_literals
+
+import sys
+
+import third_party
+
+#comment
+from . import first_party
+""",
+            usort_string(
+                """\
+from __future__ import unicode_literals
+from __future__ import division
+import sys
+
+
+
+import third_party
+#comment
+from . import first_party
 """,
                 DEFAULT_CONFIG,
             ),
