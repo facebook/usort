@@ -6,7 +6,7 @@
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import libcst as cst
 
@@ -42,8 +42,9 @@ class SortableImport:
     config: Config = field(repr=False, compare=False)
 
     # This is only used for detecting unsafe ordering, and is not used for
-    # breaking ties.  e.g. `import a as b; import b.c` shadows `b`.
-    imported_names: Set[str] = field(default_factory=set, compare=False)
+    # breaking ties.  e.g. `import a as b; import b.c` shadows `b`, but `import
+    # os` and `import os.path` do not shadow becuase it's the same `os`
+    imported_names: Dict[str, str] = field(default_factory=dict, compare=False)
 
     def __post_init__(self) -> None:
         if not self.first_module.startswith("."):
@@ -67,7 +68,7 @@ class SortableImport:
         if isinstance(node, cst.SimpleStatementLine):
             first_module: Optional[str] = None
             first_dotted_import: Optional[str] = None
-            names: List[str] = []
+            names: Dict[str, str] = {}
             sort_key: Optional[str] = None
 
             # There are 4 basic types of import
@@ -79,9 +80,12 @@ class SortableImport:
                 # import z as y
                 for name in node.body[0].names:
                     if name.asname:
-                        names.append(with_dots(name.asname.name))
+                        names[with_dots(name.asname.name).split(".")[0]] = with_dots(
+                            name.name
+                        )
                     else:
-                        names.append(with_dots(name.name).split(".")[0])
+                        tmp = with_dots(name.name).split(".")[0]
+                        names[tmp] = tmp
 
                     if first_module is None:
                         first_module = with_dots(name.name)
@@ -98,15 +102,20 @@ class SortableImport:
                     # from . import foo [as bar]
                     # (won't have dots but with_dots makes the typing easier)
                     sort_key = with_dots(node.body[0].names[0].name)
+                    name_key = sort_key
                 else:
                     # from x import foo [as bar]
                     sort_key = with_dots(node.body[0].module)
+                    name_key = sort_key + "."
 
                 if node.body[0].relative:
                     first_dotted_import = sort_key
                     sort_key = "." * len(node.body[0].relative)
                     if node.body[0].module is not None:
                         sort_key += first_dotted_import
+                    name_key = sort_key
+                    if node.body[0].module is not None:
+                        name_key += "."
 
                 if first_module is None:
                     first_module = sort_key
@@ -118,10 +127,12 @@ class SortableImport:
                 for alias in node.body[0].names:
                     if alias.asname:
                         assert isinstance(alias.asname.name, cst.Name)
-                        names.append(alias.asname.name.value)
+                        names[alias.asname.name.value] = name_key + with_dots(
+                            alias.name
+                        )
                     else:
                         assert isinstance(alias.name, cst.Name)
-                        names.append(alias.name.value)
+                        names[alias.name.value] = name_key + alias.name.value
             else:
                 raise TypeError
 
@@ -131,7 +142,7 @@ class SortableImport:
                 node=node,
                 first_module=first_module.lower(),
                 first_dotted_import=first_dotted_import.lower(),
-                imported_names=set(names),
+                imported_names=names,
                 config=config,
             )
         raise ValueError("Not an import")
@@ -143,7 +154,14 @@ class SortableBlock:
     end_idx: Optional[int] = None  # half-open interval
 
     stmts: List[SortableImport] = field(default_factory=list)
-    imported_names: Set[str] = field(default_factory=set)
+    imported_names: Dict[str, str] = field(default_factory=dict)
+
+
+def name_overlap(a: Dict[str, str], b: Dict[str, str]) -> bool:
+    for k, v in b.items():
+        if k in a and a[k] != v:
+            return True
+    return False
 
 
 def sortable_blocks(
@@ -164,16 +182,14 @@ def sortable_blocks(
                 cur = SortableBlock(i, i + 1)
                 ret.append(cur)
 
-            if cur.imported_names & imp.imported_names:
+            if name_overlap(cur.imported_names, imp.imported_names):
                 # This overwrites an earlier name
-                # TODO `os` vs `os.path` shouldn't cause a separate block, but
-                # will require a more complex data structure.
                 cur = SortableBlock(i, i + 1)
                 ret.append(cur)
 
             cur.end_idx = i + 1
             cur.stmts.append(imp)
-            cur.imported_names |= imp.imported_names
+            cur.imported_names.update(imp.imported_names)
         else:
             if cur:
                 cur = None
