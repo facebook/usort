@@ -120,6 +120,40 @@ import a as b
             ),
         )
 
+    def test_shadowed_import_ok(self) -> None:
+        self.assertEqual(
+            """\
+import a.b
+import a.c
+import a.d
+""",
+            usort_string(
+                """\
+import a.d
+import a.c
+import a.b
+""",
+                DEFAULT_CONFIG,
+            ),
+        )
+
+    def test_shadowed_relative_import_ok(self) -> None:
+        self.assertEqual(
+            """\
+import os.path as path
+from os import path as path
+from os import path
+""",
+            usort_string(
+                """\
+from os import path as path
+from os import path
+import os.path as path
+""",
+                DEFAULT_CONFIG,
+            ),
+        )
+
     def test_dot_handling(self) -> None:
         # Test that 'from .. import b' comes before 'from ..a import foo'
         self.assertEqual(
