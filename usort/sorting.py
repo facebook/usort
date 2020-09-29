@@ -6,7 +6,7 @@
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence, Set
+from typing import Iterable, List, Optional, Sequence, Set, Tuple
 
 import libcst as cst
 
@@ -32,7 +32,7 @@ class SortKey:
 
 @dataclass(order=True)
 class SortableImport:
-    node: cst.CSTNode = field(repr=False, compare=False)
+    node: cst.SimpleStatementLine = field(repr=False, compare=False)
     sort_key: SortKey = field(init=False)
 
     # For constructing the sort key...
@@ -51,7 +51,6 @@ class SortableImport:
         else:
             # replicate ... sorting before .. before ., but after absolute
             ndots = 100 - (len(self.first_module) - len(self.first_module.lstrip(".")))
-        assert isinstance(self.node, cst.SimpleStatementLine)
         self.sort_key = SortKey(
             # TODO this will raise on missing category
             category_index=self.config.categories.index(
@@ -275,6 +274,43 @@ def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
             yield Result(f, data, "", e)
 
 
+def partition_leading_lines(
+    lines: Sequence[cst.EmptyLine],
+) -> Tuple[Sequence[cst.EmptyLine], Sequence[cst.EmptyLine]]:
+    """
+    Returns a tuple of the initial blank lines, and the comment lines.
+    """
+    for j in range(len(lines)):
+        if lines[j].comment:
+            break
+    else:
+        j = len(lines)
+
+    return lines[:j], lines[j:]
+
+
+def fixup_whitespace(
+    initial_blank: Sequence[cst.EmptyLine], imports: List[SortableImport]
+) -> List[SortableImport]:
+    cur_category = None
+    # TODO if they've already been reshuffled, there may have been a blank
+    # (separator) line between a non-block and the first import, that's now in
+    # the middle.
+    for i in imports:
+        if cur_category is None:
+            blanks = initial_blank
+        elif i.sort_key.category_index != cur_category:
+            blanks = (cst.EmptyLine(),)
+        else:
+            blanks = ()
+
+        old_blanks, old_comments = partition_leading_lines(i.node.leading_lines)
+        i.node = i.node.with_changes(leading_lines=(*blanks, *old_comments))
+
+        cur_category = i.sort_key.category_index
+    return imports
+
+
 class ImportSortingTransformer(cst.CSTTransformer):
     def __init__(self, config: Config) -> None:
         self.config = config
@@ -286,7 +322,13 @@ class ImportSortingTransformer(cst.CSTTransformer):
         body: List[cst.CSTNode] = list(updated_node.body)
 
         for b in blocks:
-            sorted_stmts = sorted(b.stmts)
+            initial_blank, initial_comment = partition_leading_lines(
+                b.stmts[0].node.leading_lines
+            )
+            b.stmts[0].node = b.stmts[0].node.with_changes(
+                leading_lines=initial_comment
+            )
+            sorted_stmts = fixup_whitespace(initial_blank, sorted(b.stmts))
             body[b.start_idx : b.end_idx] = [s.node for s in sorted_stmts]
         return updated_node.with_changes(body=body)
 
@@ -297,6 +339,12 @@ class ImportSortingTransformer(cst.CSTTransformer):
         body: List[cst.CSTNode] = list(updated_node.body)
 
         for b in blocks:
-            sorted_stmts = sorted(b.stmts)
+            initial_blank, initial_comment = partition_leading_lines(
+                b.stmts[0].node.leading_lines
+            )
+            b.stmts[0].node = b.stmts[0].node.with_changes(
+                leading_lines=initial_comment
+            )
+            sorted_stmts = fixup_whitespace(initial_blank, sorted(b.stmts))
             body[b.start_idx : b.end_idx] = [s.node for s in sorted_stmts]
         return updated_node.with_changes(body=body)
