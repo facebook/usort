@@ -1,9 +1,12 @@
-## next
+## 0.5.0a3
 
 * Added support for formatting stdin with `usort format -`
 * Moved diff/check functionality into separate `diff` and `check` commands
 * Replaced `usort format --show-time` with `usort --benchmark` framework
 * Added custom section names
+* Normalize whitespace between sections
+* Improves detection of shadowed names with dotted imports
+* Case-normalizes names when sorting
 * Includes sphinx docs
 * Corrects missing `toml` dep
 
