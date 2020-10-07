@@ -14,7 +14,7 @@ from moreorless.click import echo_color_unified_diff
 from . import __version__
 from .config import Config
 from .sorting import sortable_blocks, usort_path, usort_stdin
-from .util import print_timings, try_parse
+from .util import TIMINGS, print_timings, try_parse
 
 BENCHMARK = False
 
@@ -26,6 +26,7 @@ def usort_command(fn: Callable[..., int]) -> Callable[..., None]:
 
     @wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> None:
+        TIMINGS.clear()
         exit_code = fn(*args, **kwargs) or 0
         if BENCHMARK:
             print_timings(click.echo)

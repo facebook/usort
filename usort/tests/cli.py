@@ -33,6 +33,21 @@ def sample_contents(s: str) -> Generator[str, None, None]:
 
 
 class CliTest(unittest.TestCase):
+    def test_benchmark(self) -> None:
+        with sample_contents("import sys\n") as dtmp:
+            runner = CliRunner()
+            with chdir(dtmp):
+                result = runner.invoke(main, ["--benchmark", "check", "."])
+
+        self.assertRegex(
+            result.output,
+            r"""walking \.:\s+\d+ µs
+parsing sample\.py:\s+\d+ µs
+sorting sample\.py:\s+\d+ µs
+""",
+        )
+        self.assertEqual(0, result.exit_code)
+
     def test_check_no_change(self) -> None:
         with sample_contents("import sys\n") as dtmp:
             runner = CliRunner()
