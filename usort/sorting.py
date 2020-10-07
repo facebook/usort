@@ -11,7 +11,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 import libcst as cst
 
 from .config import Config
-from .util import try_parse, walk
+from .util import timed, try_parse, walk
 
 
 def with_dots(x: cst.CSTNode) -> str:
@@ -230,9 +230,10 @@ def usort_string(data: str, config: Config, path: Optional[Path] = None) -> str:
         path = Path("<data>")
 
     mod = try_parse(data=data.encode(), path=path)
-    tr = ImportSortingTransformer(config)
-    new_mod = mod.visit(tr)
-    return new_mod.code
+    with timed(f"sorting {path}"):
+        tr = ImportSortingTransformer(config)
+        new_mod = mod.visit(tr)
+        return new_mod.code
 
 
 def usort_stdin() -> bool:

@@ -37,14 +37,15 @@ def print_timings(fn: Callable[[str], None] = print) -> None:
 
 
 def walk(path: Path, glob: str) -> Iterable[Path]:
-    paths: List[Path] = []
-    for root, dirs, files in os.walk(path):
-        dirs[:] = [d for d in dirs if not d.startswith(".")]
-        root_path = Path(root)
-        for f in files:
-            if fnmatch(f, glob):
-                paths.append(root_path / f)
-    return paths
+    with timed(f"walking {path}"):
+        paths: List[Path] = []
+        for root, dirs, files in os.walk(path):
+            dirs[:] = [d for d in dirs if not d.startswith(".")]
+            root_path = Path(root)
+            for f in files:
+                if fnmatch(f, glob):
+                    paths.append(root_path / f)
+        return paths
 
 
 def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
@@ -57,16 +58,17 @@ def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
     if data is None:
         data = path.read_bytes()
 
-    for version in cst.KNOWN_PYTHON_VERSION_STRINGS[::-1]:
-        try:
-            mod = cst.parse_module(
-                data, cst.PartialParserConfig(python_version=version)
-            )
-            return mod
-        except cst.ParserSyntaxError:
-            continue
+    with timed(f"parsing {path}"):
+        for version in cst.KNOWN_PYTHON_VERSION_STRINGS[::-1]:
+            try:
+                mod = cst.parse_module(
+                    data, cst.PartialParserConfig(python_version=version)
+                )
+                return mod
+            except cst.ParserSyntaxError:
+                continue
 
-    # Intentionally not raising an exception with a specific syntax error (if we
-    # keep the last, meaning oldest python version, then it might complain about
-    # typehints like https://github.com/psf/black/issues/1158)
-    raise Exception(f"No version could parse {path}")
+        # Intentionally not raising an exception with a specific syntax error (if we
+        # keep the last, meaning oldest python version, then it might complain about
+        # typehints like https://github.com/psf/black/issues/1158)
+        raise Exception(f"No version could parse {path}")
