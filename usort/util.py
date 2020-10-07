@@ -47,7 +47,7 @@ def walk(path: Path, glob: str) -> Iterable[Path]:
     return paths
 
 
-def try_parse(path: Path, data: Optional[bytes] = None,) -> cst.Module:
+def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
     """
     Attempts to parse the file with all syntax versions known by LibCST.
 
