@@ -34,10 +34,10 @@ When a PR has been accepted:
    branch since the previous release:
 
    * Major breaking changes should increment the first number and reset the
-     other two, eg `0.10.0 -> 1.0.0`.
+     other two, eg `1.10.0 -> 2.0.0`.
    * New features should increment the second number and reset the third,
-     eg `0.10.0 -> 0.11.0`.
-   * Bug fixes should only increment the third number, eg `0.10.0 -> 0.10.1`.
+     eg `1.10.0 -> 1.11.0`.
+   * Bug fixes should only increment the third number, eg `1.10.0 -> 1.10.1`.
 
 2. Update `CHANGELOG.md` with the new version, following the same pattern as
    previous versions. Entries should reference both the PR number and any
