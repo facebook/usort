@@ -104,14 +104,12 @@ available:
 
 The preferred method of configuring µsort is in your project's
 :file:`pyproject.toml`, in the ``tool.usort`` section.  When you use this
-configuration, you may also come up with new category names::
+configuration, you may also come up with new category names:
 
 .. code-block:: toml
 
     [tool.usort]
-    categories = [
-        "future", "standard_library", numpy", "third_party", "first_party"
-    ]
+    categories = ["future", "standard_library", numpy", "third_party", "first_party"]
     default_section = "third_party"
 
     [tool.usort.known]
