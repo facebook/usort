@@ -28,6 +28,7 @@ class SortKey:
     category_index: int
     is_from_import: bool
     ndots: int
+    module: str
 
 
 @dataclass(order=True)
@@ -35,8 +36,9 @@ class SortableImport:
     node: cst.SimpleStatementLine = field(repr=False, compare=False)
     sort_key: SortKey = field(init=False)
 
-    # For constructing the sort key...
-    first_module: str
+    # For deciding what category
+    first_module: str = field(compare=False)
+    # For tiebreaking sort_key
     first_dotted_import: str
 
     config: Config = field(repr=False, compare=False)
@@ -59,6 +61,7 @@ class SortableImport:
             ),
             is_from_import=isinstance(self.node.body[0], cst.ImportFrom),
             ndots=ndots,
+            module=self.first_module.casefold(),
         )
 
     @classmethod
@@ -140,8 +143,8 @@ class SortableImport:
             assert first_dotted_import is not None
             return cls(
                 node=node,
-                first_module=first_module.casefold(),
-                first_dotted_import=first_dotted_import.casefold(),
+                first_module=first_module,
+                first_dotted_import=first_dotted_import,
                 imported_names=names,
                 config=config,
             )
