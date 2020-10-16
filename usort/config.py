@@ -22,7 +22,7 @@ CAT_THIRD_PARTY = Category("third_party")
 def known_factory() -> Dict[str, Category]:
     known = {}
     for name in STDLIB_TOP_LEVEL_NAMES:
-        known[name] = CAT_STANDARD_LIBRARY
+        known[name.casefold()] = CAT_STANDARD_LIBRARY
 
     # This is also in the stdlib list, so this override comes last...
     known["__future__"] = CAT_FUTURE
@@ -32,6 +32,7 @@ def known_factory() -> Dict[str, Category]:
 
 @dataclass
 class Config:
+    # mapping of casefolded package names to categories
     known: Dict[str, Category] = field(default_factory=known_factory)
 
     # These names are vaguely for compatibility with isort; however while it has
@@ -99,7 +100,7 @@ class Config:
                 break
 
         if (p / "__init__.py").exists():
-            rv.known[p.name] = CAT_FIRST_PARTY
+            rv.known[p.name.casefold()] = CAT_FIRST_PARTY
 
         return rv
 
@@ -118,7 +119,7 @@ class Config:
                 raise ValueError(f"Known set for {cat} without it having an order")
 
             for name in names:
-                self.known[name] = typed_cat
+                self.known[name.casefold()] = typed_cat
 
         # "legacy" options
         for cat, option in [
@@ -129,7 +130,7 @@ class Config:
             if option in tbl:
                 for name in tbl[option]:
                     # TODO validate (no dots or whitespace, etc)
-                    self.known[name] = cat
+                    self.known[name.casefold()] = cat
 
     def update_from_flags(
         self,
@@ -151,7 +152,7 @@ class Config:
         ]:
             for name in option.split(","):
                 # TODO validate (no dots or whitespace, etc)
-                self.known[name] = cat
+                self.known[name.casefold()] = cat
 
     def category(self, dotted_import: str) -> Category:
         """
@@ -160,7 +161,7 @@ class Config:
         You can pass in ".foo" or "pkg.foo.bar" or just "os" and it should
         categorize.
         """
-        first_part = dotted_import.split(".")[0]
+        first_part = dotted_import.split(".")[0].casefold()
         if first_part == "":
             # relative import
             return CAT_FIRST_PARTY
