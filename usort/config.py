@@ -129,6 +129,7 @@ class Config:
             if option in tbl:
                 for name in tbl[option]:
                     # TODO validate (no dots or whitespace, etc)
+                    assert "." not in name
                     self.known[name] = cat
 
     def update_from_flags(
@@ -151,6 +152,7 @@ class Config:
         ]:
             for name in option.split(","):
                 # TODO validate (no dots or whitespace, etc)
+                assert "." not in name
                 self.known[name] = cat
 
     def category(self, dotted_import: str) -> Category:

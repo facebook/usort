@@ -276,6 +276,18 @@ from . import first_party
             ),
         )
 
+    def test_case_insensitive_sorting(self) -> None:
+        content = """\
+import calendar
+import cProfile
+import dataclasses
+
+from fissix.main import diff_texts
+from IPython import start_ipython
+from libcst import Module
+"""
+        self.assertEqual(content, usort_string(content, DEFAULT_CONFIG))
+
 
 if __name__ == "__main__":
     unittest.main()
