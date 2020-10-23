@@ -5,7 +5,7 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, NewType, Optional, Sequence
+from typing import Dict, List, NewType, Optional, Sequence
 
 import toml
 
@@ -30,6 +30,13 @@ def known_factory() -> Dict[str, Category]:
     return known
 
 
+def side_effect_factory() -> List[str]:
+    # TODO: define a list of common packages with known import-time side effects
+    known_side_effects: List[str] = []
+
+    return known_side_effects
+
+
 @dataclass
 class Config:
     known: Dict[str, Category] = field(default_factory=known_factory)
@@ -44,6 +51,10 @@ class Config:
         CAT_FIRST_PARTY,
     )
     default_section: Category = CAT_THIRD_PARTY
+
+    # Known set of modules with import side effects. These will be implicitly treated
+    # as block separators, similar to non-import statements.
+    side_effect_modules: List[str] = field(default_factory=side_effect_factory)
 
     @classmethod
     def find(cls, filename: Optional[Path] = None) -> "Config":
@@ -111,6 +122,8 @@ class Config:
             self.categories = [Category(x) for x in tbl["categories"]]
         if "default_section" in tbl:
             self.default_section = Category(tbl["default_section"])
+        if "side_effect_modules" in tbl:
+            self.side_effect_modules.extend(tbl["side_effect_modules"])
 
         for cat, names in tbl.get("known", {}).items():
             typed_cat = Category(cat)

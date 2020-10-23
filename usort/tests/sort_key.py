@@ -8,7 +8,7 @@ import unittest
 import libcst as cst
 
 from ..config import Config
-from ..sorting import SortableImport, is_sortable_import
+from ..sorting import SortableImport, is_side_effect_import, is_sortable_import
 
 
 class SortableImportTest(unittest.TestCase):
@@ -89,9 +89,30 @@ class SortableImportTest(unittest.TestCase):
 
 
 class IsSortableTest(unittest.TestCase):
+    def test_is_side_effect(self) -> None:
+        config = Config(side_effect_modules=["fizzbuzz", "foo.bar.baz"])
+        # import foo, bar
+        self.assertFalse(is_side_effect_import("", ["foo", "bar"], config))
+        # from foo import bar
+        self.assertFalse(is_side_effect_import("foo", ["bar"], config))
+        # from foo.bar import foo
+        self.assertFalse(is_side_effect_import("foo.bar", ["foo"], config))
+        # from foo.bar import baz
+        self.assertTrue(is_side_effect_import("foo.bar", ["baz"], config))
+        # import foo.bar.baz
+        self.assertTrue(is_side_effect_import("", ["foo.bar.baz"], config))
+        # import fizzbuzz
+        self.assertTrue(is_side_effect_import("", ["fizzbuzz"], config))
+        # from fizzbuzz import a, b
+        self.assertTrue(is_side_effect_import("fizzbuzz", ["a", "b"], config))
+        # from fizzbuzz.apple import a, b
+        self.assertTrue(is_side_effect_import("fizzbuzz.apple", ["a", "b"], config))
+
     def test_is_sortable(self) -> None:
-        self.assertTrue(is_sortable_import(cst.parse_statement("import a")))
-        self.assertTrue(is_sortable_import(cst.parse_statement("from a import b")))
+        self.assertTrue(is_sortable_import(cst.parse_statement("import a"), Config()))
+        self.assertTrue(
+            is_sortable_import(cst.parse_statement("from a import b"), Config())
+        )
         self.assertFalse(
-            is_sortable_import(cst.parse_statement("import a  # isort: skip"))
+            is_sortable_import(cst.parse_statement("import a  # isort: skip"), Config())
         )
