@@ -111,3 +111,52 @@ foo = ["numpy", "pandas"]
         )
         self.assertEqual(CAT_FIRST_PARTY, conf.known["a"])
         self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
+
+    def test_side_effect_init(self) -> None:
+        config = Config()
+        self.assertEqual([], config.side_effect_modules)
+        self.assertEqual("", config.side_effect_re.pattern)
+        self.assertRegex("", config.side_effect_re)
+
+        config = Config(side_effect_modules=["fizzbuzz", "foo.bar.baz"])
+        self.assertEqual(r"fizzbuzz\b|foo.bar.baz\b", config.side_effect_re.pattern)
+        self.assertNotRegex("", config.side_effect_re)
+        self.assertRegex("fizzbuzz", config.side_effect_re)
+        self.assertRegex("fizzbuzz.foo", config.side_effect_re)
+        self.assertNotRegex("fizzbuzz1", config.side_effect_re)
+        self.assertNotRegex("fizzbuzz1.foo", config.side_effect_re)
+        self.assertRegex("foo.bar.baz", config.side_effect_re)
+        self.assertRegex("foo.bar.baz.qux", config.side_effect_re)
+        self.assertNotRegex("foo.bar", config.side_effect_re)
+        self.assertNotRegex("foo.bar.qux", config.side_effect_re)
+
+    def test_is_side_effect(self) -> None:
+        with self.subTest("fizzbuzz"):
+            config = Config(side_effect_modules=["fizzbuzz"])
+            # import fizzbuzz1
+            self.assertFalse(config.is_side_effect_import("", ["fizzbuzz1"]))
+            # import fizzbuzz
+            self.assertTrue(config.is_side_effect_import("", ["fizzbuzz"]))
+            # from fizzbuzz import a, b
+            self.assertTrue(config.is_side_effect_import("fizzbuzz", ["a", "b"]))
+            # from fizzbuzz.apple import a, b
+            self.assertTrue(config.is_side_effect_import("fizzbuzz.apple", ["a", "b"]))
+
+        with self.subTest("foo.bar.baz"):
+            config = Config(side_effect_modules=["foo.bar.baz"])
+            # import foo.bar
+            self.assertFalse(config.is_side_effect_import("", ["foo.bar"]))
+            # import foo, bar
+            self.assertFalse(config.is_side_effect_import("", ["foo", "bar"]))
+            # import foo.bar.baz
+            self.assertTrue(config.is_side_effect_import("", ["foo.bar.baz"]))
+            # import foo.bar.bazzy
+            self.assertFalse(config.is_side_effect_import("", ["foo.bar.bazzy"]))
+            # from foo import bar
+            self.assertFalse(config.is_side_effect_import("foo", ["bar"]))
+            # from foo.bar import foo
+            self.assertFalse(config.is_side_effect_import("foo.bar", ["foo"]))
+            # from foo.bar import baz
+            self.assertTrue(config.is_side_effect_import("foo.bar", ["baz"]))
+            # from foo.bar import bazzy
+            self.assertFalse(config.is_side_effect_import("foo.bar", ["bazzy"]))

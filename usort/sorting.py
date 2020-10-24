@@ -6,7 +6,7 @@
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import libcst as cst
 
@@ -199,23 +199,6 @@ def sortable_blocks(
     return ret
 
 
-def is_side_effect_import(base: str, names: List[str], config: Config) -> bool:
-    candidates: Set[str] = set()
-    if base:
-        parts = base.split(".")
-        candidates.update(".".join(parts[0:k]) for k in range(1, len(parts) + 1))
-        candidates.update(f"{base}.{name}" for name in names)
-    else:
-        for name in names:
-            parts = name.split(".")
-            candidates.update(".".join(parts[0:k]) for k in range(1, len(parts) + 1))
-
-    for candidate in candidates:
-        if candidate in config.side_effect_modules:
-            return True
-    return False
-
-
 def is_sortable_import(stmt: cst.CSTNode, config: Config) -> bool:
     if isinstance(stmt, cst.SimpleStatementLine):
         com = stmt.trailing_whitespace.comment
@@ -236,16 +219,20 @@ def is_sortable_import(stmt: cst.CSTNode, config: Config) -> bool:
             # `from x import *` is a barrier
             if isinstance(stmt.body[0].names, cst.ImportStar):
                 return False
+            # avoid `from .` imports by checking for None, check everything else:
+            #   from . import a -> module == None
+            #   from foo import bar -> module == Name(bar)
+            #   from a.b import c -> module == Attribute(Name(a), Name(b))
             elif stmt.body[0].module is not None:
                 base = cst.helpers.get_full_name_for_node_or_raise(stmt.body[0].module)
                 names = [name.evaluated_name for name in stmt.body[0].names]
-                if is_side_effect_import(base, names, config):
+                if config.is_side_effect_import(base, names):
                     return False
             return True
         elif isinstance(stmt.body[0], cst.Import):
             base = ""
             names = [name.evaluated_name for name in stmt.body[0].names]
-            if is_side_effect_import(base, names, config):
+            if config.is_side_effect_import(base, names):
                 return False
             return True
         else:

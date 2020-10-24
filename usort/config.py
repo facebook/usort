@@ -3,9 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, NewType, Optional, Sequence
+from typing import Dict, List, NewType, Optional, Pattern, Sequence, Set
 
 import toml
 
@@ -30,13 +31,6 @@ def known_factory() -> Dict[str, Category]:
     return known
 
 
-def side_effect_factory() -> List[str]:
-    # TODO: define a list of common packages with known import-time side effects
-    known_side_effects: List[str] = []
-
-    return known_side_effects
-
-
 @dataclass
 class Config:
     known: Dict[str, Category] = field(default_factory=known_factory)
@@ -54,7 +48,13 @@ class Config:
 
     # Known set of modules with import side effects. These will be implicitly treated
     # as block separators, similar to non-import statements.
-    side_effect_modules: List[str] = field(default_factory=side_effect_factory)
+    side_effect_modules: List[str] = field(default_factory=list)
+    side_effect_re: Pattern[str] = field(default=re.compile(""))
+
+    def __post_init__(self) -> None:
+        self.side_effect_re = re.compile(
+            "|".join(m + r"\b" for m in self.side_effect_modules)
+        )
 
     @classmethod
     def find(cls, filename: Optional[Path] = None) -> "Config":
@@ -145,6 +145,9 @@ class Config:
                     assert "." not in name
                     self.known[name] = cat
 
+        # make sure generated regexes get updated
+        self.__post_init__()
+
     def update_from_flags(
         self,
         known_first_party: str,
@@ -183,3 +186,18 @@ class Config:
             return self.known[first_part]
         else:
             return self.default_section
+
+    def is_side_effect_import(self, base: str, names: List[str]) -> bool:
+        """
+        Determine if any of the given imports are in the list with known side effects.
+
+        Takes a "base" (possibly empty) and a list of imported names, and checks if
+        any of the base+name combinations (or a prefix of that combination) is in the
+        list of know modules with side effects.
+        """
+        if self.side_effect_modules:
+            candidates: Set[str] = set()
+            for name in names:
+                candidates.add(f"{base}.{name}" if base else name)
+            return any(self.side_effect_re.match(candidate) for candidate in candidates)
+        return False
