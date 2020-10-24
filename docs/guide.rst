@@ -121,6 +121,8 @@ The following options are valid for the main ``tool.usort`` table:
     effects. Any module in this list will create implicit block separators from
     any import statement matching one of these modules.
 
+    See :ref:`side-effect-imports`.
+
 
 ``[tool.usort.known]``
 %%%%%%%%%%%%%%%%%%%%%%
@@ -205,6 +207,40 @@ will also create implicit block separators::
     from bar import *  # <-- implicit block separator
 
     import dog
+
+.. _side-effect-imports:
+
+Side Effect Imports
+^^^^^^^^^^^^^^^^^^^
+
+Writing modules with import-time side effects is a bad practice; any side
+effects should ideally wait for a function in that module to be called, like
+with :func:`warnings.filterwarnings()`. In these cases, µsort will correctly
+find and create a block separator, preventing accidental changes in execution
+order when sorting.
+
+However, it's common for testing libraries and entry points to have well-known
+side effects when imported, and this can cause trouble with import sorting.
+Rather than adding ``# usort:skip`` comments to every occurence, these modules
+can be added to the :attr:`side_effect_modules` configuration option:
+
+.. code-block:: toml
+    :name: pyproject.toml
+
+    [tool.usort]
+    side_effect_modules = ["sir_kibble"]
+
+µsort will then treat any import of these modules as implicit block separators::
+
+    import foo
+
+    from sir_kibble import leash  # <-- implicit block separator
+
+    import dog
+
+This may result in less-obvious sorting results for users unaware of the
+context, so it is recommended to use this sparingly. The ``list-imports``
+command may be useful for understanding how this affects your source files.
 
 
 Troubleshooting
