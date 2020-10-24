@@ -1,3 +1,7 @@
+## next
+
+* Add support for configurable side-effect modules as block separators (#39)
+
 ## 0.5.0
 
 Initial public release
