@@ -53,7 +53,7 @@ class Config:
 
     def __post_init__(self) -> None:
         self.side_effect_re = re.compile(
-            "|".join(m + r"\b" for m in self.side_effect_modules)
+            "|".join(re.escape(m) + r"\b" for m in self.side_effect_modules)
         )
 
     @classmethod

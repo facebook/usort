@@ -119,7 +119,7 @@ foo = ["numpy", "pandas"]
         self.assertRegex("", config.side_effect_re)
 
         config = Config(side_effect_modules=["fizzbuzz", "foo.bar.baz"])
-        self.assertEqual(r"fizzbuzz\b|foo.bar.baz\b", config.side_effect_re.pattern)
+        self.assertEqual(r"fizzbuzz\b|foo\.bar\.baz\b", config.side_effect_re.pattern)
         self.assertNotRegex("", config.side_effect_re)
         self.assertRegex("fizzbuzz", config.side_effect_re)
         self.assertRegex("fizzbuzz.foo", config.side_effect_re)

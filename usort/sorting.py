@@ -221,7 +221,7 @@ def is_sortable_import(stmt: cst.CSTNode, config: Config) -> bool:
                 return False
             # avoid `from .` imports by checking for None, check everything else:
             #   from . import a -> module == None
-            #   from foo import bar -> module == Name(bar)
+            #   from foo import bar -> module == Name(foo)
             #   from a.b import c -> module == Attribute(Name(a), Name(b))
             elif stmt.body[0].module is not None:
                 base = cst.helpers.get_full_name_for_node_or_raise(stmt.body[0].module)
