@@ -179,7 +179,7 @@ def sortable_blocks(
     for i, stmt in enumerate(body):
         # print(stmt)
         # TODO support known_side_effect_modules or so
-        if is_sortable_import(stmt):
+        if is_sortable_import(stmt, config):
             imp = SortableImport.from_node(stmt, config)
             if cur is None:
                 cur = SortableBlock(i, i + 1)
@@ -199,7 +199,7 @@ def sortable_blocks(
     return ret
 
 
-def is_sortable_import(stmt: cst.CSTNode) -> bool:
+def is_sortable_import(stmt: cst.CSTNode, config: Config) -> bool:
     if isinstance(stmt, cst.SimpleStatementLine):
         com = stmt.trailing_whitespace.comment
         if com:
@@ -219,8 +219,21 @@ def is_sortable_import(stmt: cst.CSTNode) -> bool:
             # `from x import *` is a barrier
             if isinstance(stmt.body[0].names, cst.ImportStar):
                 return False
+            # avoid `from .` imports by checking for None, check everything else:
+            #   from . import a -> module == None
+            #   from foo import bar -> module == Name(foo)
+            #   from a.b import c -> module == Attribute(Name(a), Name(b))
+            elif stmt.body[0].module is not None:
+                base = cst.helpers.get_full_name_for_node_or_raise(stmt.body[0].module)
+                names = [name.evaluated_name for name in stmt.body[0].names]
+                if config.is_side_effect_import(base, names):
+                    return False
             return True
         elif isinstance(stmt.body[0], cst.Import):
+            base = ""
+            names = [name.evaluated_name for name in stmt.body[0].names]
+            if config.is_side_effect_import(base, names):
+                return False
             return True
         else:
             return False

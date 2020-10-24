@@ -90,8 +90,10 @@ class SortableImportTest(unittest.TestCase):
 
 class IsSortableTest(unittest.TestCase):
     def test_is_sortable(self) -> None:
-        self.assertTrue(is_sortable_import(cst.parse_statement("import a")))
-        self.assertTrue(is_sortable_import(cst.parse_statement("from a import b")))
+        self.assertTrue(is_sortable_import(cst.parse_statement("import a"), Config()))
+        self.assertTrue(
+            is_sortable_import(cst.parse_statement("from a import b"), Config())
+        )
         self.assertFalse(
-            is_sortable_import(cst.parse_statement("import a  # isort: skip"))
+            is_sortable_import(cst.parse_statement("import a  # isort: skip"), Config())
         )

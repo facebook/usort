@@ -5,6 +5,7 @@
 
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from ..config import Config
@@ -287,6 +288,27 @@ from IPython import start_ipython
 from libcst import Module
 """
         self.assertEqual(content, usort_string(content, DEFAULT_CONFIG))
+
+    def test_side_effect_modules(self) -> None:
+        config = replace(
+            DEFAULT_CONFIG,
+            side_effect_modules=["tracemalloc", "fizzbuzz", "foo.bar.baz"],
+        )
+        content = """\
+from zipfile import ZipFile
+from tracemalloc import start
+from collections import defaultdict
+
+import fizzbuzz
+import attr
+import solar
+import foo.bar.baz
+from foo import bar
+from star import sun
+from foo.bar import baz
+from attr import evolve
+"""
+        self.assertEqual(content, usort_string(content, config))
 
 
 if __name__ == "__main__":
