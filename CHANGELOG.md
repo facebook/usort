@@ -1,7 +1,13 @@
-## next
+## 0.6.0
 
 * Add support for configurable side-effect modules as block separators (#39)
 * Rename `default_section` option to `default_category` (#41)
+
+```shell-session
+$ git shortlog -sn v0.5.0...
+    11  John Reese
+     2  Tim Hatch
+```
 
 ## 0.5.0
 
