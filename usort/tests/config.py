@@ -100,18 +100,6 @@ foo = ["numpy", "pandas"]
             with self.assertRaisesRegex(ValueError, "Known set for foo"):
                 Config.find(Path(d) / "sample.py")
 
-    def test_from_flags(self) -> None:
-        conf = Config()
-        conf.update_from_flags(
-            known_first_party="a,b",
-            known_third_party="",
-            known_standard_library="",
-            categories="",
-            default_category="",
-        )
-        self.assertEqual(CAT_FIRST_PARTY, conf.known["a"])
-        self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
-
     def test_side_effect_init(self) -> None:
         config = Config()
         self.assertEqual([], config.side_effect_modules)
