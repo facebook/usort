@@ -9,7 +9,7 @@ venv:
 
 .PHONY: clean
 clean:
-	rm -rf dist html
+	rm -rf build dist html
 
 .PHONY: distclean
 distclean:

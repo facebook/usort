@@ -44,7 +44,7 @@ class Config:
         CAT_THIRD_PARTY,
         CAT_FIRST_PARTY,
     )
-    default_section: Category = CAT_THIRD_PARTY
+    default_category: Category = CAT_THIRD_PARTY
 
     # Known set of modules with import side effects. These will be implicitly treated
     # as block separators, similar to non-import statements.
@@ -120,8 +120,8 @@ class Config:
 
         if "categories" in tbl:
             self.categories = [Category(x) for x in tbl["categories"]]
-        if "default_section" in tbl:
-            self.default_section = Category(tbl["default_section"])
+        if "default_category" in tbl:
+            self.default_category = Category(tbl["default_category"])
         if "side_effect_modules" in tbl:
             self.side_effect_modules.extend(tbl["side_effect_modules"])
 
@@ -154,12 +154,12 @@ class Config:
         known_third_party: str,
         known_standard_library: str,
         categories: str,
-        default_section: str,
+        default_category: str,
     ) -> None:
         if categories:
             self.categories = [Category(x) for x in categories.split(",")]
-        if default_section:
-            self.default_section = Category(default_section)
+        if default_category:
+            self.default_category = Category(default_category)
 
         for cat, option in [
             (CAT_FIRST_PARTY, known_first_party),
@@ -185,7 +185,7 @@ class Config:
         elif first_part in self.known:
             return self.known[first_part]
         else:
-            return self.default_section
+            return self.default_category
 
     def is_side_effect_import(self, base: str, names: List[str]) -> bool:
         """
