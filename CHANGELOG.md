@@ -1,6 +1,7 @@
 ## next
 
 * Add support for configurable side-effect modules as block separators (#39)
+* Rename `default_section` option to `default_category` (#41)
 
 ## 0.5.0
 
