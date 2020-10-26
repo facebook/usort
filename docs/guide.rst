@@ -106,7 +106,7 @@ The following options are valid for the main ``tool.usort`` table:
     that µsort provides. New categories may be added, but any of the default
     categories *not* listed here will be removed.
 
-.. attribute:: default_section
+.. attribute:: default_category
     :type: str
     :value: "third_party"
 
@@ -141,7 +141,7 @@ as adding the :mod:`example` module to the "first_party" category:
 
     [tool.usort]
     categories = ["future", "standard_library", numpy", "third_party", "first_party"]
-    default_section = "third_party"
+    default_category = "third_party"
 
     [tool.usort.known]
     numpy = ["numpy", "pandas"]

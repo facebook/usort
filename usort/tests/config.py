@@ -19,7 +19,7 @@ class ConfigTest(unittest.TestCase):
             (Path(d) / "pyproject.toml").write_text(
                 """\
 [tool.usort]
-default_section = "future"
+default_category = "future"
 """
             )
             conf = Config.find(Path(d))
@@ -30,7 +30,7 @@ default_section = "future"
             (Path(d) / "pyproject.toml").write_text(
                 """\
 [tool.usort]
-default_section = "future"
+default_category = "future"
 known_third_party = ["psutil", "cocoa"]
 """
             )
@@ -50,7 +50,7 @@ known_third_party = ["psutil", "cocoa"]
             (Path(d) / "pyproject.toml").write_text(
                 """\
 [tool.usort]
-default_section = "future"
+default_category = "future"
 [tool.usort.known]
 third_party = ["psutil", "cocoa"]
 """
@@ -107,7 +107,7 @@ foo = ["numpy", "pandas"]
             known_third_party="",
             known_standard_library="",
             categories="",
-            default_section="",
+            default_category="",
         )
         self.assertEqual(CAT_FIRST_PARTY, conf.known["a"])
         self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
