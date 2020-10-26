@@ -148,29 +148,6 @@ class Config:
         # make sure generated regexes get updated
         self.__post_init__()
 
-    def update_from_flags(
-        self,
-        known_first_party: str,
-        known_third_party: str,
-        known_standard_library: str,
-        categories: str,
-        default_category: str,
-    ) -> None:
-        if categories:
-            self.categories = [Category(x) for x in categories.split(",")]
-        if default_category:
-            self.default_category = Category(default_category)
-
-        for cat, option in [
-            (CAT_FIRST_PARTY, known_first_party),
-            (CAT_THIRD_PARTY, known_third_party),
-            (CAT_STANDARD_LIBRARY, known_standard_library),
-        ]:
-            for name in option.split(","):
-                # TODO validate (no dots or whitespace, etc)
-                assert "." not in name
-                self.known[name] = cat
-
     def category(self, dotted_import: str) -> Category:
         """
         Given a piece of an import string, return its category for this config.
