@@ -11,7 +11,6 @@ from typing import Generator
 
 import volatile
 from click.testing import CliRunner
-
 from usort.cli import main
 
 
@@ -130,14 +129,28 @@ import os
         self.assertEqual(result.exit_code, 0)
 
     def test_format_parse_error(self) -> None:
+        """Code that has syntax that would never be valid in any version of python"""
         with sample_contents("import\n") as dtmp:
             runner = CliRunner()
             with chdir(dtmp):
                 result = runner.invoke(main, ["format", "."])
 
-        self.assertEqual(
-            "Error on sample.py: Exception('No version could parse sample.py')\n",
-            result.output.replace(",)", ")"),
+        self.assertRegex(
+            result.output,
+            r"Error parsing sample\.py:1 on 3\.\d+: `import` - Incomplete input",
+        )
+        self.assertEqual(result.exit_code, 1)
+
+    def test_format_parse_error_conflicting_syntax(self) -> None:
+        """Code that contains syntax both <=2.7 and >=3.8 that could never coexist"""
+        with sample_contents("while (i := foo()):\n    print 'i'\n") as dtmp:
+            runner = CliRunner()
+            with chdir(dtmp):
+                result = runner.invoke(main, ["format", "."])
+
+        self.assertRegex(
+            result.output,
+            r"Error parsing sample\.py:2 on 3\.\d+: `print 'i'` - Incomplete input",
         )
         self.assertEqual(result.exit_code, 1)
 

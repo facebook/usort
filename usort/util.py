@@ -59,16 +59,23 @@ def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
         data = path.read_bytes()
 
     with timed(f"parsing {path}"):
+        parse_error: Optional[cst.ParserSyntaxError] = None
+        parse_version: Optional[str] = None
+
         for version in cst.KNOWN_PYTHON_VERSION_STRINGS[::-1]:
             try:
                 mod = cst.parse_module(
                     data, cst.PartialParserConfig(python_version=version)
                 )
                 return mod
-            except cst.ParserSyntaxError:
-                continue
+            except cst.ParserSyntaxError as e:
+                # keep the first error we see in case parsing fails on all versions
+                if parse_error is None:
+                    parse_error = e
+                    parse_version = version
 
-        # Intentionally not raising an exception with a specific syntax error (if we
-        # keep the last, meaning oldest python version, then it might complain about
-        # typehints like https://github.com/psf/black/issues/1158)
-        raise Exception(f"No version could parse {path}")
+        context = parse_error.context.rstrip("^").strip()
+        raise Exception(
+            f"Error parsing {path}:{parse_error.editor_line} on {parse_version}: "
+            f"`{context}` - {parse_error.message}"
+        )
