@@ -74,8 +74,14 @@ def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
                     parse_error = e
                     parse_version = version
 
-        context = parse_error.context.rstrip("^").strip()
-        raise Exception(
-            f"Error parsing {path}:{parse_error.editor_line} on {parse_version}: "
-            f"`{context}` - {parse_error.message}"
-        )
+        if parse_error is None:
+            reason = f"Unknown error parsing {path}"
+        else:
+            context = parse_error.context or ""
+            context = context.rstrip("^").strip()
+            reason = (
+                f"Error parsing {path}:{parse_error.editor_line} on {parse_version}: "
+                f"`{context}` - {parse_error.message}"
+            )
+
+        raise Exception(reason)

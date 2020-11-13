@@ -11,6 +11,7 @@ from typing import Generator
 
 import volatile
 from click.testing import CliRunner
+
 from usort.cli import main
 
 
