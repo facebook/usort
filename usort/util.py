@@ -72,4 +72,6 @@ def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
                 if parse_error is None:
                     parse_error = e
 
+        # not caring about existing traceback here because it's not useful for parse
+        # errors, and usort_path is already going to wrap it in a custom class
         raise parse_error or Exception("unknown parse failure")
