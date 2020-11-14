@@ -60,7 +60,6 @@ def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
 
     with timed(f"parsing {path}"):
         parse_error: Optional[cst.ParserSyntaxError] = None
-        parse_version: Optional[str] = None
 
         for version in cst.KNOWN_PYTHON_VERSION_STRINGS[::-1]:
             try:
