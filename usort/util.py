@@ -52,8 +52,8 @@ def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
     """
     Attempts to parse the file with all syntax versions known by LibCST.
 
-    If none parse, raises an exception that tells you that (what we know, not an
-    error that might not be the most helpful).
+    If parsing fails on all supported grammar versions, then raises the parser error
+    from the first/newest version attempted.
     """
     if data is None:
         data = path.read_bytes()
