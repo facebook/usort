@@ -102,7 +102,7 @@ def check(filenames: List[str]) -> int:
         path = Path(f)
         for result in usort_path(path, write=False):
             if result.error:
-                click.echo(f"{result.error}")
+                click.echo(f"Error sorting {result.path}: {result.error}")
                 return_code |= 1
 
             if result.content != result.output:
@@ -127,7 +127,7 @@ def diff(filenames: List[str]) -> int:
         path = Path(f)
         for result in usort_path(path, write=False):
             if result.error:
-                click.echo(f"{result.error}")
+                click.echo(f"Error sorting {result.path}: {result.error}")
                 return_code |= 1
 
             if result.content != result.output:
@@ -161,7 +161,7 @@ def format(filenames: List[str]) -> int:
         path = Path(f)
         for result in usort_path(path, write=True):
             if result.error:
-                click.echo(f"{result.error}")
+                click.echo(f"Error sorting {result.path}: {result.error}")
                 return_code |= 1
                 continue
 

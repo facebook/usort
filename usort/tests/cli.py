@@ -138,7 +138,7 @@ import os
 
         self.assertRegex(
             result.output,
-            r"Error parsing sample\.py:1 on 3\.\d+: `import` - Incomplete input",
+            r"Error sorting sample\.py: Syntax Error @ 1:7\.",
         )
         self.assertEqual(result.exit_code, 1)
 
@@ -151,7 +151,7 @@ import os
 
         self.assertRegex(
             result.output,
-            r"Error parsing sample\.py:2 on 3\.\d+: `print 'i'` - Incomplete input",
+            r"Error sorting sample\.py: Syntax Error @ 2:11\.",
         )
         self.assertEqual(result.exit_code, 1)
 
