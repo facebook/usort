@@ -155,6 +155,23 @@ import os
         )
         self.assertEqual(result.exit_code, 1)
 
+    def test_format_permission_error(self) -> None:
+        """File does not have read permissions"""
+        with sample_contents("print('hello world')\n") as dtmp:
+            runner = CliRunner()
+            # make the file unreadable
+            (Path(dtmp) / "sample.py").chmod(0o000)
+            with chdir(dtmp):
+                result = runner.invoke(main, ["format", "."])
+            # restore permissions so that cleanup can succeed on windows
+            (Path(dtmp) / "sample.py").chmod(0o644)
+
+        self.assertRegex(
+            result.output,
+            r"Error sorting sample\.py: .+ Permission denied:",
+        )
+        self.assertEqual(result.exit_code, 1)
+
     def test_format_with_change(self) -> None:
         with sample_contents("import sys\nimport os\n") as dtmp:
             runner = CliRunner()
