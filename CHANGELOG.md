@@ -1,3 +1,15 @@
+## 0.6.1
+
+Minor release
+
+* Improve error messages, especially for parsing errors (#45)
+
+```shell-session
+$ git shortlog -sn v0.6.0...
+     7  John Reese
+     1  Tim Hatch
+```
+
 ## 0.6.0
 
 * Add support for configurable side-effect modules as block separators (#39)
