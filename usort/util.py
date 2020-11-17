@@ -52,23 +52,26 @@ def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
     """
     Attempts to parse the file with all syntax versions known by LibCST.
 
-    If none parse, raises an exception that tells you that (what we know, not an
-    error that might not be the most helpful).
+    If parsing fails on all supported grammar versions, then raises the parser error
+    from the first/newest version attempted.
     """
     if data is None:
         data = path.read_bytes()
 
     with timed(f"parsing {path}"):
+        parse_error: Optional[cst.ParserSyntaxError] = None
+
         for version in cst.KNOWN_PYTHON_VERSION_STRINGS[::-1]:
             try:
                 mod = cst.parse_module(
                     data, cst.PartialParserConfig(python_version=version)
                 )
                 return mod
-            except cst.ParserSyntaxError:
-                continue
+            except cst.ParserSyntaxError as e:
+                # keep the first error we see in case parsing fails on all versions
+                if parse_error is None:
+                    parse_error = e
 
-        # Intentionally not raising an exception with a specific syntax error (if we
-        # keep the last, meaning oldest python version, then it might complain about
-        # typehints like https://github.com/psf/black/issues/1158)
-        raise Exception(f"No version could parse {path}")
+        # not caring about existing traceback here because it's not useful for parse
+        # errors, and usort_path is already going to wrap it in a custom class
+        raise parse_error or Exception("unknown parse failure")

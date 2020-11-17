@@ -294,6 +294,7 @@ def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
     else:
         files = [path]
 
+    data: str = ""
     for f in files:
         try:
             config = Config.find(f.parent)

@@ -130,14 +130,45 @@ import os
         self.assertEqual(result.exit_code, 0)
 
     def test_format_parse_error(self) -> None:
+        """Code that has syntax that would never be valid in any version of python"""
         with sample_contents("import\n") as dtmp:
             runner = CliRunner()
             with chdir(dtmp):
                 result = runner.invoke(main, ["format", "."])
 
-        self.assertEqual(
-            "Error on sample.py: Exception('No version could parse sample.py')\n",
-            result.output.replace(",)", ")"),
+        self.assertRegex(
+            result.output,
+            r"Error sorting sample\.py: Syntax Error @ 1:7\.",
+        )
+        self.assertEqual(result.exit_code, 1)
+
+    def test_format_parse_error_conflicting_syntax(self) -> None:
+        """Code that contains syntax both <=2.7 and >=3.8 that could never coexist"""
+        with sample_contents("while (i := foo()):\n    print 'i'\n") as dtmp:
+            runner = CliRunner()
+            with chdir(dtmp):
+                result = runner.invoke(main, ["format", "."])
+
+        self.assertRegex(
+            result.output,
+            r"Error sorting sample\.py: Syntax Error @ 2:11\.",
+        )
+        self.assertEqual(result.exit_code, 1)
+
+    def test_format_permission_error(self) -> None:
+        """File does not have read permissions"""
+        with sample_contents("print('hello world')\n") as dtmp:
+            runner = CliRunner()
+            # make the file unreadable
+            (Path(dtmp) / "sample.py").chmod(0o000)
+            with chdir(dtmp):
+                result = runner.invoke(main, ["format", "."])
+            # restore permissions so that cleanup can succeed on windows
+            (Path(dtmp) / "sample.py").chmod(0o644)
+
+        self.assertRegex(
+            result.output,
+            r"Error sorting sample\.py: .+ Permission denied:",
         )
         self.assertEqual(result.exit_code, 1)
 
