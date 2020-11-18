@@ -31,12 +31,12 @@ test:
 
 .PHONY: format
 format:
-	python -m isort --recursive -y $(SOURCES)
+	python -m usort format $(SOURCES)
 	python -m black $(SOURCES)
 
 .PHONY: lint
 lint:
-	python -m isort --recursive --diff $(SOURCES)
+	python -m usort check $(SOURCES)
 	python -m black --check $(SOURCES)
 	python -m flake8 $(SOURCES)
 	mypy --strict usort
