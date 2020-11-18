@@ -1,3 +1,15 @@
+## 0.6.2
+
+Minor release
+
+* Option to disable first-party heuristic (#47)
+
+```shell-session
+$ git shortlog -sn v0.6.1...
+     1  John Reese
+     1  Tim Hatch
+```
+
 ## 0.6.1
 
 Minor release
