@@ -310,6 +310,16 @@ from attr import evolve
 """
         self.assertEqual(content, usort_string(content, config))
 
+    def test_match_black_blank_line_before_comment(self) -> None:
+        content = """\
+import a
+import b
+
+# comment
+import c
+"""
+        self.assertEqual(content, usort_string(content, DEFAULT_CONFIG))
+
 
 if __name__ == "__main__":
     unittest.main()
