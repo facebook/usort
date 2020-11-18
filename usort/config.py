@@ -51,13 +51,18 @@ class Config:
     side_effect_modules: List[str] = field(default_factory=list)
     side_effect_re: Pattern[str] = field(default=re.compile(""))
 
+    # Whether to perform the first-party heuristic during find()
+    first_party_detection: bool = True
+
     def __post_init__(self) -> None:
         self.side_effect_re = re.compile(
             "|".join(re.escape(m) + r"\b" for m in self.side_effect_modules)
         )
 
     @classmethod
-    def find(cls, filename: Optional[Path] = None) -> "Config":
+    def find(
+        cls, filename: Optional[Path] = None, with_first_party: bool = True
+    ) -> "Config":
         rv = cls()
 
         # TODO This logic should be split out to a separate project, as it's
@@ -84,17 +89,31 @@ class Config:
 
             p = p.parent
 
-        # Infer first-party top-level names; this only works for the common case of
-        # a single package, but not multiple, or modules (pure-python or extensions).
-        # In those cases, you should explicitly set `known_first_party` in the config.
-        #
-        # This code as-is should work for something like running against a site-packages
-        # dir, but if we broaden to support multiple top-level names, it would find too
-        # much.
-        if filename is None:
-            p = Path.cwd()
-        else:
-            p = filename
+        # Either param or config can force off.
+        if with_first_party and rv.first_party_detection:
+            if filename is None:
+                # directory
+                rv = rv.with_first_party(Path.cwd())
+            else:
+                # filename, ideally
+                rv = rv.with_first_party(filename)
+
+        return rv
+
+    def with_first_party(self, filename: Path) -> "Config":
+        """
+        Infer first-party top-level names; this only works for the common case of
+        a single package, but not multiple, or modules (pure-python or extensions).
+        In those cases, you should explicitly set `known_first_party` in the config.
+
+        This code as-is should work for something like running against a site-packages
+        dir, but if we broaden to support multiple top-level names, it would find too
+        much.
+
+        To disable this code entirely, set `first_party_detection=false` in the config.
+        """
+
+        p = filename
 
         while True:
             # Stop on root (hopefully works on Windows)
@@ -110,9 +129,9 @@ class Config:
                 break
 
         if (p / "__init__.py").exists():
-            rv.known[p.name] = CAT_FIRST_PARTY
+            self.known[p.name] = CAT_FIRST_PARTY
 
-        return rv
+        return self
 
     def update_from_config(self, toml_path: Path) -> None:
         conf = toml.loads(toml_path.read_text())
@@ -124,6 +143,8 @@ class Config:
             self.default_category = Category(tbl["default_category"])
         if "side_effect_modules" in tbl:
             self.side_effect_modules.extend(tbl["side_effect_modules"])
+        if "first_party_detection" in tbl:
+            self.first_party_detection = tbl["first_party_detection"]
 
         for cat, names in tbl.get("known", {}).items():
             typed_cat = Category(cat)
