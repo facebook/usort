@@ -331,14 +331,18 @@ def fixup_whitespace(
     # (separator) line between a non-block and the first import, that's now in
     # the middle.
     for i in imports:
+        old_blanks, old_comments = partition_leading_lines(i.node.leading_lines)
+
         if cur_category is None:
             blanks = initial_blank
         elif i.sort_key.category_index != cur_category:
             blanks = (cst.EmptyLine(),)
+        elif old_comments:
+            # preserves black formatting
+            blanks = (cst.EmptyLine(),)
         else:
             blanks = ()
 
-        old_blanks, old_comments = partition_leading_lines(i.node.leading_lines)
         i.node = i.node.with_changes(leading_lines=(*blanks, *old_comments))
 
         cur_category = i.sort_key.category_index
