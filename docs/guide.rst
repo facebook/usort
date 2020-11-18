@@ -123,6 +123,15 @@ The following options are valid for the main ``tool.usort`` table:
 
     See :ref:`side-effect-imports`.
 
+.. attribute:: first_party_detection
+    :type: bool
+    :value: true
+
+    Whether to run a heuristic to detect the top-level name of the file being sorted,
+    and consider that name as first-party.  This heuristic happens after other options
+    are loaded, so such names cannot be overridden to another category if this is
+    enabled.
+
 
 ``[tool.usort.known]``
 %%%%%%%%%%%%%%%%%%%%%%

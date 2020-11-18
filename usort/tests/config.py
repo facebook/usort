@@ -65,7 +65,7 @@ third_party = ["psutil", "cocoa"]
             (Path(d) / "a" / "b" / "__init__.py").write_text("")
             (Path(d) / "a" / "b" / "c" / "__init__.py").write_text("from b import zzz")
 
-            f = Path(d) / "a" / "b" / "c" / "__init__"
+            f = Path(d) / "a" / "b" / "c" / "__init__.py"
 
             conf = Config.find(f)
             self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
@@ -74,6 +74,27 @@ third_party = ["psutil", "cocoa"]
             conf = Config.find(f.parent.parent)  # b
             self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
             conf = Config.find(Path("/"))
+            self.assertNotIn("b", conf.known)
+
+    def test_first_party_root_finding_disable(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "a" / "b" / "c").mkdir(parents=True)
+            (Path(d) / "a" / "b" / "__init__.py").write_text("")
+            (Path(d) / "a" / "b" / "c" / "__init__.py").write_text("from b import zzz")
+
+            f = Path(d) / "a" / "b" / "c" / "__init__.py"
+
+            conf = Config.find(f)
+            self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
+
+            (Path(d) / "pyproject.toml").write_text(
+                """\
+[tool.usort]
+first_party_detection = false
+"""
+            )
+
+            conf = Config.find(f)
             self.assertNotIn("b", conf.known)
 
     def test_new_category_names(self) -> None:
