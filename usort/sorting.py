@@ -242,14 +242,35 @@ def is_sortable_import(stmt: cst.CSTNode, config: Config) -> bool:
 
 
 def usort_string(data: str, config: Config, path: Optional[Path] = None) -> str:
+    r"""
+    Whenever possible use usort_bytes instead.
+
+    One does not just .read_text() Python source code.  That will use the system
+    encoding, which if is not utf-8 would be in violation of pep 3120.
+
+    There are two additional cases where this function does the wrong thing, but you
+    won't notice on most modern file contents:
+
+    - a string unrepresentable in utf-8, e.g. "\ud800" is a single high surrogate
+    - a string with a valid pep 263 coding line, other than utf-8
+    """
+    return usort_bytes(data=data.encode(), config=config, path=path)[0].decode()
+
+
+def usort_bytes(
+    data: bytes, config: Config, path: Optional[Path] = None
+) -> Tuple[bytes, str]:
+    """
+    Returns (new_bytes, encoding_str) after sorting.
+    """
     if path is None:
         path = Path("<data>")
 
-    mod = try_parse(data=data.encode(), path=path)
+    mod = try_parse(data=data, path=path)
     with timed(f"sorting {path}"):
         tr = ImportSortingTransformer(config)
         new_mod = mod.visit(tr)
-        return new_mod.code
+        return (new_mod.bytes, new_mod.encoding)
 
 
 def usort_stdin() -> bool:
@@ -279,8 +300,11 @@ def usort_stdin() -> bool:
 @dataclass
 class Result:
     path: Path
-    content: str
-    output: str
+    content: bytes
+    output: bytes
+    # encoding will be None on parse errors; we get this from LibCST on a successful
+    # parse.
+    encoding: Optional[str]
     error: Optional[Exception] = None
 
 
@@ -294,18 +318,18 @@ def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
     else:
         files = [path]
 
-    data: str = ""
+    data: bytes = b""
     for f in files:
         try:
             config = Config.find(f.parent)
-            data = f.read_text()
-            output = usort_string(data, config, f)
+            data = f.read_bytes()
+            output, encoding = usort_bytes(data, config, f)
             if write:
-                f.write_text(output)
-            yield Result(f, data, output)
+                f.write_bytes(output)
+            yield Result(f, data, output, encoding)
 
         except Exception as e:
-            yield Result(f, data, "", e)
+            yield Result(f, data, b"", None, e)
 
 
 def partition_leading_lines(

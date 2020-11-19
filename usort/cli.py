@@ -131,8 +131,11 @@ def diff(filenames: List[str]) -> int:
                 return_code |= 1
 
             if result.content != result.output:
+                assert result.encoding is not None
                 echo_color_unified_diff(
-                    result.content, result.output, result.path.as_posix()
+                    result.content.decode(result.encoding),
+                    result.output.decode(result.encoding),
+                    result.path.as_posix(),
                 )
 
     return return_code
