@@ -71,7 +71,7 @@ class Config:
         if filename is None:
             p = Path.cwd()
         else:
-            p = filename
+            p = Path.cwd() / filename
 
         while True:
             if p.is_dir():
@@ -96,7 +96,7 @@ class Config:
                 rv = rv.with_first_party(Path.cwd())
             else:
                 # filename, ideally
-                rv = rv.with_first_party(filename)
+                rv = rv.with_first_party(Path.cwd() / filename)
 
         return rv
 
