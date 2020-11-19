@@ -19,8 +19,10 @@ from usort.cli import main
 def chdir(new_dir: str) -> Generator[None, None, None]:
     cur_dir = os.getcwd()
     os.chdir(new_dir)
-    yield
-    os.chdir(cur_dir)
+    try:
+        yield
+    finally:
+        os.chdir(cur_dir)
 
 
 @contextmanager

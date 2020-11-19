@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from usort.config import CAT_FIRST_PARTY, CAT_FUTURE, CAT_THIRD_PARTY, Config
+from .cli import chdir
 
 
 class ConfigTest(unittest.TestCase):
@@ -169,3 +170,38 @@ foo = ["numpy", "pandas"]
             self.assertTrue(config.is_side_effect_import("foo.bar", ["baz"]))
             # from foo.bar import bazzy
             self.assertFalse(config.is_side_effect_import("foo.bar", ["bazzy"]))
+
+    def test_config_parent_walk(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            d_path = Path(d)
+
+            (d_path / "a").mkdir(parents=True)
+            (d_path / "a" / "__init__.py").write_text("")
+
+            (d_path / "b").mkdir(parents=True)
+            (d_path / "b" / "pyproject.toml").write_text(
+                """\
+[tool.usort.known]
+first_party = ["x"]
+"""
+            )
+            (d_path / "b" / "c").mkdir(parents=True)
+            (d_path / "b" / "c" / "d").symlink_to(d_path / "a")
+
+            # This is behavior that's worked for ages, if given an absolute path
+            conf = Config.find(d_path / "b" / "c" / "d" / "__init__.py")
+            self.assertEqual(CAT_FIRST_PARTY, conf.known["x"])
+            self.assertEqual(CAT_FIRST_PARTY, conf.known["d"])
+
+            # This is also something that's worked for ages, a relative path with cwd
+            # above the pyproject.toml
+            with chdir(d):
+                conf = Config.find(Path("b") / "c" / "d" / "__init__.py")
+                self.assertEqual(CAT_FIRST_PARTY, conf.known["x"])
+                self.assertEqual(CAT_FIRST_PARTY, conf.known["d"])
+
+            # This is an instance of issue 43
+            with chdir((d_path / "b" / "c").as_posix()):
+                conf = Config.find(Path("d") / "__init__.py")
+                self.assertEqual(CAT_FIRST_PARTY, conf.known["x"])
+                self.assertEqual(CAT_FIRST_PARTY, conf.known["d"])
