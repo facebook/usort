@@ -7,7 +7,7 @@ import os
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
+from typing import AnyStr, Generator
 
 import volatile
 from click.testing import CliRunner
@@ -26,11 +26,14 @@ def chdir(new_dir: str) -> Generator[None, None, None]:
 
 
 @contextmanager
-def sample_contents(s: str) -> Generator[str, None, None]:
+def sample_contents(s: AnyStr) -> Generator[str, None, None]:
     with volatile.dir() as dtmp:
         ptmp = Path(dtmp)
         (ptmp / "pyproject.toml").write_text("")
-        (ptmp / "sample.py").write_text(s)
+        if isinstance(s, bytes):
+            (ptmp / "sample.py").write_bytes(s)
+        else:
+            (ptmp / "sample.py").write_text(s)
         yield dtmp
 
 
@@ -78,7 +81,7 @@ sorting sample\.py:\s+\d+ µs
         self.assertEqual(0, result.exit_code)
 
     def test_diff_with_change(self) -> None:
-        with sample_contents("import sys\nimport os\n") as dtmp:
+        with sample_contents(b"import sys\nimport os\n") as dtmp:
             runner = CliRunner()
             with chdir(dtmp):
                 result = runner.invoke(main, ["diff", "."])
@@ -91,7 +94,9 @@ sorting sample\.py:\s+\d+ µs
 +import os
  import sys
 -import os
-""",
+""".replace(
+                "\r", ""
+            ),
             result.output,
         )
 
@@ -189,4 +194,95 @@ import os
 import sys
 """,
                 (Path(dtmp) / "sample.py").read_text(),
+            )
+
+    def test_format_utf8(self) -> None:
+        # the string is "µ" as in "µsort"
+        with sample_contents(
+            b"""\
+import b
+import a
+s = "\xc2\xb5"
+"""
+        ) as dtmp:
+            runner = CliRunner()
+            with chdir(dtmp):
+                result = runner.invoke(main, ["diff", "."])
+
+            # Diff output is unicode
+            self.assertEqual(
+                result.output,
+                """\
+--- a/sample.py
++++ b/sample.py
+@@ -1,3 +1,3 @@
++import a
+ import b
+-import a
+ s = "\u00b5"
+""",
+                result.output,
+            )
+
+            with chdir(dtmp):
+                result = runner.invoke(main, ["format", "."])
+
+            self.assertEqual(
+                b"""\
+import a
+import b
+s = "\xc2\xb5"
+""",
+                (Path(dtmp) / "sample.py").read_bytes(),
+            )
+
+    def test_format_latin_1(self) -> None:
+        # the string is "µ" as in "µsort"
+        with sample_contents(
+            b"""\
+# -*- coding: latin-1 -*-
+import b
+import a
+s = "\xb5"
+""".replace(
+                b"\r", b""
+            )  # git on windows might make \r\n
+        ) as dtmp:
+            runner = CliRunner()
+
+            # Diff output is unicode
+            with chdir(dtmp):
+                result = runner.invoke(main, ["diff", "."])
+
+            self.assertEqual(
+                result.output,
+                """\
+--- a/sample.py
++++ b/sample.py
+@@ -1,4 +1,4 @@
+ # -*- coding: latin-1 -*-
++import a
+ import b
+-import a
+ s = "\u00b5"
+""".replace(
+                    "\r", ""
+                ),  # git on windows again
+                result.output,
+            )
+
+            # Format keeps current encoding
+            with chdir(dtmp):
+                result = runner.invoke(main, ["format", "."])
+
+            self.assertEqual(
+                b"""\
+# -*- coding: latin-1 -*-
+import a
+import b
+s = "\xb5"
+""".replace(
+                    b"\r", b""
+                ),  # git on windows again
+                (Path(dtmp) / "sample.py").read_bytes(),
             )
