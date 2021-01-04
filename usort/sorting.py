@@ -373,6 +373,22 @@ def fixup_whitespace(
     return imports
 
 
+def sort_body(
+    body: Sequence[cst.CSTNode], blocks: Iterable[SortableBlock]
+) -> List[cst.CSTNode]:
+    new_body = list(body)
+    for block in blocks:
+        initial_blank, initial_comment = partition_leading_lines(
+            block.stmts[0].node.leading_lines
+        )
+        block.stmts[0].node = block.stmts[0].node.with_changes(
+            leading_lines=initial_comment
+        )
+        sorted_stmts = fixup_whitespace(initial_blank, sorted(block.stmts))
+        new_body[block.start_idx : block.end_idx] = [stmt.node for stmt in sorted_stmts]
+    return new_body
+
+
 class ImportSortingTransformer(cst.CSTTransformer):
     def __init__(self, config: Config) -> None:
         self.config = config
@@ -381,32 +397,12 @@ class ImportSortingTransformer(cst.CSTTransformer):
         self, original_node: cst.Module, updated_node: cst.Module
     ) -> cst.Module:
         blocks = sortable_blocks(updated_node.body, config=self.config)
-        body: List[cst.CSTNode] = list(updated_node.body)
-
-        for b in blocks:
-            initial_blank, initial_comment = partition_leading_lines(
-                b.stmts[0].node.leading_lines
-            )
-            b.stmts[0].node = b.stmts[0].node.with_changes(
-                leading_lines=initial_comment
-            )
-            sorted_stmts = fixup_whitespace(initial_blank, sorted(b.stmts))
-            body[b.start_idx : b.end_idx] = [s.node for s in sorted_stmts]
+        body: List[cst.CSTNode] = sort_body(updated_node.body, blocks)
         return updated_node.with_changes(body=body)
 
     def leave_IndentedBlock(
         self, original_node: cst.IndentedBlock, updated_node: cst.IndentedBlock
     ) -> cst.IndentedBlock:
         blocks = sortable_blocks(updated_node.body, config=self.config)
-        body: List[cst.CSTNode] = list(updated_node.body)
-
-        for b in blocks:
-            initial_blank, initial_comment = partition_leading_lines(
-                b.stmts[0].node.leading_lines
-            )
-            b.stmts[0].node = b.stmts[0].node.with_changes(
-                leading_lines=initial_comment
-            )
-            sorted_stmts = fixup_whitespace(initial_blank, sorted(b.stmts))
-            body[b.start_idx : b.end_idx] = [s.node for s in sorted_stmts]
+        body: List[cst.CSTNode] = sort_body(updated_node.body, blocks)
         return updated_node.with_changes(body=body)
