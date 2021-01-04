@@ -320,6 +320,116 @@ import c
 """
         self.assertEqual(content, usort_string(content, DEFAULT_CONFIG))
 
+    def test_function_without_decorator(self) -> None:
+        in_content = """\
+import a
+import b
+
+def function(arg: str) -> int:
+    return 0
+
+import c
+"""
+        out_content = """\
+import a
+import b
+import c
+
+def function(arg: str) -> int:
+    return 0
+"""
+        self.assertEqual(usort_string(in_content, DEFAULT_CONFIG), out_content)
+
+    def test_function_with_decorator(self) -> None:
+        content = """\
+import a
+import b
+
+@wrapped
+def function(arg: str) -> int:
+    return 0
+
+import c
+"""
+        self.assertEqual(usort_string(content, DEFAULT_CONFIG), content)
+
+    def test_class_without_decorator(self) -> None:
+        in_content = """\
+import a
+import b
+
+class SomeClass(Parent):
+    member: int
+
+import c
+"""
+        out_content = """\
+import a
+import b
+import c
+
+class SomeClass(Parent):
+    member: int
+"""
+        self.assertEqual(usort_string(in_content, DEFAULT_CONFIG), out_content)
+
+    def test_class_with_decorator(self) -> None:
+        content = """\
+import a
+import b
+
+@register
+class SomeClass(Parent):
+    member: int
+
+import c
+"""
+        self.assertEqual(usort_string(content, DEFAULT_CONFIG), content)
+
+    def test_nested_functions_and_classes(self) -> None:
+        in_content = """\
+import a
+import b
+
+class SomeClass(Parent):
+    member: int
+
+    import c
+    def function(self) -> int:
+        return 0
+    import d
+
+    @decorated
+    def function2(self) -> None:
+        import e
+        pass
+        import f
+    import g
+
+import h
+"""
+        out_content = """\
+import a
+import b
+import h
+
+class SomeClass(Parent):
+    member: int
+
+    import c
+    import d
+    def function(self) -> int:
+        return 0
+
+    @decorated
+    def function2(self) -> None:
+        import e
+        pass
+        import f
+    import g
+"""
+        self.assertEqual(usort_string(in_content, DEFAULT_CONFIG), out_content)
+
 
 if __name__ == "__main__":
     unittest.main()

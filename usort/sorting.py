@@ -157,6 +157,7 @@ class SortableBlock:
     end_idx: Optional[int] = None  # half-open interval
 
     stmts: List[SortableImport] = field(default_factory=list)
+    safe_stmts: List[cst.BaseStatement] = field(default_factory=list)
     imported_names: Dict[str, str] = field(default_factory=dict)
 
 
@@ -193,6 +194,13 @@ def sortable_blocks(
             cur.end_idx = i + 1
             cur.stmts.append(imp)
             cur.imported_names.update(imp.imported_names)
+        elif isinstance(stmt, (cst.ClassDef, cst.FunctionDef)) and not stmt.decorators:
+            if cur is None:
+                cur = SortableBlock(i, i + 1)
+                ret.append(cur)
+
+            cur.end_idx = i + 1
+            cur.safe_stmts.append(stmt)
         else:
             if cur:
                 cur = None
@@ -378,14 +386,19 @@ def sort_body(
 ) -> List[cst.CSTNode]:
     new_body = list(body)
     for block in blocks:
-        initial_blank, initial_comment = partition_leading_lines(
-            block.stmts[0].node.leading_lines
-        )
-        block.stmts[0].node = block.stmts[0].node.with_changes(
-            leading_lines=initial_comment
-        )
-        sorted_stmts = fixup_whitespace(initial_blank, sorted(block.stmts))
-        new_body[block.start_idx : block.end_idx] = [stmt.node for stmt in sorted_stmts]
+        if block.stmts:
+            initial_blank, initial_comment = partition_leading_lines(
+                block.stmts[0].node.leading_lines
+            )
+            block.stmts[0].node = block.stmts[0].node.with_changes(
+                leading_lines=initial_comment
+            )
+            sorted_stmts = fixup_whitespace(initial_blank, sorted(block.stmts))
+            new_body[block.start_idx : block.end_idx] = [
+                stmt.node for stmt in sorted_stmts
+            ] + block.safe_stmts
+        else:
+            new_body[block.start_idx : block.end_idx] = block.safe_stmts
     return new_body
 
 
