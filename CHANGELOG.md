@@ -1,3 +1,19 @@
+## 0.6.3
+
+Bugfix release
+
+* Enforce blank lines before comments within a category (#50)
+* Fix config finding with relative paths (#43, #53)
+* Correctly handle encodings in LibCST (#46, #54)
+* Sort usort with usort (#51)
+* Officially support Python 3.9 (#50)
+
+```shell-session
+$ git shortlog -sn v0.6.2...
+    11  Tim Hatch
+     3  John Reese
+```
+
 ## 0.6.2
 
 Minor release
