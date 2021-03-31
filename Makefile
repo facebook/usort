@@ -31,13 +31,11 @@ test:
 
 .PHONY: format
 format:
-	python -m usort format $(SOURCES)
-	python -m black $(SOURCES)
+	python -m ufmt format $(SOURCES)
 
 .PHONY: lint
 lint:
-	python -m usort check $(SOURCES)
-	python -m black --check $(SOURCES)
+	python -m ufmt check $(SOURCES)
 	python -m flake8 $(SOURCES)
 	mypy --strict usort
 	/bin/bash check_copyright.sh
