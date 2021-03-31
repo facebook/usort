@@ -7,6 +7,7 @@ from .cli import CliTest
 from .config import ConfigTest
 from .functional import BasicOrderingTest, UsortStringFunctionalTest
 from .sort_key import IsSortableTest, SortableImportTest
+from .stdlibs import StdlibsTest
 
 __all__ = [
     "CliTest",
@@ -15,4 +16,5 @@ __all__ = [
     "UsortStringFunctionalTest",
     "IsSortableTest",
     "SortableImportTest",
+    "StdlibsTest",
 ]

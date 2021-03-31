@@ -27,6 +27,7 @@ def known_factory() -> Dict[str, Category]:
 
     # This is also in the stdlib list, so this override comes last...
     known["__future__"] = CAT_FUTURE
+    known["__main__"] = CAT_FIRST_PARTY
 
     return known
 
