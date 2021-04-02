@@ -1,3 +1,15 @@
+## 0.6.4
+
+Bugfix release
+
+* Fix incomplete stdlib detection by using "stdlibs" from pypi (#56)
+
+```shell-session
+$ git shortlog -sn v0.6.3...
+     1  John Reese
+     1  Tim Hatch
+```
+
 ## 0.6.3
 
 Bugfix release
