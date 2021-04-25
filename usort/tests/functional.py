@@ -87,6 +87,31 @@ import a
             ),
         )
 
+    def test_sort_implicit_blocks(self) -> None:
+        # When there are implicit blocks, we create the break as early as
+        # possible.
+        self.assertEqual(
+            """\
+from z import A
+from a import A
+from b import B
+from c import C
+from d import D
+from e import E
+""",
+            usort_string(
+                """\
+from z import A
+from d import D
+from e import E
+from a import A
+from b import B
+from c import C
+""",
+                DEFAULT_CONFIG,
+            ),
+        )
+
     # Disabled until wrapping is supported
     #     def test_sort_wrap_moves_comments(self):
     #         # Test that end-of-line directive comments get moved to the first line

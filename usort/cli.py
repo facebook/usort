@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
 import sys
 from functools import wraps
 from pathlib import Path
@@ -41,6 +42,7 @@ def usort_command(fn: Callable[..., int]) -> Callable[..., None]:
 def main(benchmark: bool) -> None:
     global BENCHMARK
     BENCHMARK = benchmark
+    logging.basicConfig(level=logging.WARNING)
 
 
 @main.command()

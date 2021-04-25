@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -12,6 +13,8 @@ import libcst as cst
 
 from .config import Config
 from .util import timed, try_parse, walk
+
+LOG = logging.getLogger(__name__)
 
 
 def with_dots(x: cst.CSTNode) -> str:
@@ -157,14 +160,43 @@ class SortableBlock:
     end_idx: Optional[int] = None  # half-open interval
 
     stmts: List[SortableImport] = field(default_factory=list)
-    imported_names: Dict[str, str] = field(default_factory=dict)
+    imported_names_idx: Dict[str, Tuple[str, int]] = field(default_factory=dict)
 
+    def split_inplace(self, idx: int) -> "SortableBlock":
+        assert self.end_idx is not None
+        t = idx - self.start_idx
+        new = SortableBlock(idx, self.end_idx)
+        self.end_idx = idx
+        new.stmts = self.stmts[t:]
+        del self.stmts[t:]
+        new.imported_names_idx = {
+            k: v for k, v in self.imported_names_idx.items() if v[1] >= idx
+        }
+        for k in list(self.imported_names_idx.keys()):
+            if self.imported_names_idx[k][1] >= idx:
+                del self.imported_names_idx[k]
+        return new
 
-def name_overlap(a: Dict[str, str], b: Dict[str, str]) -> bool:
-    for k, v in b.items():
-        if k in a and a[k] != v:
-            return True
-    return False
+    def name_overlap_idx(self, qualnames: Dict[str, str]) -> int:
+        """
+        Returns the last index of any overlapped name, or -1
+        """
+        idx = -1
+        for k, v in qualnames.items():
+            item = self.imported_names_idx.get(k)
+            if item is not None and item[0] != v:
+                LOG.warning(
+                    "Name %r shadowed; implicit block split after index %d", k, item[1]
+                )
+                idx = max(idx, item[1])
+        return idx
+
+    def add_stmt(self, stmt: SortableImport, i: int) -> None:
+        self.end_idx = i + 1
+        self.stmts.append(stmt)
+
+        for k, v in stmt.imported_names.items():
+            self.imported_names_idx[k] = (v, i)
 
 
 def sortable_blocks(
@@ -185,14 +217,13 @@ def sortable_blocks(
                 cur = SortableBlock(i, i + 1)
                 ret.append(cur)
 
-            if name_overlap(cur.imported_names, imp.imported_names):
+            t = cur.name_overlap_idx(imp.imported_names)
+            if t != -1:
                 # This overwrites an earlier name
-                cur = SortableBlock(i, i + 1)
+                cur = cur.split_inplace(t + 1)
                 ret.append(cur)
 
-            cur.end_idx = i + 1
-            cur.stmts.append(imp)
-            cur.imported_names.update(imp.imported_names)
+            cur.add_stmt(imp, i)
         else:
             if cur:
                 cur = None
