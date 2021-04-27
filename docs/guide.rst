@@ -199,11 +199,34 @@ logging::
 Shadowed Imports
 ^^^^^^^^^^^^^^^^
 
-Any import that shadows a previous import will create an implicit block
-separator::
+Any import that shadows a previous import with a different source will also cause block
+splitting, but the individual blocks can still be sorted.
 
-    import foo as os
-    import os  # <-- implicit block separator
+Same source is fine; these are still sortable::
+
+    import os
+    import os.path
+    import os
+
+But if they have different sources, then there will be two blocks now.  Note that ``zz``
+is part of the second block, because ``foo as os`` ends its block, as the
+next-to-the-last import of the name ``os``::
+
+    import foo as os  # <-- first import of "os"; kind of a block separator
+    import zz  # <-- caught in the middle
+    import os  # <-- second import of "os"
+
+If there are multiple imports shadowed on a line, this gets pretty confusing::
+
+    import m as x
+    import n as y
+    import p
+    import o as z # <-- first import of any of "x", "y", or "z"
+    import a  # <-- caught in the middle, this is part of the second block
+    import x, y, z  # <-- second import of "x", "y", and "z"
+
+In this particular example, the ``p`` import needs a second invocation of ``usort``
+before it ends up in its final position.
 
 Star Imports
 ^^^^^^^^^^^^
