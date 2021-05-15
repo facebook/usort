@@ -5,13 +5,16 @@
 
 import sys
 from dataclasses import dataclass, field
+from functools import partial
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import libcst as cst
+import trailrunner
+from moreorless import unified_diff
 
 from .config import Config
-from .util import timed, try_parse, walk
+from .util import timed, try_parse
 
 
 def with_dots(x: cst.CSTNode) -> str:
@@ -300,36 +303,54 @@ def usort_stdin() -> bool:
 @dataclass
 class Result:
     path: Path
-    content: bytes
-    output: bytes
-    # encoding will be None on parse errors; we get this from LibCST on a successful
-    # parse.
-    encoding: Optional[str]
+    changed: bool = False
+    written: bool = False
+    diff: Optional[str] = None
     error: Optional[Exception] = None
+
+
+def usort_file(path: Path, dry_run: bool = False, diff: bool = False) -> Result:
+    result = Result(path)
+
+    try:
+        config = Config.find(path)
+
+        src_contents = path.read_bytes()
+
+        dst_contents, encoding = usort_bytes(src_contents, config, path)
+
+        if src_contents != dst_contents:
+            result.changed = True
+            if diff:
+                result.diff = unified_diff(
+                    src_contents.decode(encoding),
+                    dst_contents.decode(encoding),
+                    path.as_posix(),
+                )
+
+            if not dry_run:
+                path.write_bytes(dst_contents)
+                result.written = True
+    except Exception as e:
+        result.error = e
+
+    return result
+
+
+def usort_paths(
+    paths: List[Path], dry_run: bool = False, diff: bool = False
+) -> List[Result]:
+    fn = partial(usort_file, dry_run=dry_run, diff=diff)
+    results = list(trailrunner.walk_and_run(paths, fn).values())
+
+    return results
 
 
 def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
     """
     For a given path, format it, or any .py files in it, and yield Result objects
     """
-    files: Iterable[Path]
-    if path.is_dir():
-        files = walk(path, "*.py")
-    else:
-        files = [path]
-
-    data: bytes = b""
-    for f in files:
-        try:
-            config = Config.find(f.parent)
-            data = f.read_bytes()
-            output, encoding = usort_bytes(data, config, f)
-            if write:
-                f.write_bytes(output)
-            yield Result(f, data, output, encoding)
-
-        except Exception as e:
-            yield Result(f, data, b"", None, e)
+    return usort_paths([path], dry_run=not write)
 
 
 def partition_leading_lines(

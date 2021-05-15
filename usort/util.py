@@ -36,18 +36,6 @@ def print_timings(fn: Callable[[str], None] = print) -> None:
         fn(f"{msg + ':':50} {int(duration*1000000):7} µs")
 
 
-def walk(path: Path, glob: str) -> Iterable[Path]:
-    with timed(f"walking {path}"):
-        paths: List[Path] = []
-        for root, dirs, files in os.walk(path):
-            dirs[:] = [d for d in dirs if not d.startswith(".")]
-            root_path = Path(root)
-            for f in files:
-                if fnmatch(f, glob):
-                    paths.append(root_path / f)
-        return paths
-
-
 def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
     """
     Attempts to parse the file with all syntax versions known by LibCST.

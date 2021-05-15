@@ -9,11 +9,11 @@ from pathlib import Path
 from typing import Any, Callable, List
 
 import click
-from moreorless.click import echo_color_unified_diff
+from moreorless.click import echo_color_precomputed_diff
 
 from . import __version__
 from .config import Config
-from .sorting import sortable_blocks, usort_path, usort_stdin
+from .sorting import sortable_blocks, usort_paths, usort_stdin
 from .util import TIMINGS, print_timings, try_parse
 
 BENCHMARK = False
@@ -88,7 +88,7 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> int:
 
 
 @main.command()
-@click.argument("filenames", nargs=-1)
+@click.argument("filenames", type=click.Path(exists=True), nargs=-1)
 @usort_command
 def check(filenames: List[str]) -> int:
     """
@@ -98,16 +98,15 @@ def check(filenames: List[str]) -> int:
         raise click.ClickException("Provide some filenames")
 
     return_code = 0
-    for f in filenames:
-        path = Path(f)
-        for result in usort_path(path, write=False):
-            if result.error:
-                click.echo(f"Error sorting {result.path}: {result.error}")
-                return_code |= 1
+    paths = [Path(name) for name in filenames]
+    for result in usort_paths(paths, dry_run=True):
+        if result.error:
+            click.echo(f"Error sorting {result.path}: {result.error}")
+            return_code |= 1
 
-            if result.content != result.output:
-                click.echo(f"Would sort {result.path}")
-                return_code |= 2
+        if result.changed:
+            click.echo(f"Would sort {result.path}")
+            return_code |= 2
 
     return return_code
 
@@ -123,20 +122,16 @@ def diff(filenames: List[str]) -> int:
         raise click.ClickException("Provide some filenames")
 
     return_code = 0
-    for f in filenames:
-        path = Path(f)
-        for result in usort_path(path, write=False):
-            if result.error:
-                click.echo(f"Error sorting {result.path}: {result.error}")
-                return_code |= 1
+    paths = [Path(name) for name in filenames]
+    for result in usort_paths(paths, dry_run=True, diff=True):
+        if result.error:
+            click.echo(f"Error sorting {result.path}: {result.error}")
+            return_code |= 1
+            continue
 
-            if result.content != result.output:
-                assert result.encoding is not None
-                echo_color_unified_diff(
-                    result.content.decode(result.encoding),
-                    result.output.decode(result.encoding),
-                    result.path.as_posix(),
-                )
+        if result.changed:
+            assert result.diff is not None
+            echo_color_precomputed_diff(result.diff)
 
     return return_code
 
@@ -160,16 +155,15 @@ def format(filenames: List[str]) -> int:
         return 0 if success else 1
 
     return_code = 0
-    for f in filenames:
-        path = Path(f)
-        for result in usort_path(path, write=True):
-            if result.error:
-                click.echo(f"Error sorting {result.path}: {result.error}")
-                return_code |= 1
-                continue
+    paths = [Path(name) for name in filenames]
+    for result in usort_paths(paths, dry_run=False):
+        if result.error:
+            click.echo(f"Error sorting {result.path}: {result.error}")
+            return_code |= 1
+            continue
 
-            if result.content != result.output:
-                click.echo(f"Sorted {result.path}")
+        if result.changed:
+            click.echo(f"Sorted {result.path}")
 
     return return_code
 
