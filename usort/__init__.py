@@ -7,3 +7,5 @@ try:
     from .version import version as __version__  # noqa: F401
 except ImportError:
     __version__ = "dev"
+
+__all__ = ["__version__"]

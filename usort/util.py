@@ -3,12 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
 from contextlib import contextmanager
-from fnmatch import fnmatch
 from pathlib import Path
 from time import monotonic
-from typing import Callable, Generator, Iterable, List, Optional, Tuple
+from typing import Callable, Generator, List, Optional, Tuple
 
 import libcst as cst
 
