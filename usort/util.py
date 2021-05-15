@@ -4,13 +4,14 @@
 # LICENSE file in the root directory of this source tree.
 
 from contextlib import contextmanager
+from multiprocessing import Queue
 from pathlib import Path
 from time import monotonic
 from typing import Callable, Generator, List, Optional, Tuple
 
 import libcst as cst
 
-TIMINGS: List[Tuple[str, float]] = []
+TIMINGS_QUEUE: Optional[Queue] = None
 
 
 @contextmanager
@@ -23,14 +24,25 @@ def timed(msg: str) -> Generator[None, None, None]:
     before = monotonic()
     yield
     after = monotonic()
-    TIMINGS.append((msg, after - before))
+    if TIMINGS_QUEUE is not None:
+        TIMINGS_QUEUE.put((msg, after - before))
+
+
+def clear_timings() -> None:
+    """
+    Starts a new timings run by initializing a new Queue.
+    """
+    global TIMINGS_QUEUE
+    TIMINGS_QUEUE = Queue()
 
 
 def print_timings(fn: Callable[[str], None] = print) -> None:
     """
     Print all stored timing values in microseconds.
     """
-    for msg, duration in TIMINGS:
+    assert TIMINGS_QUEUE is not None
+    while not TIMINGS_QUEUE.empty():
+        msg, duration = TIMINGS_QUEUE.get()
         fn(f"{msg + ':':50} {int(duration*1000000):7} µs")
 
 

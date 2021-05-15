@@ -340,8 +340,13 @@ def usort_file(path: Path, dry_run: bool = False, diff: bool = False) -> Result:
 def usort_paths(
     paths: List[Path], dry_run: bool = False, diff: bool = False
 ) -> List[Result]:
+    all_paths: List[Path] = []
+    for path in paths:
+        with timed(f"walking {path.as_posix()}"):
+            all_paths.extend(trailrunner.walk(path))
+
     fn = partial(usort_file, dry_run=dry_run, diff=diff)
-    results = list(trailrunner.walk_and_run(paths, fn).values())
+    results = list(trailrunner.run(all_paths, fn).values())
 
     return results
 
