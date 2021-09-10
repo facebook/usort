@@ -75,3 +75,15 @@ def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
         # not caring about existing traceback here because it's not useful for parse
         # errors, and usort_path is already going to wrap it in a custom class
         raise parse_error or Exception("unknown parse failure")
+
+
+def with_dots(x: cst.CSTNode) -> str:
+    """
+    Helper to make it easier to use an Attribute or Name.
+    """
+    if isinstance(x, cst.Attribute):
+        return ".".join([with_dots(x.value), with_dots(x.attr)])
+    elif isinstance(x, cst.Name):
+        return x.value
+    else:
+        raise TypeError(f"Can't with_dots on {type(x)}")
