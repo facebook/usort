@@ -8,7 +8,8 @@ import unittest
 import libcst as cst
 
 from ..config import Config
-from ..sorting import SortableImport, is_sortable_import
+from ..sorting import is_sortable_import
+from ..types import SortableImport
 
 
 class SortableImportTest(unittest.TestCase):

@@ -12,8 +12,9 @@ import click
 from moreorless.click import echo_color_unified_diff
 
 from . import __version__
+from .api import usort_path, usort_stdin
 from .config import Config
-from .sorting import sortable_blocks, usort_path, usort_stdin
+from .sorting import sortable_blocks
 from .util import TIMINGS, print_timings, try_parse
 
 BENCHMARK = False

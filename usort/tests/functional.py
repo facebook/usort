@@ -10,8 +10,9 @@ from pathlib import Path
 from textwrap import dedent
 from typing import Optional
 
+from ..api import usort_string
 from ..config import Config
-from ..sorting import SortableImport, usort_string
+from ..types import SortableImport
 from ..util import try_parse
 
 DEFAULT_CONFIG = Config()
