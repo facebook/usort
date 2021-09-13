@@ -13,6 +13,9 @@ from .types import Result
 from .util import try_parse, timed, walk
 
 
+__all__ = ["usort_bytes", "usort_string", "usort_path", "usort_stdin"]
+
+
 def usort_bytes(
     data: bytes, config: Config, path: Optional[Path] = None
 ) -> Tuple[bytes, str]:
