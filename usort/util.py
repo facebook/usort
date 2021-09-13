@@ -77,6 +77,18 @@ def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
         raise parse_error or Exception("unknown parse failure")
 
 
+def parse_import(code: str) -> cst.SimpleStatementLine:
+    """
+    Parse a single import statement. For testing and debugging purposes only.
+    """
+    node = cst.parse_statement(code)
+    if not isinstance(node, cst.SimpleStatementLine):
+        raise ValueError("not a statement")
+    if not isinstance(node.body[0], (cst.Import, cst.ImportFrom)):
+        raise ValueError("not an import statement")
+    return node
+
+
 def with_dots(x: cst.CSTNode) -> str:
     """
     Helper to make it easier to use an Attribute or Name.
