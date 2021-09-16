@@ -12,7 +12,7 @@ from typing import Optional
 
 from ..api import usort_string
 from ..config import Config
-from ..types import SortableImport
+from ..translate import import_from_node
 from ..util import parse_import
 
 DEFAULT_CONFIG = Config()
@@ -35,7 +35,7 @@ class BasicOrderingTest(unittest.TestCase):
         ]
 
         nodes = [
-            SortableImport.from_node(parse_import(x), config=DEFAULT_CONFIG)
+            import_from_node(parse_import(x), config=DEFAULT_CONFIG)
             for x in items_in_order
         ]
         self.assertSequenceEqual(nodes, sorted(nodes))

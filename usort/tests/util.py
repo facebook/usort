@@ -13,18 +13,33 @@ from ..util import parse_import
 class UtilTest(unittest.TestCase):
     def test_parse_import_simple(self) -> None:
         node = parse_import("import a")
-        self.assertIsInstance(node, cst.SimpleStatementLine)
-        self.assertIsInstance(node.body[0], cst.Import)
-        self.assertIsInstance(node.body[0].names[0], cst.ImportAlias)  # type: ignore
-        self.assertEqual(node.body[0].names[0].name.value, "a")  # type: ignore
+        self.assertEqual(
+            cst.ensure_type(
+                cst.ensure_type(
+                    cst.ensure_type(node, cst.SimpleStatementLine).body[0],
+                    cst.Import,
+                ).names[0],
+                cst.ImportAlias,
+            ).name.value,
+            "a",
+        )
 
     def test_parse_import_from(self) -> None:
         node = parse_import("from a import x")
-        self.assertIsInstance(node, cst.SimpleStatementLine)
-        self.assertIsInstance(node.body[0], cst.ImportFrom)
-        self.assertIsInstance(node.body[0].names[0], cst.ImportAlias)  # type: ignore
-        self.assertEqual(node.body[0].module.value, "a")  # type: ignore
-        self.assertEqual(node.body[0].names[0].name.value, "x")  # type: ignore
+        inner = cst.ensure_type(
+            cst.ensure_type(node, cst.SimpleStatementLine).body[0],
+            cst.ImportFrom,
+        )
+        self.assertEqual(cst.ensure_type(inner.module, cst.Name).value, "a")
+        assert isinstance(inner.names, list)
+        name = inner.names[0]
+        self.assertEqual(
+            cst.ensure_type(
+                name,
+                cst.ImportAlias,
+            ).name.value,
+            "x",
+        )
 
     def test_parse_import_not_an_import(self) -> None:
         with self.assertRaisesRegex(ValueError, "not an import"):

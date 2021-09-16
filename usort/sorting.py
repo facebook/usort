@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import libcst as cst
 
 from .config import Config
+from .translate import import_from_node
 from .types import SortableBlock, SortableImport
 
 
@@ -32,7 +33,7 @@ def sortable_blocks(
         # TODO support known_side_effect_modules or so
         if is_sortable_import(stmt, config):
             assert isinstance(stmt, cst.SimpleStatementLine)
-            imp = SortableImport.from_node(stmt, config)
+            imp = import_from_node(stmt, config)
             if cur is None:
                 cur = SortableBlock(i, i + 1)
                 ret.append(cur)
