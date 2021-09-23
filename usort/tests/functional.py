@@ -12,8 +12,8 @@ from typing import Optional
 
 from ..api import usort_string
 from ..config import Config
-from ..types import SortableImport
-from ..util import try_parse
+from ..translate import import_from_node
+from ..util import parse_import
 
 DEFAULT_CONFIG = Config()
 
@@ -23,21 +23,19 @@ class BasicOrderingTest(unittest.TestCase):
 
     def test_order(self) -> None:
         items_in_order = [
-            b"from __future__ import division",
-            b"import os",
-            b"from os import path",
-            b"import tp",
-            b"from tp import x",
-            b"from .. import c",
-            b"from . import a",
-            b"from . import b",
-            b"from .a import z",
+            "from __future__ import division",
+            "import os",
+            "from os import path",
+            "import tp",
+            "from tp import x",
+            "from .. import c",
+            "from . import a",
+            "from . import b",
+            "from .a import z",
         ]
 
         nodes = [
-            SortableImport.from_node(
-                try_parse(Path("test.py"), data=x).body[0], config=DEFAULT_CONFIG
-            )
+            import_from_node(parse_import(x), config=DEFAULT_CONFIG)
             for x in items_in_order
         ]
         self.assertSequenceEqual(nodes, sorted(nodes))
