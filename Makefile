@@ -28,6 +28,7 @@ setup:
 test:
 	python -m coverage run -m usort.tests $(TESTOPTS)
 	python -m coverage report
+	python -m mypy --strict usort
 
 .PHONY: format
 format:
@@ -37,7 +38,6 @@ format:
 lint:
 	python -m ufmt check $(SOURCES)
 	python -m flake8 $(SOURCES)
-	mypy --strict usort
 	/bin/bash check_copyright.sh
 
 
