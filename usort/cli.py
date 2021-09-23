@@ -11,12 +11,13 @@ from typing import Any, Callable, List, Sequence
 import click
 from moreorless.click import echo_color_unified_diff
 
+from usort.translate import render_node
+
 from . import __version__
 from .api import usort_path, usort_stdin
 from .config import Config
 from .sorting import sortable_blocks
-from .types import Timing
-from .util import get_timings, print_timings, try_parse
+from .util import get_timings, print_timings, try_parse, Timing
 
 BENCHMARK = False
 
@@ -76,18 +77,19 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> int:
         click.secho(f"{f} {len(blocks)} blocks:", fg="yellow")
         for b in blocks:
             print(f"  body[{b.start_idx}:{b.end_idx}]")
-            sorted_stmts = sorted(b.stmts)
+            sorted_imports = sorted(b.imports)
             if debug:
-                for s in b.stmts:
+                for imp in b.imports:
                     print(
-                        f"    {sorted_stmts.index(s)} {s} "
-                        f"({s.config.category(s.first_module)})"
+                        f"    {sorted_imports.index(imp)} {imp} "
+                        f"({imp.config.category(imp.stem or '')})"
                     )
             else:
                 print("Formatted:")
                 print("[[[")
-                for s in sorted_stmts:
-                    print(mod.code_for_node(s.node), end="")
+                for imp in sorted_imports:
+                    assert imp.node is not None
+                    print(render_node(imp.node), end="")
                 print("]]]")
 
     return 0

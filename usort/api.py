@@ -28,10 +28,10 @@ def usort_bytes(
     if path is None:
         path = Path("<data>")
 
-    mod = try_parse(data=data, path=path)
+    module = try_parse(data=data, path=path)
     with timed(f"sorting {path}"):
-        tr = ImportSortingTransformer(config)
-        new_mod = mod.visit(tr)
+        tr = ImportSortingTransformer(config, module)
+        new_mod = module.visit(tr)
         return (new_mod.bytes, new_mod.encoding)
 
 

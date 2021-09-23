@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import re
 from contextlib import contextmanager
 from pathlib import Path
 from time import monotonic
@@ -10,8 +11,9 @@ from typing import Callable, Generator, List, Optional, Tuple, Sequence
 
 import libcst as cst
 
-from .types import Timing
+Timing = Tuple[str, float]
 
+INLINE_COMMENT_RE = re.compile(r"#+[^#]*")
 TIMINGS: List[Timing] = []
 
 
@@ -84,6 +86,28 @@ def parse_import(code: str) -> cst.SimpleStatementLine:
     if not isinstance(node.body[0], (cst.Import, cst.ImportFrom)):
         raise ValueError("not an import statement")
     return node
+
+
+def split_inline_comment(text: str) -> Sequence[str]:
+    return [part.rstrip() for part in INLINE_COMMENT_RE.findall(text)]
+
+
+def split_relative(name: str) -> Tuple[str, int]:
+    ndots = len(name) - len(name.lstrip("."))
+    return name[ndots:], ndots
+
+
+def stem_join(stem: Optional[str], name: str) -> str:
+    if stem is None:
+        return name
+    elif stem.endswith("."):
+        return stem + name
+    else:
+        return f"{stem}.{name}"
+
+
+def top_level_name(name: str) -> str:
+    return name.split(".", 1)[0]
 
 
 def with_dots(x: cst.CSTNode) -> str:

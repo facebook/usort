@@ -3,22 +3,160 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Dict, Optional
+from typing import Optional, List, Union, Sequence
 
 import libcst as cst
 
 from .config import Config
-from .types import SortableImport
-from .util import with_dots
+from .types import (
+    ImportComments,
+    ImportItemComments,
+    SortableImport,
+    SortableImportItem,
+)
+from .util import split_relative, split_inline_comment, with_dots
+
+
+def render_node(node: cst.CSTNode, module: Optional[cst.Module] = None) -> str:
+    if module is None:
+        module = cst.Module(body=[])
+    code = module.code_for_node(node.with_changes(leading_lines=()))
+    return code
+
+
+def name_to_node(name: str) -> Union[cst.Name, cst.Attribute]:
+    if "." not in name:
+        return cst.Name(name)
+
+    base, name = name.rsplit(".", 1)
+    return cst.Attribute(value=name_to_node(base), attr=cst.Name(name))
+
+
+def import_comments_from_node(node: cst.SimpleStatementLine) -> ImportComments:
+    comments = ImportComments()
+
+    assert len(node.body) == 1
+    assert isinstance(node.body[0], (cst.Import, cst.ImportFrom))
+    imp: Union[cst.Import, cst.ImportFrom] = node.body[0]
+
+    for line in node.leading_lines:
+        if line.comment:
+            comments.before.append(line.comment.value)
+        else:
+            comments.before.append("")
+
+    if isinstance(imp, cst.ImportFrom):
+        if imp.lpar:
+            ws = cst.ensure_type(imp.lpar.whitespace_after, cst.ParenthesizedWhitespace)
+            if ws.first_line.comment:
+                comments.first_inline.extend(
+                    split_inline_comment(ws.first_line.comment.value)
+                )
+
+            comments.initial.extend(
+                line.comment.value for line in ws.empty_lines if line.comment
+            )
+
+            assert imp.rpar is not None
+            if isinstance(imp.rpar.whitespace_before, cst.ParenthesizedWhitespace):
+                comments.final.extend(
+                    line.comment.value
+                    for line in imp.rpar.whitespace_before.empty_lines
+                    if line.comment
+                )
+
+                if imp.rpar.whitespace_before.first_line.comment:
+                    comments.inline.extend(
+                        split_inline_comment(
+                            imp.rpar.whitespace_before.first_line.comment.value
+                        )
+                    )
+
+            if node.trailing_whitespace and node.trailing_whitespace.comment:
+                comments.last_inline.extend(
+                    split_inline_comment(node.trailing_whitespace.comment.value)
+                )
+
+        elif node.trailing_whitespace and node.trailing_whitespace.comment:
+            comments.first_inline.extend(
+                split_inline_comment(node.trailing_whitespace.comment.value)
+            )
+
+    elif isinstance(imp, cst.Import):
+        if node.trailing_whitespace and node.trailing_whitespace.comment:
+            comments.first_inline.extend(
+                split_inline_comment(node.trailing_whitespace.comment.value)
+            )
+
+    else:
+        raise TypeError
+
+    return comments
+
+
+def item_comments_from_node(imp: cst.ImportAlias) -> ImportItemComments:
+    comments = ImportItemComments()
+
+    if isinstance(imp.comma, cst.Comma):
+        if (
+            isinstance(imp.comma.whitespace_before, cst.ParenthesizedWhitespace)
+            and imp.comma.whitespace_before.first_line.comment
+        ):
+            # from a import (
+            #   b  # THIS PART
+            #   ,
+            # )
+            comments.inline.extend(
+                split_inline_comment(
+                    imp.comma.whitespace_before.first_line.comment.value
+                )
+            )
+
+        ws = cst.ensure_type(imp.comma.whitespace_after, cst.ParenthesizedWhitespace)
+        if ws.first_line.comment:
+            # from a import (
+            #   b,  # THIS PART
+            # )
+            comments.inline.extend(split_inline_comment(ws.first_line.comment.value))
+
+        # from a import (
+        #   b,
+        #   # THIS PART
+        #   c,  # (but only if it's not the last item)
+        # )
+        comments.following.extend(
+            line.comment.value for line in ws.empty_lines if line.comment
+        )
+
+    return comments
+
+
+def item_from_node(
+    node: cst.ImportAlias, directive_comments: Sequence[str] = ()
+) -> SortableImportItem:
+    name = with_dots(node.name)
+    asname = with_dots(node.asname.name) if node.asname else ""
+
+    comments = ImportItemComments()
+
+    if (
+        isinstance(node.comma, cst.Comma)
+        and isinstance(node.comma.whitespace_after, cst.ParenthesizedWhitespace)
+        and node.comma.whitespace_after.first_line.comment
+    ):
+        comments.inline.extend(
+            split_inline_comment(node.comma.whitespace_after.first_line.comment.value)
+        )
+
+    return SortableImportItem(name=name, asname=asname, comments=comments)
 
 
 def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableImport:
-    # TODO: This duplicates (differently) what's in the LibCST import
-    # metadata visitor.  This is also a bit hard to read.
-    first_module: Optional[str] = None
-    first_dotted_import: Optional[str] = None
-    names: Dict[str, str] = {}
-    sort_key: Optional[str] = None
+    # TODO: This duplicates (differently) what's in the LibCST import metadata visitor.
+
+    stem: Optional[str] = None
+    items: List[SortableImportItem] = []
+    comments = import_comments_from_node(node)
 
     # There are 4 basic types of import
     # Additionally some forms z can have leading dots for relative
@@ -27,16 +165,7 @@ def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableI
     if isinstance(node.body[0], cst.Import):
         # import z
         # import z as y
-        for name in node.body[0].names:
-            if name.asname:
-                names[with_dots(name.asname.name).split(".")[0]] = with_dots(name.name)
-            else:
-                tmp = with_dots(name.name).split(".")[0]
-                names[tmp] = tmp
-
-            if first_module is None:
-                first_module = with_dots(name.name)
-                first_dotted_import = first_module
+        items = [item_from_node(name) for name in node.body[0].names]
 
     elif isinstance(node.body[0], cst.ImportFrom):
         # from z import x
@@ -45,48 +174,120 @@ def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableI
         # This is treated as a barrier and should never get this far.
         assert not isinstance(node.body[0].names, cst.ImportStar)
 
-        if node.body[0].module is None:
-            # from . import foo [as bar]
-            # (won't have dots but with_dots makes the typing easier)
-            sort_key = with_dots(node.body[0].names[0].name)
-            name_key = sort_key
-        else:
-            # from x import foo [as bar]
-            sort_key = with_dots(node.body[0].module)
-            name_key = sort_key + "."
+        stem = with_dots(node.body[0].module) if node.body[0].module else ""
 
         if node.body[0].relative:
-            first_dotted_import = sort_key
-            sort_key = "." * len(node.body[0].relative)
-            if node.body[0].module is not None:
-                sort_key += first_dotted_import
-            name_key = sort_key
-            if node.body[0].module is not None:
-                name_key += "."
+            stem = "." * len(node.body[0].relative) + stem
 
-        if first_module is None:
-            first_module = sort_key
-            if first_dotted_import is None:
-                for alias in node.body[0].names:
-                    first_dotted_import = with_dots(alias.name)
-                    break
+        for name in node.body[0].names:
+            items.append(item_from_node(name, comments.initial))
+            comments.initial = []
 
-        for alias in node.body[0].names:
-            if alias.asname:
-                assert isinstance(alias.asname.name, cst.Name)
-                names[alias.asname.name.value] = name_key + with_dots(alias.name)
-            else:
-                assert isinstance(alias.name, cst.Name)
-                names[alias.name.value] = name_key + alias.name.value
     else:
         raise TypeError
 
-    assert first_module is not None
-    assert first_dotted_import is not None
     return SortableImport(
-        node=node,
-        first_module=first_module,
-        first_dotted_import=first_dotted_import,
-        imported_names=names,
+        stem=stem,
+        items=items,
+        comments=comments,
         config=config,
+        node=node,
     )
+
+
+def import_to_node(
+    imp: SortableImport, module: cst.Module, config: Config
+) -> cst.BaseStatement:
+    width = 88  # TODO: get width from tool.black
+    node = import_to_node_single(imp, module)
+    content = render_node(node, module)
+    if len(content) > width:
+        node = import_to_node_multi(imp, module)
+    return node
+
+
+def import_to_node_single(imp: SortableImport, module: cst.Module) -> cst.BaseStatement:
+    trailing_whitespace = cst.TrailingWhitespace()
+    leading_lines = [
+        cst.EmptyLine(comment=(cst.Comment(line) if line.startswith("#") else None))
+        for line in imp.comments.before
+    ]
+
+    if imp.comments.first_inline or imp.comments.last_inline:
+        text = " ".join(imp.comments.first_inline + imp.comments.last_inline)
+        trailing_whitespace = cst.TrailingWhitespace(
+            whitespace=cst.SimpleWhitespace("  "), comment=cst.Comment(text)
+        )
+
+    names: List[cst.ImportAlias] = []
+    for item in imp.items:
+        name = name_to_node(item.name)
+        asname = cst.AsName(name=cst.Name(item.asname)) if item.asname else None
+        node = cst.ImportAlias(name=name, asname=asname)
+        names.append(node)
+
+    if imp.stem:
+        stem, ndots = split_relative(imp.stem)
+        if not stem:
+            module_name = None
+        else:
+            module_name = name_to_node(stem)
+        relative = (cst.Dot(),) * ndots
+
+        line = cst.SimpleStatementLine(
+            body=[cst.ImportFrom(module=module_name, names=names, relative=relative)],
+            leading_lines=leading_lines,
+            trailing_whitespace=trailing_whitespace,
+        )
+
+    else:
+        line = cst.SimpleStatementLine(
+            body=[cst.Import(names=names)],
+            leading_lines=leading_lines,
+            trailing_whitespace=trailing_whitespace,
+        )
+
+    return line
+
+
+def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseStatement:
+    leading_lines: List[cst.EmptyLine] = []
+
+    names: List[cst.ImportAlias] = []
+    for item in imp.items:
+        name = name_to_node(item.name)
+        asname = cst.AsName(name=cst.Name(item.asname)) if item.asname else None
+        node = cst.ImportAlias(
+            name=name,
+            asname=asname,
+            comma=cst.Comma(whitespace_after=cst.ParenthesizedWhitespace()),
+        )
+        names.append(node)
+
+    if imp.stem:
+        stem, ndots = split_relative(imp.stem)
+        if not stem:
+            module_name = None
+        else:
+            module_name = name_to_node(stem)
+        relative = (cst.Dot(),) * ndots
+
+        line = cst.SimpleStatementLine(
+            body=[
+                cst.ImportFrom(
+                    module=module_name,
+                    names=names,
+                    relative=relative,
+                    lpar=cst.LeftParen(whitespace_after=cst.ParenthesizedWhitespace()),
+                    rpar=cst.RightParen(),
+                )
+            ],
+            leading_lines=leading_lines,
+        )
+
+    else:
+        line = cst.SimpleStatementLine(
+            body=[cst.Import(names=names)], leading_lines=leading_lines
+        )
+
+    return line

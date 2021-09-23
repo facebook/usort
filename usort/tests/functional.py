@@ -48,7 +48,12 @@ class UsortStringFunctionalTest(unittest.TestCase):
         before = dedent(before)
         after = dedent(after)
         config = config or DEFAULT_CONFIG
-        self.assertEqual(after, usort_string(before, config))
+        result = usort_string(before, config)
+        if result != after:
+            self.fail(
+                "µsort result did not match expected value:\n\n"
+                f"Expected:\n---------\n{after}\nResult:\n-------\n{result}"
+            )
 
     def test_sort_ordering(self) -> None:
         # This only tests ordering, not any of the comment or whitespace
@@ -302,6 +307,46 @@ numpy = ["numpy", "pandas"]
             import c
         """
         self.assertUsortResult(content, content)
+
+    def test_multi_line_collapse(self) -> None:
+        self.assertUsortResult(
+            """
+                from foo import (
+                    bar,
+                    baz,
+                )
+            """,
+            """
+                from foo import bar, baz
+            """,
+        )
+
+    @unittest.expectedFailure
+    def test_multi_line_expand(self) -> None:
+        with self.subTest("top level"):
+            self.assertUsortResult(
+                """
+                    from really_absurdly_long_python_module_name.insanely_long_submodule_name import SomeReallyObnoxiousCamelCaseClass
+                """,
+                """
+                    from really_absurdly_long_python_module_name.insanely_long_submodule_name import (
+                        SomeReallyObnoxiousCamelCaseClass,
+                    )
+                """,
+            )
+        with self.subTest("inside block"):
+            self.assertUsortResult(
+                """
+                    def foo():
+                        from really_absurdly_long_python_module_name.insanely_long_submodule_name import SomeReallyObnoxiousCamelCaseClass
+                """,
+                """
+                    def foo():
+                        from really_absurdly_long_python_module_name.insanely_long_submodule_name import (
+                            SomeReallyObnoxiousCamelCaseClass,
+                        )
+                """,
+            )
 
 
 if __name__ == "__main__":
