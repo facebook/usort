@@ -9,6 +9,8 @@ import libcst as cst
 
 from .config import Config
 from .types import (
+    BLOCK_INDENT,
+    COMMENT_INDENT,
     ImportComments,
     ImportItemComments,
     SortableImport,
@@ -246,9 +248,9 @@ def import_to_node_single(imp: SortableImport, module: cst.Module) -> cst.BaseSt
 
     trailing_comments += imp.comments.last_inline
     if trailing_comments:
-        text = "  ".join(trailing_comments)
+        text = COMMENT_INDENT.join(trailing_comments)
         trailing_whitespace = cst.TrailingWhitespace(
-            whitespace=cst.SimpleWhitespace("  "), comment=cst.Comment(text)
+            whitespace=cst.SimpleWhitespace(COMMENT_INDENT), comment=cst.Comment(text)
         )
 
     if imp.stem:
@@ -293,7 +295,7 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
                 cst.EmptyLine(
                     indent=True,
                     comment=cst.Comment(c),
-                    whitespace=cst.SimpleWhitespace("    "),
+                    whitespace=cst.SimpleWhitespace(BLOCK_INDENT),
                 )
                 for c in item.comments.before
             ]
@@ -306,10 +308,11 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
         indent = idx != (len(imp.items) - 1)
 
         first_line = cst.TrailingWhitespace()
-        inline = "  ".join(item.comments.inline)
+        inline = COMMENT_INDENT.join(item.comments.inline)
         if inline:
             first_line = cst.TrailingWhitespace(
-                whitespace=cst.SimpleWhitespace("  "), comment=cst.Comment(inline)
+                whitespace=cst.SimpleWhitespace(COMMENT_INDENT),
+                comment=cst.Comment(inline),
             )
 
         after = cst.ParenthesizedWhitespace(
@@ -319,11 +322,11 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
                 cst.EmptyLine(
                     indent=True,
                     comment=cst.Comment(c),
-                    whitespace=cst.SimpleWhitespace("    "),
+                    whitespace=cst.SimpleWhitespace(BLOCK_INDENT),
                 )
                 for c in item.comments.following
             ],
-            last_line=cst.SimpleWhitespace("    " if indent else ""),
+            last_line=cst.SimpleWhitespace(BLOCK_INDENT if indent else ""),
         )
 
         node = cst.ImportAlias(
@@ -347,9 +350,10 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
 
         # inline comment following lparen
         if imp.comments.first_inline:
-            inline = "  ".join(imp.comments.first_inline)
+            inline = COMMENT_INDENT.join(imp.comments.first_inline)
             lpar_inline = cst.TrailingWhitespace(
-                whitespace=cst.SimpleWhitespace("  "), comment=cst.Comment(inline)
+                whitespace=cst.SimpleWhitespace(COMMENT_INDENT),
+                comment=cst.Comment(inline),
             )
 
         body = [
@@ -362,7 +366,7 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
                         indent=True,
                         first_line=lpar_inline,
                         empty_lines=lpar_lines,
-                        last_line=cst.SimpleWhitespace("    "),
+                        last_line=cst.SimpleWhitespace(BLOCK_INDENT),
                     ),
                 ),
                 rpar=cst.RightParen(),
@@ -380,9 +384,9 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
 
     # inline comments following import/rparen
     if imp.comments.last_inline:
-        inline = "  ".join(imp.comments.last_inline)
+        inline = COMMENT_INDENT.join(imp.comments.last_inline)
         trailing = cst.TrailingWhitespace(
-            whitespace=cst.SimpleWhitespace("  "), comment=cst.Comment(inline)
+            whitespace=cst.SimpleWhitespace(COMMENT_INDENT), comment=cst.Comment(inline)
         )
     else:
         trailing = cst.TrailingWhitespace()
