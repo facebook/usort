@@ -52,7 +52,7 @@ class UsortStringFunctionalTest(unittest.TestCase):
         if result != after:
             self.fail(
                 "µsort result did not match expected value:\n\n"
-                f"Expected:\n---------\n{after}\nResult:\n-------\n{result}"
+                f"Before:\n-------\n{before}\nExpected:\n---------\n{after}\nResult:\n-------\n{result}"
             )
 
     def test_sort_ordering(self) -> None:
@@ -308,45 +308,85 @@ numpy = ["numpy", "pandas"]
         """
         self.assertUsortResult(content, content)
 
+    @unittest.expectedFailure
+    def test_multi_line_maintain(self) -> None:
+        self.assertUsortResult(
+            """
+                from fuzz import buzz
+                # one
+                from foo import (  # two
+                    # three
+                    bar,  # four
+                    # five
+                    baz # six
+                    , # seven
+                    # eight
+                )  # nine
+                # ten
+            """,
+            """
+                # one
+                from foo import (  # two
+                    # three
+                    bar,  # four
+                    # five
+                    baz,  # six  # seven
+                    # eight
+                )  # nine
+                from fuzz import buzz
+                # ten
+            """,
+        )
+
     def test_multi_line_collapse(self) -> None:
         self.assertUsortResult(
             """
-                from foo import (
-                    bar,
-                    baz,
-                )
+                from fuzz import buzz
+                # 1
+                from foo import (  # 2
+                    # 3
+                    bar,  # 4
+                    # 5
+                    baz # 6
+                    , # 7
+                )  # 8
+                # 9
             """,
             """
-                from foo import bar, baz
+                # 1
+                from foo import bar, baz  # 2  # 3  # 4  # 5  # 6  # 7  # 8
+                from fuzz import buzz
+                # 9
             """,
         )
 
     @unittest.expectedFailure
-    def test_multi_line_expand(self) -> None:
-        with self.subTest("top level"):
-            self.assertUsortResult(
-                """
+    def test_multi_line_expand_top_level(self) -> None:
+        self.assertUsortResult(
+            """
+                from really_absurdly_long_python_module_name.insanely_long_submodule_name import SomeReallyObnoxiousCamelCaseClass
+            """,
+            """
+                from really_absurdly_long_python_module_name.insanely_long_submodule_name import (
+                    SomeReallyObnoxiousCamelCaseClass,
+                )
+            """,
+        )
+
+    @unittest.expectedFailure
+    def test_multi_line_expand_function(self) -> None:
+        self.assertUsortResult(
+            """
+                def foo():
                     from really_absurdly_long_python_module_name.insanely_long_submodule_name import SomeReallyObnoxiousCamelCaseClass
-                """,
-                """
+            """,
+            """
+                def foo():
                     from really_absurdly_long_python_module_name.insanely_long_submodule_name import (
                         SomeReallyObnoxiousCamelCaseClass,
                     )
-                """,
-            )
-        with self.subTest("inside block"):
-            self.assertUsortResult(
-                """
-                    def foo():
-                        from really_absurdly_long_python_module_name.insanely_long_submodule_name import SomeReallyObnoxiousCamelCaseClass
-                """,
-                """
-                    def foo():
-                        from really_absurdly_long_python_module_name.insanely_long_submodule_name import (
-                            SomeReallyObnoxiousCamelCaseClass,
-                        )
-                """,
-            )
+            """,
+        )
 
 
 if __name__ == "__main__":

@@ -39,6 +39,11 @@ def import_comments_from_node(node: cst.SimpleStatementLine) -> ImportComments:
     assert isinstance(node.body[0], (cst.Import, cst.ImportFrom))
     imp: Union[cst.Import, cst.ImportFrom] = node.body[0]
 
+    # # THIS PART
+    # import foo
+    #
+    # # THIS PART
+    # from foo import bar
     for line in node.leading_lines:
         if line.comment:
             comments.before.append(line.comment.value)
@@ -47,12 +52,19 @@ def import_comments_from_node(node: cst.SimpleStatementLine) -> ImportComments:
 
     if isinstance(imp, cst.ImportFrom):
         if imp.lpar:
+            # from foo import (  # THIS PART
+            #     bar,
+            # )
             ws = cst.ensure_type(imp.lpar.whitespace_after, cst.ParenthesizedWhitespace)
             if ws.first_line.comment:
                 comments.first_inline.extend(
                     split_inline_comment(ws.first_line.comment.value)
                 )
 
+            # from foo import (
+            #     # THIS PART
+            #     bar,
+            # )
             comments.initial.extend(
                 line.comment.value for line in ws.empty_lines if line.comment
             )
@@ -72,16 +84,21 @@ def import_comments_from_node(node: cst.SimpleStatementLine) -> ImportComments:
                         )
                     )
 
+            # from foo import (
+            #     bar,
+            # )  # THIS PART
             if node.trailing_whitespace and node.trailing_whitespace.comment:
                 comments.last_inline.extend(
                     split_inline_comment(node.trailing_whitespace.comment.value)
                 )
 
+        # from foo import bar  # THIS PART
         elif node.trailing_whitespace and node.trailing_whitespace.comment:
             comments.first_inline.extend(
                 split_inline_comment(node.trailing_whitespace.comment.value)
             )
 
+    # import foo  # THIS PART
     elif isinstance(imp, cst.Import):
         if node.trailing_whitespace and node.trailing_whitespace.comment:
             comments.first_inline.extend(
@@ -94,59 +111,49 @@ def import_comments_from_node(node: cst.SimpleStatementLine) -> ImportComments:
     return comments
 
 
-def item_comments_from_node(imp: cst.ImportAlias) -> ImportItemComments:
-    comments = ImportItemComments()
-
-    if isinstance(imp.comma, cst.Comma):
-        if (
-            isinstance(imp.comma.whitespace_before, cst.ParenthesizedWhitespace)
-            and imp.comma.whitespace_before.first_line.comment
-        ):
-            # from a import (
-            #   b  # THIS PART
-            #   ,
-            # )
-            comments.inline.extend(
-                split_inline_comment(
-                    imp.comma.whitespace_before.first_line.comment.value
-                )
-            )
-
-        ws = cst.ensure_type(imp.comma.whitespace_after, cst.ParenthesizedWhitespace)
-        if ws.first_line.comment:
-            # from a import (
-            #   b,  # THIS PART
-            # )
-            comments.inline.extend(split_inline_comment(ws.first_line.comment.value))
-
-        # from a import (
-        #   b,
-        #   # THIS PART
-        #   c,  # (but only if it's not the last item)
-        # )
-        comments.following.extend(
-            line.comment.value for line in ws.empty_lines if line.comment
-        )
-
-    return comments
-
-
 def item_from_node(
-    node: cst.ImportAlias, directive_comments: Sequence[str] = ()
+    node: cst.ImportAlias, before: Sequence[str] = ()
 ) -> SortableImportItem:
     name = with_dots(node.name)
     asname = with_dots(node.asname.name) if node.asname else ""
-
     comments = ImportItemComments()
+    comments.before.extend(before)
 
-    if (
-        isinstance(node.comma, cst.Comma)
-        and isinstance(node.comma.whitespace_after, cst.ParenthesizedWhitespace)
-        and node.comma.whitespace_after.first_line.comment
-    ):
-        comments.inline.extend(
-            split_inline_comment(node.comma.whitespace_after.first_line.comment.value)
-        )
+    if isinstance(node.comma, cst.Comma):
+        if (
+            isinstance(node.comma.whitespace_before, cst.ParenthesizedWhitespace)
+            and node.comma.whitespace_before.first_line.comment
+        ):
+            # from foo import (
+            #     bar  # THIS PART
+            #     ,
+            # )
+            comments.inline.extend(
+                split_inline_comment(
+                    node.comma.whitespace_before.first_line.comment.value
+                )
+            )
+
+        if isinstance(node.comma.whitespace_after, cst.ParenthesizedWhitespace):
+            ws = cst.ensure_type(
+                node.comma.whitespace_after, cst.ParenthesizedWhitespace
+            )
+            if ws.first_line.comment:
+                # from foo import (
+                #     baz,  # THIS PART
+                # )
+                comments.inline.extend(
+                    split_inline_comment(ws.first_line.comment.value)
+                )
+
+            # from a import (
+            #   b,
+            #   # THIS PART
+            #   c,  # (but only if it's not the last item)
+            # )
+            comments.following.extend(
+                line.comment.value for line in ws.empty_lines if line.comment
+            )
 
     return SortableImportItem(name=name, asname=asname, comments=comments)
 
@@ -207,17 +214,13 @@ def import_to_node(
 
 
 def import_to_node_single(imp: SortableImport, module: cst.Module) -> cst.BaseStatement:
-    trailing_whitespace = cst.TrailingWhitespace()
     leading_lines = [
         cst.EmptyLine(comment=(cst.Comment(line) if line.startswith("#") else None))
         for line in imp.comments.before
     ]
 
-    if imp.comments.first_inline or imp.comments.last_inline:
-        text = " ".join(imp.comments.first_inline + imp.comments.last_inline)
-        trailing_whitespace = cst.TrailingWhitespace(
-            whitespace=cst.SimpleWhitespace("  "), comment=cst.Comment(text)
-        )
+    trailing_whitespace = cst.TrailingWhitespace()
+    trailing_comments = list(imp.comments.first_inline)
 
     names: List[cst.ImportAlias] = []
     for item in imp.items:
@@ -225,6 +228,16 @@ def import_to_node_single(imp: SortableImport, module: cst.Module) -> cst.BaseSt
         asname = cst.AsName(name=cst.Name(item.asname)) if item.asname else None
         node = cst.ImportAlias(name=name, asname=asname)
         names.append(node)
+        trailing_comments += item.comments.before
+        trailing_comments += item.comments.inline
+        trailing_comments += item.comments.following
+
+    trailing_comments += imp.comments.last_inline
+    if trailing_comments:
+        text = "  ".join(trailing_comments)
+        trailing_whitespace = cst.TrailingWhitespace(
+            whitespace=cst.SimpleWhitespace("  "), comment=cst.Comment(text)
+        )
 
     if imp.stem:
         stem, ndots = split_relative(imp.stem)
@@ -260,7 +273,7 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
         node = cst.ImportAlias(
             name=name,
             asname=asname,
-            comma=cst.Comma(whitespace_after=cst.ParenthesizedWhitespace()),
+            comma=cst.Comma(whitespace_after=cst.ParenthesizedWhitespace(indent=True)),
         )
         names.append(node)
 

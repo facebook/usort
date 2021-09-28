@@ -34,6 +34,7 @@ class Result:
 
 @dataclass
 class ImportItemComments:
+    before: List[str] = field(factory=list)
     inline: List[str] = field(factory=list)
     following: List[str] = field(factory=list)
 
