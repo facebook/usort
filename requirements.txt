@@ -1,4 +1,4 @@
-LibCST>=0.3.6
-stdlibs>=2021.4.1
-moreorless>=0.3.0
-toml>=0.10.0
+LibCST==0.3.21
+stdlibs==2021.4.1
+moreorless==0.4.0
+toml==0.10.2

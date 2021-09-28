@@ -12,6 +12,14 @@ except ImportError:
 
 from .api import usort_bytes, usort_path, usort_stdin, usort_string
 
+__all__ = [
+    "__version__",
+    "usort_bytes",
+    "usort_path",
+    "usort_stdin",
+    "usort_string",
+]
+
 # DEPRECATED: preserve old api, will be removed by 1.0
 from . import sorting  # usort:skip
 
