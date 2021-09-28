@@ -13,7 +13,7 @@ clean:
 
 .PHONY: distclean
 distclean:
-	rm -rf .venv
+	rm -rf .venv .mypy_cache .coverage
 
 # The rest of these are intended to be run within the venv, where python points
 # to whatever was used to set up the venv.
@@ -28,7 +28,7 @@ setup:
 test:
 	python -m coverage run -m usort.tests $(TESTOPTS)
 	python -m coverage report
-	python -m mypy --strict usort
+	python -m mypy --strict usort --install-types --non-interactive
 
 .PHONY: format
 format:
