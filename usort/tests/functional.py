@@ -308,7 +308,6 @@ numpy = ["numpy", "pandas"]
         """
         self.assertUsortResult(content, content)
 
-    @unittest.expectedFailure
     def test_multi_line_maintain(self) -> None:
         self.assertUsortResult(
             """
@@ -338,6 +337,37 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_multi_line_maintain_inner(self) -> None:
+        self.assertUsortResult(
+            """
+                def foo():
+                    from fuzz import buzz
+                    # one
+                    from foo import (  # two
+                        # three
+                        bar,  # four
+                        # five
+                        baz # six
+                        , # seven
+                        # eight
+                    )  # nine
+                    # ten
+            """,
+            """
+                def foo():
+                    # one
+                    from foo import (  # two
+                        # three
+                        bar,  # four
+                        # five
+                        baz,  # six  # seven
+                        # eight
+                    )  # nine
+                    from fuzz import buzz
+                    # ten
+            """,
+        )
+
     def test_multi_line_collapse(self) -> None:
         self.assertUsortResult(
             """
@@ -360,7 +390,30 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
-    @unittest.expectedFailure
+    def test_multi_line_collapse_inner(self) -> None:
+        self.assertUsortResult(
+            """
+                def foo():
+                    from fuzz import buzz
+                    # 1
+                    from foo import (  # 2
+                        # 3
+                        bar,  # 4
+                        # 5
+                        baz # 6
+                        , # 7
+                    )  # 8
+                    # 9
+            """,
+            """
+                def foo():
+                    # 1
+                    from foo import bar, baz  # 2  # 3  # 4  # 5  # 6  # 7  # 8
+                    from fuzz import buzz
+                    # 9
+            """,
+        )
+
     def test_multi_line_expand_top_level(self) -> None:
         self.assertUsortResult(
             """
@@ -373,7 +426,6 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
-    @unittest.expectedFailure
     def test_multi_line_expand_function(self) -> None:
         self.assertUsortResult(
             """
@@ -385,6 +437,28 @@ numpy = ["numpy", "pandas"]
                     from really_absurdly_long_python_module_name.insanely_long_submodule_name import (
                         SomeReallyObnoxiousCamelCaseClass,
                     )
+            """,
+        )
+
+    def test_multi_line_expand_inner_function(self) -> None:
+        self.assertUsortResult(
+            """
+                def foo():
+                    import b
+                    import a
+
+                    def bar():
+                        from really_absurdly_long_python_module_name.insanely_long_submodule_name import SomeReallyObnoxiousCamelCaseClass
+            """,
+            """
+                def foo():
+                    import a
+                    import b
+
+                    def bar():
+                        from really_absurdly_long_python_module_name.insanely_long_submodule_name import (
+                            SomeReallyObnoxiousCamelCaseClass,
+                        )
             """,
         )
 

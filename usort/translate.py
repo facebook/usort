@@ -193,13 +193,23 @@ def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableI
     else:
         raise TypeError
 
-    return SortableImport(
+    # assume that "following" comments are actually meant for an item after that
+    prev: Optional[SortableImportItem] = None
+    for item in items:
+        if prev is not None and prev.comments.following:
+            item.comments.before.extend(prev.comments.following)
+            prev.comments.following.clear()
+        prev = item
+
+    imp = SortableImport(
         stem=stem,
         items=items,
         comments=comments,
         config=config,
         node=node,
+        indent="",
     )
+    return imp
 
 
 def import_to_node(
@@ -215,7 +225,9 @@ def import_to_node(
 
 def import_to_node_single(imp: SortableImport, module: cst.Module) -> cst.BaseStatement:
     leading_lines = [
-        cst.EmptyLine(comment=(cst.Comment(line) if line.startswith("#") else None))
+        cst.EmptyLine(
+            indent=True, comment=(cst.Comment(line) if line.startswith("#") else None)
+        )
         for line in imp.comments.before
     ]
 
@@ -264,19 +276,67 @@ def import_to_node_single(imp: SortableImport, module: cst.Module) -> cst.BaseSt
 
 
 def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseStatement:
-    leading_lines: List[cst.EmptyLine] = []
-
+    body: List[cst.BaseSmallStatement] = []
     names: List[cst.ImportAlias] = []
-    for item in imp.items:
+    prev: Optional[cst.ImportAlias] = None
+    lpar_lines: List[cst.EmptyLine] = []
+    lpar_inline: cst.TrailingWhitespace = cst.TrailingWhitespace()
+
+    for idx, item in enumerate(imp.items):
         name = name_to_node(item.name)
         asname = cst.AsName(name=cst.Name(item.asname)) if item.asname else None
+
+        # Leading comments actually have to be trailing comments on the previous node.
+        # That means putting them on the lpar node for the first item
+        if item.comments.before:
+            lines = [
+                cst.EmptyLine(
+                    indent=True,
+                    comment=cst.Comment(c),
+                    whitespace=cst.SimpleWhitespace("    "),
+                )
+                for c in item.comments.before
+            ]
+            if prev is None:
+                lpar_lines.extend(lines)
+            else:
+                prev.comma.whitespace_after.empty_lines.extend(lines)  # type: ignore
+
+        # all items except the last needs whitespace to indent the *next* line/item
+        indent = idx != (len(imp.items) - 1)
+
+        first_line = cst.TrailingWhitespace()
+        inline = "  ".join(item.comments.inline)
+        if inline:
+            first_line = cst.TrailingWhitespace(
+                whitespace=cst.SimpleWhitespace("  "), comment=cst.Comment(inline)
+            )
+
+        after = cst.ParenthesizedWhitespace(
+            indent=True,
+            first_line=first_line,
+            empty_lines=[
+                cst.EmptyLine(
+                    indent=True,
+                    comment=cst.Comment(c),
+                    whitespace=cst.SimpleWhitespace("    "),
+                )
+                for c in item.comments.following
+            ],
+            last_line=cst.SimpleWhitespace("    " if indent else ""),
+        )
+
         node = cst.ImportAlias(
             name=name,
             asname=asname,
-            comma=cst.Comma(whitespace_after=cst.ParenthesizedWhitespace(indent=True)),
+            comma=cst.Comma(whitespace_after=after),
         )
         names.append(node)
+        prev = node
 
+    # from foo import (
+    #     bar
+    # )
     if imp.stem:
         stem, ndots = split_relative(imp.stem)
         if not stem:
@@ -285,22 +345,50 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
             module_name = name_to_node(stem)
         relative = (cst.Dot(),) * ndots
 
-        line = cst.SimpleStatementLine(
-            body=[
-                cst.ImportFrom(
-                    module=module_name,
-                    names=names,
-                    relative=relative,
-                    lpar=cst.LeftParen(whitespace_after=cst.ParenthesizedWhitespace()),
-                    rpar=cst.RightParen(),
-                )
-            ],
-            leading_lines=leading_lines,
-        )
+        # inline comment following lparen
+        if imp.comments.first_inline:
+            inline = "  ".join(imp.comments.first_inline)
+            lpar_inline = cst.TrailingWhitespace(
+                whitespace=cst.SimpleWhitespace("  "), comment=cst.Comment(inline)
+            )
 
+        body = [
+            cst.ImportFrom(
+                module=module_name,
+                names=names,
+                relative=relative,
+                lpar=cst.LeftParen(
+                    whitespace_after=cst.ParenthesizedWhitespace(
+                        indent=True,
+                        first_line=lpar_inline,
+                        empty_lines=lpar_lines,
+                        last_line=cst.SimpleWhitespace("    "),
+                    ),
+                ),
+                rpar=cst.RightParen(),
+            )
+        ]
+
+    # import foo
     else:
-        line = cst.SimpleStatementLine(
-            body=[cst.Import(names=names)], leading_lines=leading_lines
-        )
+        body = [cst.Import(names=names)]
 
-    return line
+    # comment lines above import
+    leading_lines: List[cst.EmptyLine] = [
+        cst.EmptyLine(indent=True, comment=cst.Comment(c)) for c in imp.comments.before
+    ]
+
+    # inline comments following import/rparen
+    if imp.comments.last_inline:
+        inline = "  ".join(imp.comments.last_inline)
+        trailing = cst.TrailingWhitespace(
+            whitespace=cst.SimpleWhitespace("  "), comment=cst.Comment(inline)
+        )
+    else:
+        trailing = cst.TrailingWhitespace()
+
+    return cst.SimpleStatementLine(
+        body=body,
+        leading_lines=leading_lines,
+        trailing_whitespace=trailing,
+    )

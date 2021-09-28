@@ -69,10 +69,12 @@ class SortableImport:
     sort_key: SortKey = field(init=False)
     stem: Optional[str] = field(order=case_insensitive_ordering)  # "from" imports
     items: Sequence[SortableImportItem] = field()
-    comments: ImportComments = field()
-
+    comments: ImportComments = field(order=False)
+    indent: str = field(order=False)
     config: Config = field(order=False, factory=Config)
-    node: cst.CSTNode = field(factory=cst.EmptyLine)  # for cli/debugging only
+
+    # for cli/debugging only
+    node: cst.CSTNode = field(order=False, factory=cst.EmptyLine)
 
     def __repr__(self) -> str:  # pragma: nocover
         items = indent(("\n".join(f"{item!r}," for item in self.items)), "        ")
@@ -86,6 +88,7 @@ class SortableImport:
             {items}
                 ],
                 comments = {comments!r},
+                indent = {indent!r},
             )
             """
             )
@@ -95,6 +98,7 @@ class SortableImport:
                 stem=self.stem,
                 items=items,
                 comments=self.comments,
+                indent=self.indent,
             )
         )
 
