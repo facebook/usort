@@ -62,7 +62,6 @@ class SortKey:
     category_index: int
     is_from_import: bool
     ndots: int
-    module: str
 
 
 @dataclass(order=True)
@@ -84,21 +83,21 @@ class SortableImport:
     # for cli/debugging only
     node: cst.CSTNode = field(order=False, factory=cst.EmptyLine)
 
-    def __repr__(self) -> str:  # pragma: nocover
+    def __repr__(self) -> str:
         items = indent(("\n".join(f"{item!r}," for item in self.items)), "        ")
         return (
             dedent(
                 """
-            SortableImport(
-                # sort_key = {sort_key!r},
-                stem = {stem!r},
-                items = [
-            {items}
-                ],
-                comments = {comments!r},
-                indent = {indent!r},
-            )
-            """
+                    SortableImport(
+                        # sort_key = {sort_key!r},
+                        stem = {stem!r},
+                        items = [
+                    {items}
+                        ],
+                        comments = {comments!r},
+                        indent = {indent!r},
+                    )
+                """
             )
             .strip()
             .format(
@@ -144,7 +143,6 @@ class SortableImport:
             category_index=self.config.categories.index(category),
             is_from_import=bool(self.stem),
             ndots=ndots,
-            module="",
         )
 
 
@@ -156,19 +154,19 @@ class SortableBlock:
     imports: List[SortableImport] = field(factory=list)
     imported_names: Dict[str, str] = field(factory=dict)
 
-    def __repr__(self) -> str:  # pragma: nocover
+    def __repr__(self) -> str:
         imports = indent("\n".join(f"{imp!r}," for imp in self.imports), "        ")
         return (
             dedent(
                 """
-            SortableBlock(
-                start_idx = {start_idx!r},
-                end_idx = {end_idx!r},
-                imports = [
-            {imports}
-                ],
-            )
-            """
+                    SortableBlock(
+                        start_idx = {start_idx!r},
+                        end_idx = {end_idx!r},
+                        imports = [
+                    {imports}
+                        ],
+                    )
+                """
             )
             .strip()
             .format(start_idx=self.start_idx, end_idx=self.end_idx, imports=imports)

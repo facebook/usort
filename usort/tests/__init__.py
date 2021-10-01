@@ -8,6 +8,7 @@ from .config import ConfigTest
 from .functional import BasicOrderingTest, UsortStringFunctionalTest
 from .stdlibs import StdlibsTest
 from .translate import IsSortableTest, SortableImportTest
+from .types import TypesTest
 from .util import UtilTest
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "IsSortableTest",
     "SortableImportTest",
     "StdlibsTest",
+    "TypesTest",
     "UtilTest",
 ]
