@@ -24,6 +24,11 @@ def case_insensitive_ordering(text: Optional[str]) -> Optional[str]:
 
 
 @dataclass
+class Options:
+    debug: bool
+
+
+@dataclass
 class Result:
     path: Path
     content: bytes
@@ -32,6 +37,7 @@ class Result:
     # parse.
     encoding: Optional[str] = None
     error: Optional[Exception] = None
+    trace: str = ""
     timings: Sequence[Timing] = ()
 
 

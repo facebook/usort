@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import sys
+import traceback
 from functools import partial
 from pathlib import Path
 from typing import Iterable, Optional, Tuple
@@ -72,7 +73,10 @@ def usort_file(path: Path, *, write: bool = False) -> Result:
         )
 
     except Exception as e:
-        return Result(path=path, content=data, error=e, timings=get_timings())
+        trace = "".join(traceback.format_exception(*sys.exc_info()))
+        return Result(
+            path=path, content=data, error=e, trace=trace, timings=get_timings()
+        )
 
 
 def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:

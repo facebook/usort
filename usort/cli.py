@@ -17,6 +17,7 @@ from . import __version__
 from .api import usort_path, usort_stdin
 from .config import Config
 from .sorting import sortable_blocks
+from .types import Options
 from .util import get_timings, print_timings, try_parse, Timing
 
 BENCHMARK = False
@@ -43,11 +44,15 @@ def usort_command(fn: Callable[..., int]) -> Callable[..., None]:
 
 
 @click.group()
+@click.pass_context
 @click.version_option(__version__, "--version", "-V")
+@click.option("--debug", is_flag=True, help="Enable debug output")
 @click.option("--benchmark", is_flag=True, help="Output benchmark timing info")
-def main(benchmark: bool) -> None:
+def main(ctx: click.Context, benchmark: bool, debug: bool) -> None:
     global BENCHMARK
     BENCHMARK = benchmark
+
+    ctx.obj = Options(debug=debug)
 
 
 @main.command()
@@ -123,9 +128,10 @@ def check(filenames: List[str]) -> int:
 
 
 @main.command()
+@click.pass_context
 @click.argument("filenames", nargs=-1)
 @usort_command
-def diff(filenames: List[str]) -> int:
+def diff(ctx: click.Context, filenames: List[str]) -> int:
     """
     Output diff of changes for one or more path
     """
@@ -138,7 +144,10 @@ def diff(filenames: List[str]) -> int:
         for result in usort_path(path, write=False):
             if result.error:
                 click.echo(f"Error sorting {result.path}: {result.error}")
+                if ctx.obj.debug:
+                    click.echo(result.trace)
                 return_code |= 1
+                continue
 
             if result.content != result.output:
                 assert result.encoding is not None
