@@ -6,6 +6,7 @@
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import libcst as cst
+from libcst.metadata import PositionProvider
 
 from .config import Config
 from .translate import import_from_node, import_to_node
@@ -137,7 +138,7 @@ def fixup_whitespace(
 
 
 def find_and_sort_blocks(
-    body: Sequence[cst.BaseStatement], module: cst.Module, config: Config
+    body: Sequence[cst.BaseStatement], module: cst.Module, indent: str, config: Config
 ) -> Sequence[cst.BaseStatement]:
     """
     Find all sortable blocks in a module, sort them, and return updated module content.
@@ -154,29 +155,46 @@ def find_and_sort_blocks(
 
     for block in blocks:
         sorted_body[block.start_idx : block.end_idx] = [
-            import_to_node(imp, module, config) for imp in block.imports
+            import_to_node(imp, module, indent, config) for imp in block.imports
         ]
 
     return sorted_body
 
 
 class ImportSortingTransformer(cst.CSTTransformer):
+    METADATA_DEPENDENCIES = (PositionProvider,)
+
     def __init__(self, config: Config, module: cst.Module) -> None:
         self.config = config
         self.module = module
 
+    def get_indent(self, node: cst.CSTNode) -> str:
+        pos = self.get_metadata(PositionProvider, node)
+        indent_level = pos.start.column
+        indent = self.module.default_indent[0] * indent_level
+        return indent
+
     def leave_Module(
         self, original_node: cst.Module, updated_node: cst.Module
     ) -> cst.Module:
+        indent = self.get_indent(original_node)
         sorted_body = find_and_sort_blocks(
-            updated_node.body, module=self.module, config=self.config
+            updated_node.body, module=self.module, indent=indent, config=self.config
         )
         return updated_node.with_changes(body=sorted_body)
 
     def leave_IndentedBlock(
         self, original_node: cst.IndentedBlock, updated_node: cst.IndentedBlock
     ) -> cst.BaseSuite:
+        indent = self.get_indent(original_node)
         sorted_body = find_and_sort_blocks(
-            updated_node.body, module=self.module, config=self.config
+            updated_node.body, module=self.module, indent=indent, config=self.config
         )
         return updated_node.with_changes(body=sorted_body)
+
+
+def sort_module(module: cst.Module, config: Config) -> cst.Module:
+    wrapper = cst.MetadataWrapper(module)
+    transform = ImportSortingTransformer(config, module)
+    new_module = wrapper.visit(transform)
+    return new_module

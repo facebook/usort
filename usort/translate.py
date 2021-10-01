@@ -9,7 +9,6 @@ import libcst as cst
 
 from .config import Config
 from .types import (
-    BLOCK_INDENT,
     COMMENT_INDENT,
     ImportComments,
     ImportItemComments,
@@ -215,11 +214,11 @@ def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableI
 
 
 def import_to_node(
-    imp: SortableImport, module: cst.Module, config: Config
+    imp: SortableImport, module: cst.Module, indent: str, config: Config
 ) -> cst.BaseStatement:
     width = 88  # TODO: get width from tool.black
     node = import_to_node_single(imp, module)
-    content = render_node(node, module)
+    content = indent + render_node(node, module).rstrip()
     if len(content) > width:
         node = import_to_node_multi(imp, module)
     return node
@@ -227,9 +226,9 @@ def import_to_node(
 
 def import_to_node_single(imp: SortableImport, module: cst.Module) -> cst.BaseStatement:
     leading_lines = [
-        cst.EmptyLine(
-            indent=True, comment=(cst.Comment(line) if line.startswith("#") else None)
-        )
+        cst.EmptyLine(indent=True, comment=cst.Comment(line))
+        if line.startswith("#")
+        else cst.EmptyLine(indent=False)
         for line in imp.comments.before
     ]
 
@@ -295,7 +294,7 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
                 cst.EmptyLine(
                     indent=True,
                     comment=cst.Comment(c),
-                    whitespace=cst.SimpleWhitespace(BLOCK_INDENT),
+                    whitespace=cst.SimpleWhitespace(module.default_indent),
                 )
                 for c in item.comments.before
             ]
@@ -322,11 +321,11 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
                 cst.EmptyLine(
                     indent=True,
                     comment=cst.Comment(c),
-                    whitespace=cst.SimpleWhitespace(BLOCK_INDENT),
+                    whitespace=cst.SimpleWhitespace(module.default_indent),
                 )
                 for c in item.comments.following
             ],
-            last_line=cst.SimpleWhitespace(BLOCK_INDENT if indent else ""),
+            last_line=cst.SimpleWhitespace(module.default_indent if indent else ""),
         )
 
         node = cst.ImportAlias(
@@ -366,7 +365,7 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
                         indent=True,
                         first_line=lpar_inline,
                         empty_lines=lpar_lines,
-                        last_line=cst.SimpleWhitespace(BLOCK_INDENT),
+                        last_line=cst.SimpleWhitespace(module.default_indent),
                     ),
                 ),
                 rpar=cst.RightParen(),
@@ -378,8 +377,11 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
         body = [cst.Import(names=names)]
 
     # comment lines above import
-    leading_lines: List[cst.EmptyLine] = [
-        cst.EmptyLine(indent=True, comment=cst.Comment(c)) for c in imp.comments.before
+    leading_lines = [
+        cst.EmptyLine(indent=True, comment=cst.Comment(line))
+        if line.startswith("#")
+        else cst.EmptyLine(indent=False)
+        for line in imp.comments.before
     ]
 
     # inline comments following import/rparen

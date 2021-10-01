@@ -12,7 +12,7 @@ from typing import Iterable, Optional, Tuple
 from trailrunner import walk, run
 
 from .config import Config
-from .sorting import ImportSortingTransformer
+from .sorting import sort_module
 from .types import Result
 from .util import get_timings, try_parse, timed
 
@@ -31,8 +31,7 @@ def usort_bytes(
 
     module = try_parse(data=data, path=path)
     with timed(f"sorting {path}"):
-        tr = ImportSortingTransformer(config, module)
-        new_mod = module.visit(tr)
+        new_mod = sort_module(module, config)
         return (new_mod.bytes, new_mod.encoding)
 
 

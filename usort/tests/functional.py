@@ -414,6 +414,28 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_maintain_tabs(self) -> None:
+        self.assertUsortResult(
+            """
+                import foo
+
+                def a():
+                \timport bar
+                \t
+                \tdef b():
+                \t\timport baz
+            """,
+            """
+                import foo
+
+                def a():
+                \timport bar
+                \t
+                \tdef b():
+                \t\timport baz
+            """,
+        )
+
     def test_multi_line_expand_top_level(self) -> None:
         self.assertUsortResult(
             """
