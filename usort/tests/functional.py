@@ -113,6 +113,25 @@ class UsortStringFunctionalTest(unittest.TestCase):
     #             ),
     #         )
 
+    def test_star_imports(self) -> None:
+        # Test that we create a second block with the star import
+        self.assertUsortResult(
+            """
+                import d
+                import c
+                from x import *
+                import b
+                import a
+            """,
+            """
+                import c
+                import d
+                from x import *
+                import a
+                import b
+            """,
+        )
+
     def test_shadowed_import(self) -> None:
         # Test that a new block is started when there's a duplicate name
         self.assertUsortResult(
