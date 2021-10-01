@@ -216,10 +216,9 @@ def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableI
 def import_to_node(
     imp: SortableImport, module: cst.Module, indent: str, config: Config
 ) -> cst.BaseStatement:
-    width = 88  # TODO: get width from tool.black
     node = import_to_node_single(imp, module)
     content = indent + render_node(node, module).rstrip()
-    if len(content) > width:
+    if len(content) > config.line_length:
         node = import_to_node_multi(imp, module)
     return node
 
