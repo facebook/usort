@@ -10,11 +10,12 @@ try:
 except ImportError:
     __version__ = "dev"
 
-from .api import usort_bytes, usort_path, usort_stdin, usort_string
+from .api import usort_bytes, usort_file, usort_path, usort_stdin, usort_string
 
 __all__ = [
     "__version__",
     "usort_bytes",
+    "usort_file",
     "usort_path",
     "usort_stdin",
     "usort_string",

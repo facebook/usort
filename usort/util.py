@@ -3,16 +3,16 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import os
 from contextlib import contextmanager
-from fnmatch import fnmatch
 from pathlib import Path
 from time import monotonic
-from typing import Callable, Generator, Iterable, List, Optional, Tuple
+from typing import Callable, Generator, List, Optional, Tuple, Sequence
 
 import libcst as cst
 
-TIMINGS: List[Tuple[str, float]] = []
+from .types import Timing
+
+TIMINGS: List[Timing] = []
 
 
 @contextmanager
@@ -28,24 +28,21 @@ def timed(msg: str) -> Generator[None, None, None]:
     TIMINGS.append((msg, after - before))
 
 
-def print_timings(fn: Callable[[str], None] = print) -> None:
+def get_timings() -> Sequence[Tuple[str, float]]:
+    try:
+        return list(TIMINGS)
+    finally:
+        TIMINGS.clear()
+
+
+def print_timings(
+    fn: Callable[[str], None] = print, *, timings: Sequence[Timing]
+) -> None:
     """
     Print all stored timing values in microseconds.
     """
-    for msg, duration in TIMINGS:
+    for msg, duration in timings:
         fn(f"{msg + ':':50} {int(duration*1000000):7} µs")
-
-
-def walk(path: Path, glob: str) -> Iterable[Path]:
-    with timed(f"walking {path}"):
-        paths: List[Path] = []
-        for root, dirs, files in os.walk(path):
-            dirs[:] = [d for d in dirs if not d.startswith(".")]
-            root_path = Path(root)
-            for f in files:
-                if fnmatch(f, glob):
-                    paths.append(root_path / f)
-        return paths
 
 
 def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:
