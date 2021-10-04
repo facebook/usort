@@ -1,5 +1,5 @@
 black==21.9b0
-coverage==5.5
+coverage==6.0
 flake8==3.9.2
 mypy==0.910
 sphinx==4.2.0
