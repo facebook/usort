@@ -11,12 +11,14 @@ from typing import Any, Callable, List, Sequence
 import click
 from moreorless.click import echo_color_unified_diff
 
+from usort.translate import render_node
+
 from . import __version__
 from .api import usort_path, usort_stdin
 from .config import Config
 from .sorting import sortable_blocks
-from .types import Timing
-from .util import get_timings, print_timings, try_parse
+from .types import Options
+from .util import get_timings, print_timings, try_parse, Timing
 
 BENCHMARK = False
 
@@ -42,11 +44,15 @@ def usort_command(fn: Callable[..., int]) -> Callable[..., None]:
 
 
 @click.group()
+@click.pass_context
 @click.version_option(__version__, "--version", "-V")
+@click.option("--debug", is_flag=True, help="Enable debug output")
 @click.option("--benchmark", is_flag=True, help="Output benchmark timing info")
-def main(benchmark: bool) -> None:
+def main(ctx: click.Context, benchmark: bool, debug: bool) -> None:
     global BENCHMARK
     BENCHMARK = benchmark
+
+    ctx.obj = Options(debug=debug)
 
 
 @main.command()
@@ -76,18 +82,19 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> int:
         click.secho(f"{f} {len(blocks)} blocks:", fg="yellow")
         for b in blocks:
             print(f"  body[{b.start_idx}:{b.end_idx}]")
-            sorted_stmts = sorted(b.stmts)
+            sorted_imports = sorted(b.imports)
             if debug:
-                for s in b.stmts:
+                for imp in b.imports:
                     print(
-                        f"    {sorted_stmts.index(s)} {s} "
-                        f"({s.config.category(s.first_module)})"
+                        f"    {sorted_imports.index(imp)} {imp} "
+                        f"({imp.config.category(imp.stem or '')})"
                     )
             else:
                 print("Formatted:")
                 print("[[[")
-                for s in sorted_stmts:
-                    print(mod.code_for_node(s.node), end="")
+                for imp in sorted_imports:
+                    assert imp.node is not None
+                    print(render_node(imp.node), end="")
                 print("]]]")
 
     return 0
@@ -121,9 +128,10 @@ def check(filenames: List[str]) -> int:
 
 
 @main.command()
+@click.pass_context
 @click.argument("filenames", nargs=-1)
 @usort_command
-def diff(filenames: List[str]) -> int:
+def diff(ctx: click.Context, filenames: List[str]) -> int:
     """
     Output diff of changes for one or more path
     """
@@ -136,7 +144,10 @@ def diff(filenames: List[str]) -> int:
         for result in usort_path(path, write=False):
             if result.error:
                 click.echo(f"Error sorting {result.path}: {result.error}")
+                if ctx.obj.debug:
+                    click.echo(result.trace)
                 return_code |= 1
+                continue
 
             if result.content != result.output:
                 assert result.encoding is not None

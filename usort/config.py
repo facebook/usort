@@ -55,6 +55,9 @@ class Config:
     # Whether to perform the first-party heuristic during find()
     first_party_detection: bool = True
 
+    # Needed for formatting final imports
+    line_length: int = 88
+
     def __post_init__(self) -> None:
         self.side_effect_re = re.compile(
             "|".join(re.escape(m) + r"\b" for m in self.side_effect_modules)
@@ -136,7 +139,8 @@ class Config:
 
     def update_from_config(self, toml_path: Path) -> None:
         conf = toml.loads(toml_path.read_text())
-        tbl = conf.get("tool", {}).get("usort", {})
+        tool = conf.get("tool", {})
+        tbl = tool.get("usort", {})
 
         if "categories" in tbl:
             self.categories = [Category(x) for x in tbl["categories"]]
@@ -166,6 +170,11 @@ class Config:
                     # TODO validate (no dots or whitespace, etc)
                     assert "." not in name
                     self.known[name] = cat
+
+        # black config
+        tbl = conf.get("black", {})
+        if "line-length" in tbl:
+            self.line_length = int(tbl["line-length"])
 
         # make sure generated regexes get updated
         self.__post_init__()

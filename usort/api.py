@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import sys
+import traceback
 from functools import partial
 from pathlib import Path
 from typing import Iterable, Optional, Tuple
@@ -11,7 +12,7 @@ from typing import Iterable, Optional, Tuple
 from trailrunner import walk, run
 
 from .config import Config
-from .sorting import ImportSortingTransformer
+from .sorting import sort_module
 from .types import Result
 from .util import get_timings, try_parse, timed
 
@@ -28,10 +29,9 @@ def usort_bytes(
     if path is None:
         path = Path("<data>")
 
-    mod = try_parse(data=data, path=path)
+    module = try_parse(data=data, path=path)
     with timed(f"sorting {path}"):
-        tr = ImportSortingTransformer(config)
-        new_mod = mod.visit(tr)
+        new_mod = sort_module(module, config)
         return (new_mod.bytes, new_mod.encoding)
 
 
@@ -72,7 +72,10 @@ def usort_file(path: Path, *, write: bool = False) -> Result:
         )
 
     except Exception as e:
-        return Result(path=path, content=data, error=e, timings=get_timings())
+        trace = "".join(traceback.format_exception(*sys.exc_info()))
+        return Result(
+            path=path, content=data, error=e, trace=trace, timings=get_timings()
+        )
 
 
 def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:

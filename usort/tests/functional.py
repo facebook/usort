@@ -48,7 +48,12 @@ class UsortStringFunctionalTest(unittest.TestCase):
         before = dedent(before)
         after = dedent(after)
         config = config or DEFAULT_CONFIG
-        self.assertEqual(after, usort_string(before, config))
+        result = usort_string(before, config)
+        if result != after:
+            self.fail(
+                "µsort result did not match expected value:\n\n"
+                f"Before:\n-------\n{before}\nExpected:\n---------\n{after}\nResult:\n-------\n{result}"
+            )
 
     def test_sort_ordering(self) -> None:
         # This only tests ordering, not any of the comment or whitespace
@@ -107,6 +112,25 @@ class UsortStringFunctionalTest(unittest.TestCase):
     #                 line_limit=10,
     #             ),
     #         )
+
+    def test_star_imports(self) -> None:
+        # Test that we create a second block with the star import
+        self.assertUsortResult(
+            """
+                import d
+                import c
+                from x import *
+                import b
+                import a
+            """,
+            """
+                import c
+                import d
+                from x import *
+                import a
+                import b
+            """,
+        )
 
     def test_shadowed_import(self) -> None:
         # Test that a new block is started when there's a duplicate name
@@ -302,6 +326,182 @@ numpy = ["numpy", "pandas"]
             import c
         """
         self.assertUsortResult(content, content)
+
+    def test_multi_line_maintain(self) -> None:
+        self.assertUsortResult(
+            """
+                from fuzz import buzz
+                # one
+                from foo import (  # two
+                    # three
+                    bar,  # four
+                    # five
+                    baz # six
+                    , # seven
+                    # eight
+                )  # nine
+                # ten
+            """,
+            """
+                # one
+                from foo import (  # two
+                    # three
+                    bar,  # four
+                    # five
+                    baz,  # six  # seven
+                    # eight
+                )  # nine
+                from fuzz import buzz
+                # ten
+            """,
+        )
+
+    def test_multi_line_maintain_inner(self) -> None:
+        self.assertUsortResult(
+            """
+                def foo():
+                    from fuzz import buzz
+                    # one
+                    from foo import (  # two
+                        # three
+                        bar,  # four
+                        # five
+                        baz # six
+                        , # seven
+                        # eight
+                    )  # nine
+                    # ten
+            """,
+            """
+                def foo():
+                    # one
+                    from foo import (  # two
+                        # three
+                        bar,  # four
+                        # five
+                        baz,  # six  # seven
+                        # eight
+                    )  # nine
+                    from fuzz import buzz
+                    # ten
+            """,
+        )
+
+    def test_multi_line_collapse(self) -> None:
+        self.assertUsortResult(
+            """
+                from fuzz import buzz
+                # 1
+                from foo import (  # 2
+                    # 3
+                    bar,  # 4
+                    # 5
+                    baz # 6
+                    , # 7
+                )  # 8
+                # 9
+            """,
+            """
+                # 1
+                from foo import bar, baz  # 2  # 3  # 4  # 5  # 6  # 7  # 8
+                from fuzz import buzz
+                # 9
+            """,
+        )
+
+    def test_multi_line_collapse_inner(self) -> None:
+        self.assertUsortResult(
+            """
+                def foo():
+                    from fuzz import buzz
+                    # 1
+                    from foo import (  # 2
+                        # 3
+                        bar,  # 4
+                        # 5
+                        baz # 6
+                        , # 7
+                    )  # 8
+                    # 9
+            """,
+            """
+                def foo():
+                    # 1
+                    from foo import bar, baz  # 2  # 3  # 4  # 5  # 6  # 7  # 8
+                    from fuzz import buzz
+                    # 9
+            """,
+        )
+
+    def test_maintain_tabs(self) -> None:
+        self.assertUsortResult(
+            """
+                import foo
+
+                def a():
+                \timport bar
+                \t
+                \tdef b():
+                \t\timport baz
+            """,
+            """
+                import foo
+
+                def a():
+                \timport bar
+                \t
+                \tdef b():
+                \t\timport baz
+            """,
+        )
+
+    def test_multi_line_expand_top_level(self) -> None:
+        self.assertUsortResult(
+            """
+                from really_absurdly_long_python_module_name.insanely_long_submodule_name import SomeReallyObnoxiousCamelCaseClass
+            """,
+            """
+                from really_absurdly_long_python_module_name.insanely_long_submodule_name import (
+                    SomeReallyObnoxiousCamelCaseClass,
+                )
+            """,
+        )
+
+    def test_multi_line_expand_function(self) -> None:
+        self.assertUsortResult(
+            """
+                def foo():
+                    from really_absurdly_long_python_module_name.insanely_long_submodule_name import SomeReallyObnoxiousCamelCaseClass
+            """,
+            """
+                def foo():
+                    from really_absurdly_long_python_module_name.insanely_long_submodule_name import (
+                        SomeReallyObnoxiousCamelCaseClass,
+                    )
+            """,
+        )
+
+    def test_multi_line_expand_inner_function(self) -> None:
+        self.assertUsortResult(
+            """
+                def foo():
+                    import b
+                    import a
+
+                    def bar():
+                        from really_absurdly_long_python_module_name.insanely_long_submodule_name import SomeReallyObnoxiousCamelCaseClass
+            """,
+            """
+                def foo():
+                    import a
+                    import b
+
+                    def bar():
+                        from really_absurdly_long_python_module_name.insanely_long_submodule_name import (
+                            SomeReallyObnoxiousCamelCaseClass,
+                        )
+            """,
+        )
 
 
 if __name__ == "__main__":
