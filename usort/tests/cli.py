@@ -7,6 +7,7 @@ import os
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
+from textwrap import dedent
 from typing import AnyStr, Generator
 
 import volatile
@@ -46,10 +47,14 @@ class CliTest(unittest.TestCase):
 
         self.assertRegex(
             result.output,
-            r"""walking \.:\s+\d+ µs
-parsing sample\.py:\s+\d+ µs
-sorting sample\.py:\s+\d+ µs
-""",
+            dedent(
+                r"""
+                parsing sample\.py:\s+\d+ µs
+                sorting sample\.py:\s+\d+ µs
+                walking \.:\s+\d+ µs
+                total for \.:\s+\d+ µs
+                """
+            ).strip(),
         )
         self.assertEqual(0, result.exit_code)
 

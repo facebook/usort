@@ -6,7 +6,7 @@
 import sys
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Sequence
 
 import click
 from moreorless.click import echo_color_unified_diff
@@ -15,9 +15,15 @@ from . import __version__
 from .api import usort_path, usort_stdin
 from .config import Config
 from .sorting import sortable_blocks
-from .util import TIMINGS, print_timings, try_parse
+from .types import Timing
+from .util import get_timings, print_timings, try_parse
 
 BENCHMARK = False
+
+
+def print_benchmark(timings: Sequence[Timing]) -> None:
+    if BENCHMARK:
+        print_timings(click.echo, timings=timings)
 
 
 def usort_command(fn: Callable[..., int]) -> Callable[..., None]:
@@ -27,10 +33,9 @@ def usort_command(fn: Callable[..., int]) -> Callable[..., None]:
 
     @wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> None:
-        TIMINGS.clear()
         exit_code = fn(*args, **kwargs) or 0
         if BENCHMARK:
-            print_timings(click.echo)
+            print_timings(click.echo, timings=get_timings())
         sys.exit(exit_code)
 
     return wrapper
@@ -110,6 +115,8 @@ def check(filenames: List[str]) -> int:
                 click.echo(f"Would sort {result.path}")
                 return_code |= 2
 
+            print_benchmark(result.timings)
+
     return return_code
 
 
@@ -138,6 +145,8 @@ def diff(filenames: List[str]) -> int:
                     result.output.decode(result.encoding),
                     result.path.as_posix(),
                 )
+
+            print_benchmark(result.timings)
 
     return return_code
 
@@ -171,6 +180,8 @@ def format(filenames: List[str]) -> int:
 
             if result.content != result.output:
                 click.echo(f"Sorted {result.path}")
+
+            print_benchmark(result.timings)
 
     return return_code
 

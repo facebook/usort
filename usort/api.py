@@ -4,13 +4,16 @@
 # LICENSE file in the root directory of this source tree.
 
 import sys
+from functools import partial
 from pathlib import Path
 from typing import Iterable, Optional, Tuple
+
+from trailrunner import walk, run
 
 from .config import Config
 from .sorting import ImportSortingTransformer
 from .types import Result
-from .util import try_parse, timed, walk
+from .util import get_timings, try_parse, timed
 
 
 __all__ = ["usort_bytes", "usort_string", "usort_path", "usort_stdin"]
@@ -48,28 +51,40 @@ def usort_string(data: str, config: Config, path: Optional[Path] = None) -> str:
     return usort_bytes(data=data.encode(), config=config, path=path)[0].decode()
 
 
+def usort_file(path: Path, *, write: bool = False) -> Result:
+    """
+    Format a single file and return a Result object.
+    """
+
+    data: bytes = b""
+    try:
+        config = Config.find(path.parent)
+        data = path.read_bytes()
+        output, encoding = usort_bytes(data, config, path)
+        if write:
+            path.write_bytes(output)
+        return Result(
+            path=path,
+            content=data,
+            output=output,
+            encoding=encoding,
+            timings=get_timings(),
+        )
+
+    except Exception as e:
+        return Result(path=path, content=data, error=e, timings=get_timings())
+
+
 def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
     """
     For a given path, format it, or any .py files in it, and yield Result objects
     """
-    files: Iterable[Path]
-    if path.is_dir():
-        files = walk(path, "*.py")
-    else:
-        files = [path]
+    with timed(f"total for {path}"):
+        with timed(f"walking {path}"):
+            paths = walk(path)
 
-    data: bytes = b""
-    for f in files:
-        try:
-            config = Config.find(f.parent)
-            data = f.read_bytes()
-            output, encoding = usort_bytes(data, config, f)
-            if write:
-                f.write_bytes(output)
-            yield Result(f, data, output, encoding)
-
-        except Exception as e:
-            yield Result(f, data, b"", None, e)
+        fn = partial(usort_file, write=write)
+        return (v for v in run(paths, fn).values())
 
 
 def usort_stdin() -> bool:

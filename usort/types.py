@@ -5,22 +5,25 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import libcst as cst
 
 from .config import Config
+
+Timing = Tuple[str, float]
 
 
 @dataclass
 class Result:
     path: Path
     content: bytes
-    output: bytes
+    output: bytes = b""
     # encoding will be None on parse errors; we get this from LibCST on a successful
     # parse.
-    encoding: Optional[str]
+    encoding: Optional[str] = None
     error: Optional[Exception] = None
+    timings: Sequence[Timing] = ()
 
 
 @dataclass(order=True)
