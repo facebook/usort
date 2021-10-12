@@ -46,6 +46,16 @@ class ImportItemComments:
     inline: List[str] = field(factory=list)
     following: List[str] = field(factory=list)
 
+    def __add__(self, other: "ImportItemComments") -> "ImportItemComments":
+        if not isinstance(other, ImportItemComments):
+            return NotImplemented
+
+        return ImportItemComments(
+            before=[*self.before, *other.before],
+            inline=[*self.inline, *other.inline],
+            following=[*self.following, *other.following],
+        )
+
 
 @dataclass
 class ImportComments:
@@ -55,6 +65,19 @@ class ImportComments:
     inline: List[str] = field(factory=list)  # Only when no trailing comma
     final: List[str] = field(factory=list)
     last_inline: List[str] = field(factory=list)
+
+    def __add__(self, other: "ImportComments") -> "ImportComments":
+        if not isinstance(other, ImportComments):
+            return NotImplemented
+
+        return ImportComments(
+            before=[*self.before, *other.before],
+            first_inline=[*self.first_inline, *other.first_inline],
+            initial=[*self.initial, *other.initial],
+            inline=[*self.inline, *other.inline],
+            final=[*self.final, *other.final],
+            last_inline=[*self.last_inline, *other.last_inline],
+        )
 
 
 @dataclass(order=True)
@@ -68,20 +91,33 @@ class SortKey:
 class SortableImportItem:
     name: str = field(order=str.casefold)
     asname: Optional[str] = field(eq=True, order=False)
-    comments: ImportItemComments = field(order=False)
+    comments: ImportItemComments = field(eq=False, order=False)
+
+    def __add__(self, other: "SortableImportItem") -> "SortableImportItem":
+        if not isinstance(other, SortableImportItem):
+            return NotImplemented
+
+        if self.name != other.name and self.asname != other.asname:
+            raise ValueError("name and asname must match")
+
+        return SortableImportItem(
+            name=self.name,
+            asname=self.asname,
+            comments=self.comments + other.comments,
+        )
 
 
 @dataclass(order=True, repr=False)
 class SortableImport:
     sort_key: SortKey = field(init=False)
     stem: Optional[str] = field(order=case_insensitive_ordering)  # "from" imports
-    items: Sequence[SortableImportItem] = field()
+    items: List[SortableImportItem] = field()
     comments: ImportComments = field(order=False)
     indent: str = field(order=False)
-    config: Config = field(order=False, factory=Config)
+    config: Config = field(eq=False, order=False, factory=Config)
 
     # for cli/debugging only
-    node: cst.CSTNode = field(order=False, factory=cst.EmptyLine)
+    node: cst.CSTNode = field(eq=False, order=False, factory=cst.EmptyLine)
 
     def __repr__(self) -> str:
         items = indent(("\n".join(f"{item!r}," for item in self.items)), "        ")
@@ -107,6 +143,43 @@ class SortableImport:
                 comments=self.comments,
                 indent=self.indent,
             )
+        )
+
+    def __add__(self, other: "SortableImport") -> "SortableImport":
+        if not isinstance(other, SortableImport):
+            return NotImplemented
+
+        if self.sort_key != other.sort_key and self.stem != other.stem:
+            raise ValueError("sort_key and stem must match")
+
+        # Combine the items from the other import statement with items from this import.
+        # If both the name and asname match, we can safely just add-op them to combine
+        # comments, and assume the other import object will get discarded. If there is
+        # no match, new items from other will be appended to the end of the list.
+        #
+        #   from foo import a, b, c
+        #   from foo import b, c as C, d
+        #
+        # should get combined to
+        #
+        #   from foo import a, b, c, c as C, d
+        #
+        combined_items = list(self.items)
+        for item in other.items:
+            if item in self.items:
+                idx = self.items.index(item)
+                self.items[idx] += item
+
+            else:
+                combined_items.append(item)
+
+        return SortableImport(
+            stem=self.stem,
+            items=combined_items,
+            comments=self.comments + other.comments,
+            indent=self.indent,
+            config=self.config,
+            node=self.node,
         )
 
     @property
