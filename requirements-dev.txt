@@ -1,5 +1,5 @@
 black==21.9b0
-coverage==6.0
+coverage==6.0.2
 flake8==4.0.1
 mypy==0.910
 setuptools_scm==6.3.2
