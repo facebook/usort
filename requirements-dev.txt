@@ -1,6 +1,6 @@
 black==21.9b0
 coverage==6.0
-flake8==3.9.2
+flake8==4.0.1
 mypy==0.910
 setuptools_scm==6.3.2
 sphinx==4.2.0
