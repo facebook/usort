@@ -166,9 +166,9 @@ class SortableImport:
         #
         combined_items = list(self.items)
         for item in other.items:
-            if item in self.items:
-                idx = self.items.index(item)
-                self.items[idx] += item
+            if item in combined_items:
+                idx = combined_items.index(item)
+                combined_items[idx] += item
 
             else:
                 combined_items.append(item)
