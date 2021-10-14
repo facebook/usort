@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Optional, List, Union, Sequence
+from typing import List, Optional, Sequence, Union
 
 import libcst as cst
 
@@ -15,7 +15,7 @@ from .types import (
     SortableImport,
     SortableImportItem,
 )
-from .util import split_relative, split_inline_comment, with_dots
+from .util import split_inline_comment, split_relative, with_dots
 
 
 def render_node(node: cst.CSTNode, module: Optional[cst.Module] = None) -> str:

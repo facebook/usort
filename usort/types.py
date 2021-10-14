@@ -4,14 +4,14 @@
 # LICENSE file in the root directory of this source tree.
 
 from pathlib import Path
-from textwrap import indent, dedent
+from textwrap import dedent, indent
 from typing import Dict, List, Optional, Sequence
 
 import libcst as cst
 from attr import dataclass, field
 
 from .config import CAT_FIRST_PARTY, Config
-from .util import stem_join, top_level_name, Timing
+from .util import stem_join, Timing, top_level_name
 
 COMMENT_INDENT = "  "
 

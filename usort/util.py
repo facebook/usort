@@ -7,7 +7,7 @@ import re
 from contextlib import contextmanager
 from pathlib import Path
 from time import monotonic
-from typing import Callable, Generator, List, Optional, Tuple, Sequence
+from typing import Callable, Generator, List, Optional, Sequence, Tuple
 
 import libcst as cst
 
