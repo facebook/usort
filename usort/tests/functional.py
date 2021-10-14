@@ -168,8 +168,7 @@ class UsortStringFunctionalTest(unittest.TestCase):
             """,
             """
                 import os.path as path
-                from os import path as path
-                from os import path
+                from os import path, path as path
             """,
         )
 
@@ -272,8 +271,7 @@ numpy = ["numpy", "pandas"]
                 from . import first_party
             """,
             """
-                from __future__ import division
-                from __future__ import unicode_literals
+                from __future__ import division, unicode_literals
 
                 import sys
 
@@ -513,6 +511,29 @@ numpy = ["numpy", "pandas"]
                 from typing import Dict, List, Optional, Pattern, Set
 
                 import a, b, c
+            """,
+        )
+
+    def test_merging_import_items(self) -> None:
+        self.assertUsortResult(
+            """
+                import os
+                import os.path
+                from typing import List, Dict, Tuple, Set, Optional
+                import os
+                from typing import Union, Sequence
+                from foo.bar import b, d, c
+                from foo import baz
+                from foo.bar import c as C, a, d
+                from foo import fizz
+            """,
+            """
+                import os
+                import os.path
+                from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
+
+                from foo import baz, fizz
+                from foo.bar import a, b, c, c as C, d
             """,
         )
 

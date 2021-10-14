@@ -90,7 +90,7 @@ class SortKey:
 @dataclass(order=True)
 class SortableImportItem:
     name: str = field(order=str.casefold)
-    asname: Optional[str] = field(eq=True, order=False)
+    asname: Optional[str] = field(eq=True, order=case_insensitive_ordering)
     comments: ImportItemComments = field(eq=False, order=False)
 
     def __add__(self, other: "SortableImportItem") -> "SortableImportItem":
