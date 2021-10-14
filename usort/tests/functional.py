@@ -325,6 +325,37 @@ numpy = ["numpy", "pandas"]
         """
         self.assertUsortResult(content, content)
 
+    def test_multi_line_comments(self) -> None:
+        self.assertUsortResult(
+            """
+                from fuzz import buzz
+                # one
+                from foo import (  # two
+                    # three
+                    beta,  # four
+                    # five
+                    gamma, # six
+                    alpha # seven
+                    , # eight
+                    # nine
+                )  # ten
+                # eleven
+            """,
+            """
+                # one
+                from foo import (  # two
+                    alpha,  # seven  # eight
+                    # three
+                    beta,  # four
+                    # five
+                    gamma,  # six
+                    # nine
+                )  # ten
+                from fuzz import buzz
+                # eleven
+            """,
+        )
+
     def test_multi_line_maintain(self) -> None:
         self.assertUsortResult(
             """
