@@ -545,6 +545,32 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_sorting_import_items_comments(self) -> None:
+        self.assertUsortResult(
+            """
+                # zero
+                from foo import (  # one
+                    # two
+                    gamma,  # three
+                    bravo,  # four
+                    delta,  # five
+                    alpha,  # six
+                    # seven
+                )  # eight
+            """,
+            """
+                # zero
+                from foo import (  # one
+                    alpha,  # six
+                    bravo,  # four
+                    delta,  # five
+                    # two
+                    gamma,  # three
+                    # seven
+                )  # eight
+            """,
+        )
+
     def test_merging_import_items(self) -> None:
         self.assertUsortResult(
             """
@@ -565,6 +591,53 @@ numpy = ["numpy", "pandas"]
 
                 from foo import baz, fizz
                 from foo.bar import a, b, c, c as C, d
+            """,
+        )
+
+    def test_merging_import_items_comments(self) -> None:
+        self.assertUsortResult(
+            """
+                import a
+
+                # one
+                from foo import ( # two
+                    # three
+                    beta,  # four
+                    # five
+                    delta,  # six
+                    # seven
+                )  # eight
+                # apple
+                from foo import (  # banana
+                    # cranberry
+                    gamma,  # date
+                    # elderberry
+                    alpha,  # fig
+                    # grape
+                    beta,  # hazelnut
+                    # kiwi
+                ) # lime
+                # mango
+            """,
+            """
+                import a
+
+                # one
+                # apple
+                from foo import (  # two  # banana
+                    # elderberry
+                    alpha,  # fig
+                    # three
+                    # grape
+                    beta,  # four  # hazelnut
+                    # five
+                    delta,  # six
+                    # cranberry
+                    gamma,  # date
+                    # seven
+                    # kiwi
+                )  # eight  # lime
+                # mango
             """,
         )
 
