@@ -503,6 +503,19 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_sorting_import_items(self) -> None:
+        self.assertUsortResult(
+            """
+                import b, a, c
+                from typing import List, Dict, Set, Optional, Pattern
+            """,
+            """
+                from typing import Dict, List, Optional, Pattern, Set
+
+                import a, b, c
+            """,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -153,6 +153,10 @@ def find_and_sort_blocks(
         block.imports[0].comments.before = initial_comment
         block.imports = fixup_whitespace(initial_blank, sorted(block.imports))
 
+        # sort items within a statement
+        for imp in block.imports:
+            imp.items.sort()
+
     for block in blocks:
         sorted_body[block.start_idx : block.end_idx] = [
             import_to_node(imp, module, indent, config) for imp in block.imports
