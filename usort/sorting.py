@@ -137,25 +137,28 @@ def fixup_whitespace(
     return imports
 
 
-def merge_and_sort_imports(imports: List[SortableImport]) -> List[SortableImport]:
-    # Look for sequential imports with matching stems, and merge them.
-    idx = 0
-    while idx + 1 < len(imports):
-        imp = imports[idx]
-        nxt = imports[idx + 1]
+def merge_and_sort_imports(
+    imports: List[SortableImport], config: Config
+) -> List[SortableImport]:
+    if config.merge_imports:
+        # Look for sequential imports with matching stems, and merge them.
+        idx = 0
+        while idx + 1 < len(imports):
+            imp = imports[idx]
+            nxt = imports[idx + 1]
 
-        if (
-            # This is a from-import and the next statement is from the same module
-            (imp.stem and imp.stem == nxt.stem)
-            # This is a module-import and the next statement imports the same module(s)
-            or (imp.stem is None and imp.items == nxt.items)
-        ):
-            # Merge them and discard the second import from the list.
-            imports[idx] += nxt
-            imports.pop(idx + 1)
+            if (
+                # This is a from-import and the next statement is from the same module
+                (imp.stem and imp.stem == nxt.stem)
+                # This is a module-import and the next statement imports the same module
+                or (imp.stem is None and imp.items == nxt.items)
+            ):
+                # Merge them and discard the second import from the list.
+                imports[idx] += nxt
+                imports.pop(idx + 1)
 
-        else:
-            idx += 1
+            else:
+                idx += 1
 
     # Sort items within each remaining statement
     for imp in imports:
@@ -182,6 +185,7 @@ def find_and_sort_blocks(
             initial_blank,
             merge_and_sort_imports(
                 sorted(block.imports),
+                config,
             ),
         )
 

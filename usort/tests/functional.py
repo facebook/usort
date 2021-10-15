@@ -641,6 +641,34 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_merging_imports_disabled(self) -> None:
+        self.assertUsortResult(
+            """
+                import os
+                import os.path
+                from typing import List, Dict, Tuple, Set, Optional
+                import os
+                from typing import Union, Sequence
+                from foo.bar import b, d, c
+                from foo import baz
+                from foo.bar import c as C, a, d
+                from foo import fizz
+            """,
+            """
+                import os
+                import os
+                import os.path
+                from typing import Dict, List, Optional, Set, Tuple
+                from typing import Sequence, Union
+
+                from foo import baz
+                from foo import fizz
+                from foo.bar import b, c, d
+                from foo.bar import a, c as C, d
+            """,
+            Config(merge_imports=False),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

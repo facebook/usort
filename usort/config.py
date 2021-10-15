@@ -55,6 +55,9 @@ class Config:
     # Whether to perform the first-party heuristic during find()
     first_party_detection: bool = True
 
+    # Whether to merge imports when sorting
+    merge_imports: bool = True
+
     # Needed for formatting final imports
     line_length: int = 88
 
@@ -150,6 +153,8 @@ class Config:
             self.side_effect_modules.extend(tbl["side_effect_modules"])
         if "first_party_detection" in tbl:
             self.first_party_detection = tbl["first_party_detection"]
+        if "merge_imports" in tbl:
+            self.merge_imports = tbl["merge_imports"]
 
         for cat, names in tbl.get("known", {}).items():
             typed_cat = Category(cat)
