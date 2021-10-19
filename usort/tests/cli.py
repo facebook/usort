@@ -3,17 +3,19 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
 import os
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
 from textwrap import dedent
 from typing import AnyStr, Generator
+from unittest.mock import Mock, patch
 
 import volatile
 from click.testing import CliRunner
 
-from usort.cli import main
+from ..cli import main
 
 
 @contextmanager
@@ -57,6 +59,30 @@ class CliTest(unittest.TestCase):
             ).strip(),
         )
         self.assertEqual(0, result.exit_code)
+
+    @patch("usort.cli.sys")
+    @patch("usort.cli.logging")
+    def test_debug(self, mock_logging: Mock, mock_sys: Mock) -> None:
+        mock_logging.DEBUG = logging.DEBUG
+        mock_logging.WARNING = logging.WARNING
+        mock_sys.stderr = object()
+
+        with sample_contents("import foo\n") as dtmp:
+            runner = CliRunner()
+            with chdir(dtmp):
+                with self.subTest("no debug"):
+                    result = runner.invoke(main, ["check", "."])
+                    mock_logging.basicConfig.assert_called_with(
+                        level=logging.WARNING, stream=mock_sys.stderr
+                    )
+                    self.assertEqual("", result.output)
+
+                with self.subTest("with debug"):
+                    result = runner.invoke(main, ["--debug", "check", "."])
+                    mock_logging.basicConfig.assert_called_with(
+                        level=logging.DEBUG, stream=mock_sys.stderr
+                    )
+                    self.assertEqual("", result.output)
 
     def test_check_no_change(self) -> None:
         with sample_contents("import sys\n") as dtmp:
