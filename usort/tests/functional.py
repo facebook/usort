@@ -673,8 +673,8 @@ numpy = ["numpy", "pandas"]
 
                 from foo import baz
                 from foo import fizz
-                from foo.bar import b, c, d
                 from foo.bar import a, c as C, d
+                from foo.bar import b, c, d
             """,
             Config(merge_imports=False),
         )
