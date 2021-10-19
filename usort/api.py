@@ -9,12 +9,12 @@ from functools import partial
 from pathlib import Path
 from typing import Iterable, Optional, Tuple
 
-from trailrunner import walk, run
+from trailrunner import run, walk
 
 from .config import Config
 from .sorting import sort_module
 from .types import Result
-from .util import get_timings, try_parse, timed
+from .util import get_timings, timed, try_parse
 
 
 __all__ = ["usort_bytes", "usort_string", "usort_path", "usort_stdin"]

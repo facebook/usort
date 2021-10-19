@@ -4,14 +4,14 @@
 # LICENSE file in the root directory of this source tree.
 
 from pathlib import Path
-from textwrap import indent, dedent
+from textwrap import dedent, indent
 from typing import Dict, List, Optional, Sequence
 
 import libcst as cst
 from attr import dataclass, field
 
 from .config import CAT_FIRST_PARTY, Config
-from .util import stem_join, top_level_name, Timing
+from .util import stem_join, Timing, top_level_name
 
 COMMENT_INDENT = "  "
 
@@ -90,7 +90,7 @@ class SortKey:
 @dataclass(order=True)
 class SortableImportItem:
     name: str = field(order=str.casefold)
-    asname: Optional[str] = field(eq=True, order=False)
+    asname: Optional[str] = field(eq=True, order=case_insensitive_ordering)
     comments: ImportItemComments = field(eq=False, order=False)
 
     def __add__(self, other: "SortableImportItem") -> "SortableImportItem":
@@ -166,9 +166,9 @@ class SortableImport:
         #
         combined_items = list(self.items)
         for item in other.items:
-            if item in self.items:
-                idx = self.items.index(item)
-                self.items[idx] += item
+            if item in combined_items:
+                idx = combined_items.index(item)
+                combined_items[idx] += item
 
             else:
                 combined_items.append(item)

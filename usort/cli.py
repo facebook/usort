@@ -18,7 +18,7 @@ from .api import usort_path, usort_stdin
 from .config import Config
 from .sorting import sortable_blocks
 from .types import Options
-from .util import get_timings, print_timings, try_parse, Timing
+from .util import get_timings, print_timings, Timing, try_parse
 
 BENCHMARK = False
 

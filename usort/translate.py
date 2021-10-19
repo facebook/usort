@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Optional, List, Union, Sequence
+from typing import List, Optional, Sequence, Union
 
 import libcst as cst
 
@@ -15,7 +15,7 @@ from .types import (
     SortableImport,
     SortableImportItem,
 )
-from .util import split_relative, split_inline_comment, with_dots
+from .util import split_inline_comment, split_relative, with_dots
 
 
 def render_node(node: cst.CSTNode, module: Optional[cst.Module] = None) -> str:
@@ -201,6 +201,10 @@ def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableI
             item.comments.before.extend(prev.comments.following)
             prev.comments.following.clear()
         prev = item
+    # following comments on the last item should maybe be on the import itself
+    if prev is not None and prev.comments.following:
+        comments.final.extend(prev.comments.following)
+        prev.comments.following.clear()
 
     imp = SortableImport(
         stem=stem,
@@ -244,6 +248,7 @@ def import_to_node_single(imp: SortableImport, module: cst.Module) -> cst.BaseSt
         trailing_comments += item.comments.inline
         trailing_comments += item.comments.following
 
+    trailing_comments += imp.comments.final
     trailing_comments += imp.comments.last_inline
     if trailing_comments:
         text = COMMENT_INDENT.join(trailing_comments)
@@ -279,9 +284,11 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
     body: List[cst.BaseSmallStatement] = []
     names: List[cst.ImportAlias] = []
     prev: Optional[cst.ImportAlias] = None
+    following: List[str] = []
     lpar_lines: List[cst.EmptyLine] = []
     lpar_inline: cst.TrailingWhitespace = cst.TrailingWhitespace()
 
+    item_count = len(imp.items)
     for idx, item in enumerate(imp.items):
         name = name_to_node(item.name)
         asname = cst.AsName(name=cst.Name(item.asname)) if item.asname else None
@@ -313,6 +320,11 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
                 comment=cst.Comment(inline),
             )
 
+        if idx == item_count - 1:
+            following = item.comments.following + imp.comments.final
+        else:
+            following = item.comments.following
+
         after = cst.ParenthesizedWhitespace(
             indent=True,
             first_line=first_line,
@@ -322,7 +334,7 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
                     comment=cst.Comment(c),
                     whitespace=cst.SimpleWhitespace(module.default_indent),
                 )
-                for c in item.comments.following
+                for c in following
             ],
             last_line=cst.SimpleWhitespace(module.default_indent if indent else ""),
         )

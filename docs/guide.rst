@@ -36,7 +36,9 @@ Sorting
 2. Group these statements into "blocks" of sortable imports
    (See `Import Blocks`_ for details)
 3. Reorder import statements within each block
-4. Normalize whitespace between imports as needed
+4. Merge sequential import statements from the same module (See `Merging`_ for details)
+5. Reorder imported names within each statement
+6. Normalize whitespace between imports as needed
 
 When ordering imports within a block, µsort categorizes the imports by source
 into four major categories for imports, prioritized following common community
@@ -77,6 +79,18 @@ to this example, for a module in the namespace :mod:`something`::
     from . import some_module
     from .other_module import some_name, that_thing
 
+
+Merging
+-------
+
+After sorting import statements within a block, µsort will look for sequential imports
+of the same style from the same module, and merge them into a single statement.
+Individual names imported from that module will be deduplicated, and any associated
+inline comments will be merged.
+
+*todo*
+
+If desired, this behavior can be disabled in your project `configuration`_.
 
 Configuration
 -------------
@@ -131,6 +145,13 @@ The following options are valid for the main ``tool.usort`` table:
     and consider that name as first-party.  This heuristic happens after other options
     are loaded, so such names cannot be overridden to another category if this is
     enabled.
+
+.. attribute:: merge_imports
+    :type: bool
+    :value: true
+
+    Whether to merge sequential imports from the same base module.
+    See `Merging`_ for details on how this works.
 
 
 ``[tool.usort.known]``

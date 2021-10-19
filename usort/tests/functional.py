@@ -168,8 +168,7 @@ class UsortStringFunctionalTest(unittest.TestCase):
             """,
             """
                 import os.path as path
-                from os import path as path
-                from os import path
+                from os import path, path as path
             """,
         )
 
@@ -272,8 +271,7 @@ numpy = ["numpy", "pandas"]
                 from . import first_party
             """,
             """
-                from __future__ import division
-                from __future__ import unicode_literals
+                from __future__ import division, unicode_literals
 
                 import sys
 
@@ -326,6 +324,37 @@ numpy = ["numpy", "pandas"]
             import c
         """
         self.assertUsortResult(content, content)
+
+    def test_multi_line_comments(self) -> None:
+        self.assertUsortResult(
+            """
+                from fuzz import buzz
+                # one
+                from foo import (  # two
+                    # three
+                    beta,  # four
+                    # five
+                    gamma, # six
+                    alpha # seven
+                    , # eight
+                    # nine
+                )  # ten
+                # eleven
+            """,
+            """
+                # one
+                from foo import (  # two
+                    alpha,  # seven  # eight
+                    # three
+                    beta,  # four
+                    # five
+                    gamma,  # six
+                    # nine
+                )  # ten
+                from fuzz import buzz
+                # eleven
+            """,
+        )
 
     def test_multi_line_maintain(self) -> None:
         self.assertUsortResult(
@@ -501,6 +530,143 @@ numpy = ["numpy", "pandas"]
                             SomeReallyObnoxiousCamelCaseClass,
                         )
             """,
+        )
+
+    def test_sorting_import_items(self) -> None:
+        self.assertUsortResult(
+            """
+                import b, a, c
+                from typing import List, Dict, Set, Optional, Pattern
+            """,
+            """
+                from typing import Dict, List, Optional, Pattern, Set
+
+                import a, b, c
+            """,
+        )
+
+    def test_sorting_import_items_comments(self) -> None:
+        self.assertUsortResult(
+            """
+                # zero
+                from foo import (  # one
+                    # two
+                    gamma,  # three
+                    bravo,  # four
+                    delta,  # five
+                    alpha,  # six
+                    # seven
+                )  # eight
+            """,
+            """
+                # zero
+                from foo import (  # one
+                    alpha,  # six
+                    bravo,  # four
+                    delta,  # five
+                    # two
+                    gamma,  # three
+                    # seven
+                )  # eight
+            """,
+        )
+
+    def test_merging_import_items(self) -> None:
+        self.assertUsortResult(
+            """
+                import os
+                import os.path
+                from typing import List, Dict, Tuple, Set, Optional
+                import os
+                from typing import Union, Sequence
+                from foo.bar import b, d, c
+                from foo import baz
+                from foo.bar import c as C, a, d
+                from foo import fizz
+            """,
+            """
+                import os
+                import os.path
+                from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
+
+                from foo import baz, fizz
+                from foo.bar import a, b, c, c as C, d
+            """,
+        )
+
+    def test_merging_import_items_comments(self) -> None:
+        self.assertUsortResult(
+            """
+                import a
+
+                # one
+                from foo import ( # two
+                    # three
+                    beta,  # four
+                    # five
+                    delta,  # six
+                    # seven
+                )  # eight
+                # apple
+                from foo import (  # banana
+                    # cranberry
+                    gamma,  # date
+                    # elderberry
+                    alpha,  # fig
+                    # grape
+                    beta,  # hazelnut
+                    # kiwi
+                ) # lime
+                # mango
+            """,
+            """
+                import a
+
+                # one
+                # apple
+                from foo import (  # two  # banana
+                    # elderberry
+                    alpha,  # fig
+                    # three
+                    # grape
+                    beta,  # four  # hazelnut
+                    # five
+                    delta,  # six
+                    # cranberry
+                    gamma,  # date
+                    # seven
+                    # kiwi
+                )  # eight  # lime
+                # mango
+            """,
+        )
+
+    def test_merging_imports_disabled(self) -> None:
+        self.assertUsortResult(
+            """
+                import os
+                import os.path
+                from typing import List, Dict, Tuple, Set, Optional
+                import os
+                from typing import Union, Sequence
+                from foo.bar import b, d, c
+                from foo import baz
+                from foo.bar import c as C, a, d
+                from foo import fizz
+            """,
+            """
+                import os
+                import os
+                import os.path
+                from typing import Dict, List, Optional, Set, Tuple
+                from typing import Sequence, Union
+
+                from foo import baz
+                from foo import fizz
+                from foo.bar import b, c, d
+                from foo.bar import a, c as C, d
+            """,
+            Config(merge_imports=False),
         )
 
 
