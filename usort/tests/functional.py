@@ -9,6 +9,7 @@ from dataclasses import replace
 from pathlib import Path
 from textwrap import dedent
 from typing import Optional
+from unittest.case import expectedFailure
 
 from ..api import usort_string
 from ..config import Config
@@ -677,6 +678,48 @@ numpy = ["numpy", "pandas"]
                 from foo.bar import b, c, d
             """,
             Config(merge_imports=False),
+        )
+
+    @expectedFailure
+    def test_sort_implicit_blocks(self) -> None:
+        self.assertUsortResult(
+            """
+                from a import A
+                from d import D
+                from e import E
+                from z import A
+                from c import C
+                from b import B
+            """,
+            """
+                from a import A
+                from b import B
+                from c import C
+                from d import D
+                from e import E
+                from z import A
+            """,
+        )
+
+    @expectedFailure
+    def test_sort_implicit_blocks2(self) -> None:
+        self.assertUsortResult(
+            """
+                from z import A
+                from d import D
+                from e import E
+                from c import C
+                from a import A
+                from b import B
+            """,
+            """
+                from z import A
+                from a import A
+                from b import B
+                from c import C
+                from d import D
+                from e import E
+            """,
         )
 
 
