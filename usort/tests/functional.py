@@ -48,11 +48,21 @@ class UsortStringFunctionalTest(unittest.TestCase):
         before = dedent(before)
         after = dedent(after)
         config = config or DEFAULT_CONFIG
-        result = usort_string(before, config)
-        if result != after:
+        result1 = usort_string(before, config)  # first pass
+        result2 = usort_string(result1, config)  # enforce stable sorting on second pass
+        if result1 != after:
             self.fail(
                 "µsort result did not match expected value:\n\n"
-                f"Before:\n-------\n{before}\nExpected:\n---------\n{after}\nResult:\n-------\n{result}"
+                f"Before:\n-------\n{before}\n"
+                f"Expected:\n---------\n{after}\n"
+                f"Result:\n-------\n{result1}"
+            )
+        if result2 != result1:
+            self.fail(
+                "µsort result was not stable on second pass:\n\n"
+                f"Before:\n-------\n{before}\n"
+                f"First Pass:\n-----------\n{result1}\n"
+                f"Second Pass:\n------------\n{result2}"
             )
 
     def test_sort_ordering(self) -> None:
@@ -663,8 +673,8 @@ numpy = ["numpy", "pandas"]
 
                 from foo import baz
                 from foo import fizz
-                from foo.bar import b, c, d
                 from foo.bar import a, c as C, d
+                from foo.bar import b, c, d
             """,
             Config(merge_imports=False),
         )

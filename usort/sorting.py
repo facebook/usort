@@ -181,13 +181,13 @@ def find_and_sort_blocks(
             block.imports[0].comments.before
         )
         block.imports[0].comments.before = initial_comment
-        block.imports = fixup_whitespace(
-            initial_blank,
-            merge_and_sort_imports(
-                sorted(block.imports),
-                config,
-            ),
-        )
+        # Sort the imports first, so that imports from the same module line up, then
+        # merge and sort imports/items, then re-sort the final set of imports again
+        # in case unsorted items affected overall sorting.
+        imports = sorted(block.imports)
+        imports = merge_and_sort_imports(imports, config)
+        imports = fixup_whitespace(initial_blank, imports)
+        block.imports = sorted(imports)
 
     for block in blocks:
         sorted_body[block.start_idx : block.end_idx] = [
