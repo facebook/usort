@@ -5,7 +5,7 @@
 
 from pathlib import Path
 from textwrap import dedent, indent
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import libcst as cst
 from attr import dataclass, field
@@ -225,7 +225,8 @@ class SortableBlock:
     end_idx: Optional[int] = None  # half-open interval
 
     imports: List[SortableImport] = field(factory=list)
-    imported_names: Dict[str, str] = field(factory=dict)
+    # imported_names: Dict[str, str] = field(factory=dict)
+    imported_names_idx: Dict[str, Tuple[str, int]] = field(factory=dict)
 
     def __repr__(self) -> str:
         imports = indent("\n".join(f"{imp!r}," for imp in self.imports), "        ")
@@ -238,9 +239,21 @@ class SortableBlock:
                         imports = [
                     {imports}
                         ],
+                        imported_names_idx = {imported_names_idx!r},
                     )
                 """
             )
             .strip()
-            .format(start_idx=self.start_idx, end_idx=self.end_idx, imports=imports)
+            .format(
+                start_idx=self.start_idx,
+                end_idx=self.end_idx,
+                imports=imports,
+                imported_names_idx=self.imported_names_idx,
+            )
         )
+
+    def add_import(self, imp: SortableImport, idx: int) -> None:
+        self.end_idx = idx + 1
+        self.imports.append(imp)
+        for key, value in imp.imported_names.items():
+            self.imported_names_idx[key] = (value, idx)
