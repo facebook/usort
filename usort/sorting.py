@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 import libcst as cst
 from libcst.metadata import PositionProvider
@@ -14,13 +14,6 @@ from .translate import import_from_node, import_to_node
 from .types import SortableBlock, SortableImport
 
 LOG = logging.getLogger(__name__)
-
-
-def name_overlap(a: Dict[str, str], b: Dict[str, str]) -> bool:
-    for k, v in b.items():
-        if k in a and a[k] != v:
-            return True
-    return False
 
 
 def is_sortable_import(stmt: cst.CSTNode, config: Config) -> bool:
@@ -67,36 +60,47 @@ def is_sortable_import(stmt: cst.CSTNode, config: Config) -> bool:
         return False
 
 
-def name_overlap_idx(block: SortableBlock, imp: SortableImport) -> Optional[int]:
-    idx: Optional[int] = None
+def name_overlap(block: SortableBlock, imp: SortableImport) -> List[str]:
+    overlap: List[str] = []
 
     for key, value in imp.imported_names.items():
-        item = block.imported_names_idx.get(key)
-        if item is not None:
-            name, block_idx = item
-            if name != value:
-                LOG.warning(
-                    f"Name {name!r} shadowed by {value!r}; "
-                    f"implicit block split at index {block_idx}"
-                )
-                idx = max(idx, block_idx) if idx is not None else block_idx
+        shadowed = block.imported_names.get(key)
+        if shadowed and shadowed != value:
+            LOG.warning(
+                f"Name {shadowed!r} shadowed by {value!r}; " f"implicit block split"
+            )
+            overlap.append(shadowed)
 
-    return idx
+    return overlap
 
 
-def split_inplace(block: SortableBlock, idx: int) -> SortableBlock:
-    assert block.end_idx is not None
+def split_inplace(block: SortableBlock, overlap: List[str]) -> SortableBlock:
+    # best-effort pre-sorting before we split
+    for imp in block.imports:
+        imp.items.sort()
+    block.imports.sort()
 
-    delta = (idx - block.start_idx) + 1
-    new = SortableBlock(idx + 1, block.end_idx)
-    block.end_idx = idx + 1
+    # find last index of shadowed import
+    last_idx = -1
+    for idx, imp in enumerate(block.imports):
+        if any(item.fullname in overlap for item in imp.items):
+            last_idx = max(last_idx, idx)
 
-    new.imports = block.imports[delta:]
-    block.imports[delta:] = []
+    delta = last_idx + 1
+    if delta >= len(block.imports):
+        new = SortableBlock(block.end_idx, block.end_idx + 1)
 
-    for key, (_name, block_idx) in list(block.imported_names_idx.items()):
-        if block_idx > idx:
-            new.imported_names_idx[key] = block.imported_names_idx.pop(key)
+    else:
+        new = SortableBlock(block.start_idx + delta, block.end_idx)
+        block.end_idx = block.start_idx + delta
+
+        new.imports = block.imports[delta:]
+        block.imports[delta:] = []
+
+        # move imported names metadata
+        for imp in new.imports:
+            for key in list(imp.imported_names):
+                new.imported_names[key] = block.imported_names.pop(key)
 
     return new
 
@@ -118,13 +122,11 @@ def sortable_blocks(
             if current is None:
                 current = SortableBlock(idx, idx + 1)
                 blocks.append(current)
-            # else:
-            #     current.imports.sort()
 
-            overlap_idx = name_overlap_idx(current, imp)
-            if overlap_idx is not None:
+            overlap = name_overlap(current, imp)
+            if overlap:
                 # This overwrites an earlier name
-                current = split_inplace(current, overlap_idx)
+                current = split_inplace(current, overlap)
                 blocks.append(current)
 
             current.add_import(imp, idx)
