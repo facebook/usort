@@ -3,6 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from multiprocessing import freeze_support
 from .cli import main
 
-main(prog_name="usort")
+if __name__ == "__main__":
+    freeze_support()
+    main(prog_name="usort")
