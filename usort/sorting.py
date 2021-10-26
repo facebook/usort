@@ -106,13 +106,17 @@ def split_inplace(block: SortableBlock, overlap: Set[str]) -> SortableBlock:
 
     count = last_idx + 1
     if count >= len(block.imports):
+        # shadowed import is the last import in the block, so we can't split anything.
+        # return a new, empty block following pattern from sortable_blocks()
         new = SortableBlock(block.end_idx, block.end_idx + 1)
 
     else:
+        # Split the existing block after the shadowed import, creating a new block that
+        # starts after the shadowed import, update the old block's end index, and then
+        # move all the imports after that to the new block
         new = SortableBlock(block.start_idx + count, block.end_idx)
         block.end_idx = block.start_idx + count
 
-        # move imports
         new.imports = block.imports[count:]
         block.imports[count:] = []
 
