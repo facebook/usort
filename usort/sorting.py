@@ -97,14 +97,15 @@ def split_inplace(block: SortableBlock, overlap: Set[str]) -> SortableBlock:
         imp.items.sort()
     block.imports.sort()
 
-    # find last index of shadowed import
-    last_idx = -1
-    for idx, imp in enumerate(block.imports):
+    # find index of last shadowed import, starting from the end of the block's imports
+    idx = len(block.imports)
+    while idx > 0:
+        idx -= 1
+        imp = block.imports[idx]
         if any(item.fullname in overlap for item in imp.items):
-            last_idx = max(last_idx, idx)
-    assert last_idx >= 0
+            break
 
-    count = last_idx + 1
+    count = idx + 1
     if count >= len(block.imports):
         # shadowed import is the last import in the block, so we can't split anything.
         # return a new, empty block following pattern from sortable_blocks()
