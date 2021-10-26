@@ -61,13 +61,23 @@ def is_sortable_import(stmt: cst.CSTNode, config: Config) -> bool:
 
 
 def name_overlap(block: SortableBlock, imp: SortableImport) -> Set[str]:
+    """
+    Find imported names that overlap existing names for a block of imports.
+
+    Compares imports of a proposed, but not yet included, import with existing imports
+    in a block. Ignores multiple imports of the same "name" that come from the same
+    qualified name. Eg, `os.path` doesn't shadow `os`, but `from foo import os` does.
+
+    Returns a set of qualified names from `imp` that shadow names from `block`.
+    This set will be empty if there are no overlaps.
+    """
     overlap: Set[str] = set()
 
     for key, value in imp.imported_names.items():
         shadowed = block.imported_names.get(key)
         if shadowed and shadowed != value:
             LOG.warning(
-                f"Name {shadowed!r} shadowed by {value!r}; " f"implicit block split"
+                f"Name {shadowed!r} shadowed by {value!r}; implicit block split"
             )
             overlap.add(shadowed)
 
@@ -75,6 +85,13 @@ def name_overlap(block: SortableBlock, imp: SortableImport) -> Set[str]:
 
 
 def split_inplace(block: SortableBlock, overlap: Set[str]) -> SortableBlock:
+    """
+    Split an existing block into two blocks after the last shadowed import.
+
+    Pre-sorts the block of imports, then finds the last import with shadowed names, and
+    splits after that import. Returns a new block containing all imports after the split
+    point, or empty otherwise.
+    """
     # best-effort pre-sorting before we split
     for imp in block.imports:
         imp.items.sort()
@@ -85,17 +102,19 @@ def split_inplace(block: SortableBlock, overlap: Set[str]) -> SortableBlock:
     for idx, imp in enumerate(block.imports):
         if any(item.fullname in overlap for item in imp.items):
             last_idx = max(last_idx, idx)
+    assert last_idx >= 0
 
-    delta = last_idx + 1
-    if delta >= len(block.imports):
+    count = last_idx + 1
+    if count >= len(block.imports):
         new = SortableBlock(block.end_idx, block.end_idx + 1)
 
     else:
-        new = SortableBlock(block.start_idx + delta, block.end_idx)
-        block.end_idx = block.start_idx + delta
+        new = SortableBlock(block.start_idx + count, block.end_idx)
+        block.end_idx = block.start_idx + count
 
-        new.imports = block.imports[delta:]
-        block.imports[delta:] = []
+        # move imports
+        new.imports = block.imports[count:]
+        block.imports[count:] = []
 
         # move imported names metadata
         for imp in new.imports:
