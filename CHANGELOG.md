@@ -1,3 +1,19 @@
+## 1.0.0a1
+
+Alpha release
+
+* New feature: sorting items in a single import statement (#81)
+* New feature: merging imports from the same module (#81)
+* Improved performance by sorting multiple files in parallel (#70)
+* Officially support Python 3.10 (#74)
+
+```shell-session
+$ git shortlog -sn v0.6.4...
+    62  John Reese
+     7  Tim Hatch
+     5  dependabot[bot]
+```
+
 ## 0.6.4
 
 Bugfix release
