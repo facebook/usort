@@ -271,6 +271,7 @@ class TypesTest(unittest.TestCase):
                             indent = '    ',
                         ),
                     ],
+                    imported_names = {},
                 )
             """
         ).strip()

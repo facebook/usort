@@ -3,7 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Dict, List, Optional, Sequence, Tuple
+import logging
+from typing import List, Optional, Sequence, Set, Tuple
 
 import libcst as cst
 from libcst.metadata import PositionProvider
@@ -12,12 +13,7 @@ from .config import Config
 from .translate import import_from_node, import_to_node
 from .types import SortableBlock, SortableImport
 
-
-def name_overlap(a: Dict[str, str], b: Dict[str, str]) -> bool:
-    for k, v in b.items():
-        if k in a and a[k] != v:
-            return True
-    return False
+LOG = logging.getLogger(__name__)
 
 
 def is_sortable_import(stmt: cst.CSTNode, config: Config) -> bool:
@@ -64,6 +60,75 @@ def is_sortable_import(stmt: cst.CSTNode, config: Config) -> bool:
         return False
 
 
+def name_overlap(block: SortableBlock, imp: SortableImport) -> Set[str]:
+    """
+    Find imported names that overlap existing names for a block of imports.
+
+    Compares imports of a proposed, but not yet included, import with existing imports
+    in a block. Ignores multiple imports of the same "name" that come from the same
+    qualified name. Eg, `os.path` doesn't shadow `os`, but `from foo import os` does.
+
+    Returns a set of qualified names from `imp` that shadow names from `block`.
+    This set will be empty if there are no overlaps.
+    """
+    overlap: Set[str] = set()
+
+    for key, value in imp.imported_names.items():
+        shadowed = block.imported_names.get(key)
+        if shadowed and shadowed != value:
+            LOG.warning(
+                f"Name {shadowed!r} shadowed by {value!r}; implicit block split"
+            )
+            overlap.add(shadowed)
+
+    return overlap
+
+
+def split_inplace(block: SortableBlock, overlap: Set[str]) -> SortableBlock:
+    """
+    Split an existing block into two blocks after the last shadowed import.
+
+    Pre-sorts the block of imports, then finds the last import with shadowed names, and
+    splits after that import. Returns a new block containing all imports after the split
+    point, or empty otherwise.
+    """
+    # best-effort pre-sorting before we split
+    for imp in block.imports:
+        imp.items.sort()
+    block.imports.sort()
+
+    # find index of last shadowed import, starting from the end of the block's imports
+    idx = len(block.imports)
+    while idx > 0:
+        idx -= 1
+        imp = block.imports[idx]
+        if any(item.fullname in overlap for item in imp.items):
+            break
+
+    count = idx + 1
+    if count >= len(block.imports):
+        # shadowed import is the last import in the block, so we can't split anything.
+        # return a new, empty block following pattern from sortable_blocks()
+        new = SortableBlock(block.end_idx, block.end_idx + 1)
+
+    else:
+        # Split the existing block after the shadowed import, creating a new block that
+        # starts after the shadowed import, update the old block's end index, and then
+        # move all the imports after that to the new block
+        new = SortableBlock(block.start_idx + count, block.end_idx)
+        block.end_idx = block.start_idx + count
+
+        new.imports = block.imports[count:]
+        block.imports[count:] = []
+
+        # move imported names metadata
+        for imp in new.imports:
+            for key in list(imp.imported_names):
+                new.imported_names[key] = block.imported_names.pop(key)
+
+    return new
+
+
 def sortable_blocks(
     body: Sequence[cst.BaseStatement], config: Config
 ) -> List[SortableBlock]:
@@ -74,22 +139,21 @@ def sortable_blocks(
     """
     blocks: List[SortableBlock] = []
     current: Optional[SortableBlock] = None
-    for i, stmt in enumerate(body):
+    for idx, stmt in enumerate(body):
         if is_sortable_import(stmt, config):
             assert isinstance(stmt, cst.SimpleStatementLine)
             imp = import_from_node(stmt, config)
             if current is None:
-                current = SortableBlock(i, i + 1)
+                current = SortableBlock(idx, idx + 1)
                 blocks.append(current)
 
-            if name_overlap(current.imported_names, imp.imported_names):
+            overlap = name_overlap(current, imp)
+            if overlap:
                 # This overwrites an earlier name
-                current = SortableBlock(i, i + 1)
+                current = split_inplace(current, overlap)
                 blocks.append(current)
 
-            current.end_idx = i + 1
-            current.imports.append(imp)
-            current.imported_names.update(imp.imported_names)
+            current.add_import(imp, idx)
         else:
             if current:
                 current = None

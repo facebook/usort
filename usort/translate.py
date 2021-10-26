@@ -113,7 +113,7 @@ def import_comments_from_node(node: cst.SimpleStatementLine) -> ImportComments:
 
 
 def item_from_node(
-    node: cst.ImportAlias, before: Sequence[str] = ()
+    node: cst.ImportAlias, stem: Optional[str] = None, before: Sequence[str] = ()
 ) -> SortableImportItem:
     name = with_dots(node.name)
     asname = with_dots(node.asname.name) if node.asname else ""
@@ -156,7 +156,7 @@ def item_from_node(
                 line.comment.value for line in ws.empty_lines if line.comment
             )
 
-    return SortableImportItem(name=name, asname=asname, comments=comments)
+    return SortableImportItem(name=name, asname=asname, comments=comments, stem=stem)
 
 
 def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableImport:
@@ -188,7 +188,7 @@ def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableI
             stem = "." * len(node.body[0].relative) + stem
 
         for name in node.body[0].names:
-            items.append(item_from_node(name, comments.initial))
+            items.append(item_from_node(name, stem, comments.initial))
             comments.initial = []
 
     else:

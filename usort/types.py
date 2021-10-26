@@ -92,6 +92,11 @@ class SortableImportItem:
     name: str = field(order=str.casefold)
     asname: Optional[str] = field(eq=True, order=case_insensitive_ordering)
     comments: ImportItemComments = field(eq=False, order=False)
+    stem: Optional[str] = field(order=False, default=None, repr=False)
+
+    @property
+    def fullname(self) -> str:
+        return stem_join(self.stem, self.name)
 
     def __add__(self, other: "SortableImportItem") -> "SortableImportItem":
         if not isinstance(other, SortableImportItem):
@@ -104,6 +109,7 @@ class SortableImportItem:
             name=self.name,
             asname=self.asname,
             comments=self.comments + other.comments,
+            stem=self.stem,
         )
 
 
@@ -192,7 +198,7 @@ class SortableImport:
                 key = top_level_name(item.name)
                 value = key
             else:
-                value = stem_join(stem=self.stem, name=item.name)
+                value = item.fullname
             results[key] = value
 
         return results
@@ -222,7 +228,7 @@ class SortableImport:
 @dataclass(repr=False)
 class SortableBlock:
     start_idx: int
-    end_idx: Optional[int] = None  # half-open interval
+    end_idx: int  # half-open interval
 
     imports: List[SortableImport] = field(factory=list)
     imported_names: Dict[str, str] = field(factory=dict)
@@ -238,9 +244,21 @@ class SortableBlock:
                         imports = [
                     {imports}
                         ],
+                        imported_names = {imported_names!r},
                     )
                 """
             )
             .strip()
-            .format(start_idx=self.start_idx, end_idx=self.end_idx, imports=imports)
+            .format(
+                start_idx=self.start_idx,
+                end_idx=self.end_idx,
+                imports=imports,
+                imported_names=self.imported_names,
+            )
         )
+
+    def add_import(self, imp: SortableImport, idx: int) -> None:
+        self.end_idx = idx + 1
+        self.imports.append(imp)
+        for key, value in imp.imported_names.items():
+            self.imported_names[key] = value

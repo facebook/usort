@@ -50,19 +50,19 @@ class UsortStringFunctionalTest(unittest.TestCase):
         config = config or DEFAULT_CONFIG
         result1 = usort_string(before, config)  # first pass
         result2 = usort_string(result1, config)  # enforce stable sorting on second pass
-        if result1 != after:
-            self.fail(
-                "µsort result did not match expected value:\n\n"
-                f"Before:\n-------\n{before}\n"
-                f"Expected:\n---------\n{after}\n"
-                f"Result:\n-------\n{result1}"
-            )
         if result2 != result1:
             self.fail(
                 "µsort result was not stable on second pass:\n\n"
                 f"Before:\n-------\n{before}\n"
                 f"First Pass:\n-----------\n{result1}\n"
                 f"Second Pass:\n------------\n{result2}"
+            )
+        if result2 != after:
+            self.fail(
+                "µsort result did not match expected value:\n\n"
+                f"Before:\n-------\n{before}\n"
+                f"Expected:\n---------\n{after}\n"
+                f"Result:\n-------\n{result1}"
             )
 
     def test_sort_ordering(self) -> None:
@@ -677,6 +677,68 @@ numpy = ["numpy", "pandas"]
                 from foo.bar import b, c, d
             """,
             Config(merge_imports=False),
+        )
+
+    def test_sort_implicit_blocks1(self) -> None:
+        self.assertUsortResult(
+            """
+                from phi import phi
+                from alpha import SHADOW
+                from delta import delta
+                from eta import eta
+                from mu import SHADOW
+                from chi import chi
+                from beta import beta
+            """,
+            """
+                from alpha import SHADOW
+                from beta import beta
+                from chi import chi
+                from delta import delta
+                from eta import eta
+                from mu import SHADOW
+                from phi import phi
+            """,
+        )
+
+    def test_sort_implicit_blocks2(self) -> None:
+        self.assertUsortResult(
+            """
+                from mu import SHADOW
+                from delta import delta
+                from eta import eta
+                from chi import chi
+                from alpha import SHADOW
+                from beta import beta
+            """,
+            """
+                from chi import chi
+                from delta import delta
+                from eta import eta
+                from mu import SHADOW
+                from alpha import SHADOW
+                from beta import beta
+            """,
+        )
+
+    def test_sort_implicit_blocks3(self) -> None:
+        self.assertUsortResult(
+            """
+                from phi import phi
+                from delta import SHADOW
+                from eta import eta
+                from chi import chi
+                from alpha import SHADOW
+                from beta import beta
+            """,
+            """
+                from chi import chi
+                from delta import SHADOW
+                from alpha import SHADOW
+                from beta import beta
+                from eta import eta
+                from phi import phi
+            """,
         )
 
 
