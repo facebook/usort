@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from multiprocessing import freeze_support
+
 from .cli import main
 
 if __name__ == "__main__":

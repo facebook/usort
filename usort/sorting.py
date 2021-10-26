@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Set, Tuple
 
 import libcst as cst
 from libcst.metadata import PositionProvider
@@ -60,8 +60,8 @@ def is_sortable_import(stmt: cst.CSTNode, config: Config) -> bool:
         return False
 
 
-def name_overlap(block: SortableBlock, imp: SortableImport) -> List[str]:
-    overlap: List[str] = []
+def name_overlap(block: SortableBlock, imp: SortableImport) -> Set[str]:
+    overlap: Set[str] = set()
 
     for key, value in imp.imported_names.items():
         shadowed = block.imported_names.get(key)
@@ -69,12 +69,12 @@ def name_overlap(block: SortableBlock, imp: SortableImport) -> List[str]:
             LOG.warning(
                 f"Name {shadowed!r} shadowed by {value!r}; " f"implicit block split"
             )
-            overlap.append(shadowed)
+            overlap.add(shadowed)
 
     return overlap
 
 
-def split_inplace(block: SortableBlock, overlap: List[str]) -> SortableBlock:
+def split_inplace(block: SortableBlock, overlap: Set[str]) -> SortableBlock:
     # best-effort pre-sorting before we split
     for imp in block.imports:
         imp.items.sort()
