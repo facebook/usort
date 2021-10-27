@@ -604,6 +604,30 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_merging_imports_with_multiple_blocks(self) -> None:
+        """verify that merging doesn't affect future blocks/statements"""
+        self.assertUsortResult(
+            """
+                import os
+                import os.path
+                from datetime import date
+                from datetime import datetime
+                from typing import *
+                import re
+                from pathlib import Path
+                print("hello world")
+            """,
+            """
+                import os
+                import os.path
+                from datetime import date, datetime
+                from typing import *
+                import re
+                from pathlib import Path
+                print("hello world")
+            """,
+        )
+
     def test_merging_import_items_comments(self) -> None:
         self.assertUsortResult(
             """

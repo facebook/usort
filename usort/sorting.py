@@ -155,8 +155,7 @@ def sortable_blocks(
 
             current.add_import(imp, idx)
         else:
-            if current:
-                current = None
+            current = None
     return blocks
 
 
@@ -253,7 +252,9 @@ def find_and_sort_blocks(
         imports = fixup_whitespace(initial_blank, imports)
         block.imports = sorted(imports)
 
-    for block in blocks:
+    # replace statements in reverse order in case some got merged, which throws off
+    # indexes for statements past the merge
+    for block in reversed(blocks):
         sorted_body[block.start_idx : block.end_idx] = [
             import_to_node(imp, module, indent, config) for imp in block.imports
         ]
