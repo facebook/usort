@@ -222,7 +222,8 @@ def import_to_node(
 ) -> cst.BaseStatement:
     node = import_to_node_single(imp, module)
     content = indent + render_node(node, module).rstrip()
-    if len(content) > config.line_length:
+    # basic imports can't be reflowed, so only deal with from-imports
+    if imp.stem and len(content) > config.line_length:
         node = import_to_node_multi(imp, module)
     return node
 
@@ -385,7 +386,7 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
 
     # import foo
     else:
-        body = [cst.Import(names=names)]
+        raise ValueError("can't render basic imports on multiple lines")
 
     # comment lines above import
     leading_lines = [
