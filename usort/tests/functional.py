@@ -542,6 +542,19 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_single_line_import_long_comment(self) -> None:
+        """
+        Basic import statements can't be reflowed to multiple lines
+        """
+        self.assertUsortResult(
+            """
+                import foo, bar, baz  # some really long inline comment that would can't be reflowed to a new line
+            """,
+            """
+                import bar, baz, foo  # some really long inline comment that would can't be reflowed to a new line
+            """,
+        )
+
     def test_sorting_import_items(self) -> None:
         self.assertUsortResult(
             """
