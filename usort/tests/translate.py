@@ -5,8 +5,10 @@
 
 import unittest
 
+import libcst as cst
+
 from ..config import Config
-from ..sorting import is_sortable_import
+from ..sorting import ImportSorter
 from ..translate import import_from_node
 from ..util import parse_import
 
@@ -81,8 +83,9 @@ class SortableImportTest(unittest.TestCase):
 
 class IsSortableTest(unittest.TestCase):
     def test_is_sortable(self) -> None:
-        self.assertTrue(is_sortable_import(parse_import("import a"), Config()))
-        self.assertTrue(is_sortable_import(parse_import("from a import b"), Config()))
+        sorter = ImportSorter(module=cst.Module([]), config=Config())
+        self.assertTrue(sorter.is_sortable_import(parse_import("import a")))
+        self.assertTrue(sorter.is_sortable_import(parse_import("from a import b")))
         self.assertFalse(
-            is_sortable_import(parse_import("import a  # isort: skip"), Config())
+            sorter.is_sortable_import(parse_import("import a  # isort: skip"))
         )

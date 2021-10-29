@@ -28,6 +28,12 @@ class Options:
 
 
 @dataclass
+class SortWarning:
+    line: int
+    message: str
+
+
+@dataclass
 class Result:
     path: Path
     content: bytes
@@ -38,6 +44,7 @@ class Result:
     error: Optional[Exception] = None
     trace: str = ""
     timings: Sequence[Timing] = ()
+    warnings: Sequence[SortWarning] = ()
 
 
 @dataclass

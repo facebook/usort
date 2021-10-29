@@ -17,7 +17,7 @@ from usort.translate import render_node
 from . import __version__
 from .api import usort_path, usort_stdin
 from .config import Config
-from .sorting import sortable_blocks
+from .sorting import ImportSorter
 from .types import Options
 from .util import get_timings, print_timings, Timing, try_parse
 
@@ -75,7 +75,8 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> int:
         config = Config.find(Path(f))
         mod = try_parse(Path(f))
         try:
-            blocks = sortable_blocks(mod.body, config)
+            sorter = ImportSorter(module=mod, config=config)
+            blocks = sorter.sortable_blocks(mod.body)
         except Exception as e:
             print("Exception", f, e)
             continue
