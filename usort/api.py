@@ -64,7 +64,8 @@ def usort_bytes(
     if result.error:
         raise result.error
 
-    return result.output, result.encoding or ""
+    assert result.encoding is not None
+    return result.output, result.encoding
 
 
 def usort_string(data: str, config: Config, path: Optional[Path] = None) -> str:
