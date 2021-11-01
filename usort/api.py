@@ -6,7 +6,8 @@
 import sys
 from functools import partial
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Tuple
+from warnings import warn
 
 from trailrunner import run, walk
 
@@ -19,7 +20,7 @@ from .util import get_timings, timed, try_parse
 __all__ = ["usort_bytes", "usort_string", "usort_path", "usort_stdin"]
 
 
-def usort_bytes(data: bytes, config: Config, path: Optional[Path] = None) -> Result:
+def usort(data: bytes, config: Config, path: Optional[Path] = None) -> Result:
     """
     Given bytes for a module, this parses and sorts imports, and returns a Result.
     """
@@ -49,6 +50,23 @@ def usort_bytes(data: bytes, config: Config, path: Optional[Path] = None) -> Res
         )
 
 
+def usort_bytes(
+    data: bytes, config: Config, path: Optional[Path] = None
+) -> Tuple[bytes, str]:
+    """
+    Returns (new_bytes, encoding_str) after sorting.
+
+    DEPRECATED: use `usort()` directly instead.
+    """
+    warn("use usort() instead", DeprecationWarning)
+
+    result = usort(data=data, config=config, path=path)
+    if result.error:
+        raise result.error
+
+    return result.output, result.encoding or ""
+
+
 def usort_string(data: str, config: Config, path: Optional[Path] = None) -> str:
     r"""
     Whenever possible use usort_bytes instead.
@@ -61,8 +79,16 @@ def usort_string(data: str, config: Config, path: Optional[Path] = None) -> str:
 
     - a string unrepresentable in utf-8, e.g. "\ud800" is a single high surrogate
     - a string with a valid pep 263 coding line, other than utf-8
+
+    DEPRECATED: use `usort()` directly, and and encode/decode bytes as necessary.
     """
-    return usort_bytes(data=data.encode(), config=config, path=path).output.decode()
+    warn("use usort() instead", DeprecationWarning, stacklevel=2)
+
+    result = usort(data=data.encode(), config=config, path=path)
+    if result.error:
+        raise result.error
+
+    return result.output.decode()
 
 
 def usort_file(path: Path, *, write: bool = False) -> Result:
@@ -73,7 +99,7 @@ def usort_file(path: Path, *, write: bool = False) -> Result:
     try:
         config = Config.find(path.parent)
         data = path.read_bytes()
-        result = usort_bytes(data, config, path)
+        result = usort(data, config, path)
 
         if result.output and write:
             path.write_bytes(result.output)
