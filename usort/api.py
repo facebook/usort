@@ -4,15 +4,15 @@
 # LICENSE file in the root directory of this source tree.
 
 import sys
-import traceback
 from functools import partial
 from pathlib import Path
 from typing import Iterable, Optional, Tuple
+from warnings import warn
 
 from trailrunner import run, walk
 
 from .config import Config
-from .sorting import sort_module
+from .sorting import ImportSorter
 from .types import Result
 from .util import get_timings, timed, try_parse
 
@@ -20,19 +20,52 @@ from .util import get_timings, timed, try_parse
 __all__ = ["usort_bytes", "usort_string", "usort_path", "usort_stdin"]
 
 
+def usort(data: bytes, config: Config, path: Optional[Path] = None) -> Result:
+    """
+    Given bytes for a module, this parses and sorts imports, and returns a Result.
+    """
+    if path is None:
+        path = Path("<data>")
+
+    try:
+        module = try_parse(data=data, path=path)
+        sorter = ImportSorter(module=module, path=path, config=config)
+        new_mod = sorter.sort_module()
+
+        return Result(
+            path=path,
+            content=data,
+            output=new_mod.bytes,
+            encoding=new_mod.encoding,
+            timings=get_timings(),
+            warnings=sorter.warnings,
+        )
+
+    except Exception as e:
+        return Result(
+            path=path,
+            content=data,
+            error=e,
+            timings=get_timings(),
+        )
+
+
 def usort_bytes(
     data: bytes, config: Config, path: Optional[Path] = None
 ) -> Tuple[bytes, str]:
     """
     Returns (new_bytes, encoding_str) after sorting.
-    """
-    if path is None:
-        path = Path("<data>")
 
-    module = try_parse(data=data, path=path)
-    with timed(f"sorting {path}"):
-        new_mod = sort_module(module, config)
-        return (new_mod.bytes, new_mod.encoding)
+    DEPRECATED: use `usort()` directly instead.
+    """
+    warn("use usort() instead", DeprecationWarning)
+
+    result = usort(data=data, config=config, path=path)
+    if result.error:
+        raise result.error
+
+    assert result.encoding is not None
+    return result.output, result.encoding
 
 
 def usort_string(data: str, config: Config, path: Optional[Path] = None) -> str:
@@ -47,8 +80,16 @@ def usort_string(data: str, config: Config, path: Optional[Path] = None) -> str:
 
     - a string unrepresentable in utf-8, e.g. "\ud800" is a single high surrogate
     - a string with a valid pep 263 coding line, other than utf-8
+
+    DEPRECATED: use `usort()` directly, and and encode/decode bytes as necessary.
     """
-    return usort_bytes(data=data.encode(), config=config, path=path)[0].decode()
+    warn("use usort() instead", DeprecationWarning, stacklevel=2)
+
+    result = usort(data=data.encode(), config=config, path=path)
+    if result.error:
+        raise result.error
+
+    return result.output.decode()
 
 
 def usort_file(path: Path, *, write: bool = False) -> Result:
@@ -56,25 +97,21 @@ def usort_file(path: Path, *, write: bool = False) -> Result:
     Format a single file and return a Result object.
     """
 
-    data: bytes = b""
     try:
         config = Config.find(path.parent)
         data = path.read_bytes()
-        output, encoding = usort_bytes(data, config, path)
-        if write:
-            path.write_bytes(output)
-        return Result(
-            path=path,
-            content=data,
-            output=output,
-            encoding=encoding,
-            timings=get_timings(),
-        )
+        result = usort(data, config, path)
+
+        if result.output and write:
+            path.write_bytes(result.output)
+
+        return result
 
     except Exception as e:
-        trace = "".join(traceback.format_exception(*sys.exc_info()))
         return Result(
-            path=path, content=data, error=e, trace=trace, timings=get_timings()
+            path=path,
+            error=e,
+            timings=get_timings(),
         )
 
 
@@ -84,10 +121,11 @@ def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
     """
     with timed(f"total for {path}"):
         with timed(f"walking {path}"):
-            paths = walk(path)
+            paths = list(walk(path))
 
         fn = partial(usort_file, write=write)
-        return (v for v in run(paths, fn).values())
+        results = [v for v in run(paths, fn).values()]
+        return results
 
 
 def usort_stdin() -> bool:

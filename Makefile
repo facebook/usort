@@ -40,6 +40,9 @@ lint:
 	python -m flake8 $(SOURCES)
 	/bin/bash check_copyright.sh
 
+.PHONY: deps
+deps:
+	python -m pessimist --requirements= -c "python -m usort --help" .
 
 .PHONY: html
 html:

@@ -10,7 +10,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import Optional
 
-from ..api import usort_string
+from ..api import usort
 from ..config import Config
 from ..translate import import_from_node
 from ..util import parse_import
@@ -48,21 +48,21 @@ class UsortStringFunctionalTest(unittest.TestCase):
         before = dedent(before)
         after = dedent(after)
         config = config or DEFAULT_CONFIG
-        result1 = usort_string(before, config)  # first pass
-        result2 = usort_string(result1, config)  # enforce stable sorting on second pass
-        if result2 != result1:
+        result1 = usort(before.encode(), config)  # first pass
+        result2 = usort(result1.output, config)  # enforce stable sorting on second pass
+        if result2.output != result1.output:
             self.fail(
                 "µsort result was not stable on second pass:\n\n"
                 f"Before:\n-------\n{before}\n"
-                f"First Pass:\n-----------\n{result1}\n"
-                f"Second Pass:\n------------\n{result2}"
+                f"First Pass:\n-----------\n{result1.output.decode()}\n"
+                f"Second Pass:\n------------\n{result2.output.decode()}"
             )
-        if result2 != after:
+        if result2.output.decode() != after:
             self.fail(
                 "µsort result did not match expected value:\n\n"
                 f"Before:\n-------\n{before}\n"
                 f"Expected:\n---------\n{after}\n"
-                f"Result:\n-------\n{result1}"
+                f"Result:\n-------\n{result1.output.decode()}"
             )
 
     def test_sort_ordering(self) -> None:
