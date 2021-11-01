@@ -5,7 +5,7 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 import libcst as cst
 from libcst.metadata import PositionProvider
@@ -314,11 +314,9 @@ class ImportSortingTransformer(cst.CSTTransformer):
         self,
         original_node: cst.SimpleStatementLine,
         updated_node: cst.SimpleStatementLine,
-    ) -> Union[
-        cst.BaseStatement, cst.FlattenSentinel[cst.BaseStatement], cst.RemovalSentinel
-    ]:
+    ) -> cst.BaseStatement:
         self.statement_map[updated_node] = original_node
-        return super().leave_SimpleStatementLine(original_node, updated_node)
+        return updated_node
 
     def leave_Module(
         self, original_node: cst.Module, updated_node: cst.Module
