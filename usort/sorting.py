@@ -4,7 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
-from typing import List, Optional, Sequence, Set, Tuple
+from pathlib import Path
+from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
 
 import libcst as cst
 from libcst.metadata import PositionProvider
@@ -12,14 +13,16 @@ from libcst.metadata import PositionProvider
 from .config import Config
 from .translate import import_from_node, import_to_node
 from .types import SortableBlock, SortableImport, SortWarning
+from .util import timed
 
 LOG = logging.getLogger(__name__)
 
 
 class ImportSorter:
-    def __init__(self, *, module: cst.Module, config: Config):
+    def __init__(self, *, module: cst.Module, path: Path, config: Config):
         self.config = config
         self.module = module
+        self.path = path
         self.warnings: List[SortWarning] = []
         self.wrapper = cst.MetadataWrapper(module)
         self.transformer = ImportSortingTransformer(config, module, self)
@@ -87,8 +90,13 @@ class ImportSorter:
         for key, value in imp.imported_names.items():
             shadowed = block.imported_names.get(key)
             if shadowed and shadowed != value:
-                LOG.warning(
-                    f"Name {shadowed!r} shadowed by {value!r}; implicit block split"
+                line = self.transformer.get_line(imp.node)
+                self.warnings.append(
+                    SortWarning(
+                        line,
+                        f"Name {shadowed!r} shadowed by {value!r}; "
+                        "implicit block split",
+                    )
                 )
                 overlap.add(shadowed)
 
@@ -272,8 +280,9 @@ class ImportSorter:
         return sorted_body
 
     def sort_module(self) -> cst.Module:
-        new_module = self.wrapper.visit(self.transformer)
-        return new_module
+        with timed(f"sorting {self.path}"):
+            new_module = self.wrapper.visit(self.transformer)
+            return new_module
 
 
 class ImportSortingTransformer(cst.CSTTransformer):
@@ -285,12 +294,31 @@ class ImportSortingTransformer(cst.CSTTransformer):
         self.config = config
         self.module = module
         self.sorter = sorter
+        self.statement_map: Dict[cst.CSTNode, cst.SimpleStatementLine] = {}
+
+    def get_line(self, node: cst.CSTNode) -> int:
+        if node in self.statement_map:
+            pos = self.get_metadata(PositionProvider, self.statement_map[node])
+        else:
+            pos = self.get_metadata(PositionProvider, node)
+
+        return pos.start.line
 
     def get_indent(self, node: cst.CSTNode) -> str:
         pos = self.get_metadata(PositionProvider, node)
         indent_level = pos.start.column
         indent = self.module.default_indent[0] * indent_level
         return indent
+
+    def leave_SimpleStatementLine(
+        self,
+        original_node: cst.SimpleStatementLine,
+        updated_node: cst.SimpleStatementLine,
+    ) -> Union[
+        cst.BaseStatement, cst.FlattenSentinel[cst.BaseStatement], cst.RemovalSentinel
+    ]:
+        self.statement_map[updated_node] = original_node
+        return super().leave_SimpleStatementLine(original_node, updated_node)
 
     def leave_Module(
         self, original_node: cst.Module, updated_node: cst.Module
@@ -309,7 +337,3 @@ class ImportSortingTransformer(cst.CSTTransformer):
             updated_node.body, module=self.module, indent=indent
         )
         return updated_node.with_changes(body=sorted_body)
-
-
-def sort_module(module: cst.Module, config: Config) -> cst.Module:
-    return ImportSorter(module=module, config=config).sort_module()

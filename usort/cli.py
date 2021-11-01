@@ -72,10 +72,11 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> int:
     # where the barriers are that produce different blocks.
 
     for f in filenames:
-        config = Config.find(Path(f))
-        mod = try_parse(Path(f))
+        path = Path(f)
+        config = Config.find(path)
+        mod = try_parse(path)
         try:
-            sorter = ImportSorter(module=mod, config=config)
+            sorter = ImportSorter(module=mod, path=path, config=config)
             blocks = sorter.sortable_blocks(mod.body)
         except Exception as e:
             print("Exception", f, e)
@@ -123,6 +124,9 @@ def check(filenames: List[str]) -> int:
                 click.echo(f"Error sorting {result.path}: {result.error}")
                 return_code |= 1
 
+            for warning in result.warnings:
+                click.echo(f"Warning at {result.path}:{warning.line} {warning.message}")
+
             if result.content != result.output:
                 click.echo(f"Would sort {result.path}")
                 return_code |= 2
@@ -153,6 +157,9 @@ def diff(ctx: click.Context, filenames: List[str]) -> int:
                     click.echo(result.trace)
                 return_code |= 1
                 continue
+
+            for warning in result.warnings:
+                click.echo(f"Warning at {result.path}:{warning.line} {warning.message}")
 
             if result.content != result.output:
                 assert result.encoding is not None
@@ -193,6 +200,9 @@ def format(filenames: List[str]) -> int:
                 click.echo(f"Error sorting {result.path}: {result.error}")
                 return_code |= 1
                 continue
+
+            for warning in result.warnings:
+                click.echo(f"Warning at {result.path}:{warning.line} {warning.message}")
 
             if result.content != result.output:
                 click.echo(f"Sorted {result.path}")

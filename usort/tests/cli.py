@@ -102,6 +102,18 @@ class CliTest(unittest.TestCase):
         self.assertEqual("Would sort sample.py\n", result.output)
         self.assertEqual(2, result.exit_code)
 
+    def test_check_with_warnings(self) -> None:
+        with sample_contents(b"import os\nimport sys\nimport re as os\n") as dtmp:
+            runner = CliRunner()
+            with chdir(dtmp):
+                result = runner.invoke(main, ["check", "."])
+
+        self.assertEqual(
+            "Warning at sample.py:3 Name 'os' shadowed by 're'; implicit block split\n"
+            "Would sort sample.py\n",
+            result.output,
+        )
+
     def test_diff_no_change(self) -> None:
         with sample_contents("import sys\n") as dtmp:
             runner = CliRunner()

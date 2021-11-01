@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
+from pathlib import Path
 
 import libcst as cst
 
@@ -83,7 +84,7 @@ class SortableImportTest(unittest.TestCase):
 
 class IsSortableTest(unittest.TestCase):
     def test_is_sortable(self) -> None:
-        sorter = ImportSorter(module=cst.Module([]), config=Config())
+        sorter = ImportSorter(module=cst.Module([]), path=Path(), config=Config())
         self.assertTrue(sorter.is_sortable_import(parse_import("import a")))
         self.assertTrue(sorter.is_sortable_import(parse_import("from a import b")))
         self.assertFalse(
