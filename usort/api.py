@@ -117,7 +117,7 @@ def usort_file(path: Path, *, write: bool = False) -> Result:
 
 def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
     """
-    For a given path, format it, or any .py files in it, and yield Result objects
+    For a given path, format it, or any .py files in it, and yield :class:`Result` s.
     """
     with timed(f"total for {path}"):
         with timed(f"walking {path}"):
