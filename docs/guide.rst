@@ -68,6 +68,7 @@ to this example, for a module in the namespace :mod:`something`::
     import sys
     from datetime import date, datetime, timedelta
     from pathlib import Path
+    from unittest import expectedFailure, TestCase, skip
 
     # third-party
     import requests
@@ -77,7 +78,7 @@ to this example, for a module in the namespace :mod:`something`::
     # first-party
     from something import other_function, some_function
     from . import some_module
-    from .other_module import some_name, that_thing
+    from .other_module import SomeClass, some_thing, TestFixture
 
 
 Merging
@@ -88,7 +89,17 @@ of the same style from the same module, and merge them into a single statement.
 Individual names imported from that module will be deduplicated, and any associated
 inline comments will be merged.
 
-*todo*
+For a simple example, starting with the following imports::
+
+    from unittest import expectedFailure, skip
+    from typing import List, Dict
+    from unittest import TestCase
+    from typing import Set, Mapping
+
+After running µsort, these imports would be merged together::
+
+    from typing import Dict, List, Mapping, Set
+    from unittest import expectedFailure, TestCase, skip
 
 If desired, this behavior can be disabled in your project `configuration`_.
 
