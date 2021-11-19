@@ -292,6 +292,24 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_whitespace_between_sections_indented(self) -> None:
+        self.assertUsortResult(
+            """
+                import sys
+                def foo():
+                    import os
+                    from something import nothing
+            """,
+            # TODO: maybe we should add whitespace after the last import in a block?
+            """
+                import sys
+                def foo():
+                    import os
+
+                    from something import nothing
+            """,
+        )
+
     def test_case_insensitive_sorting(self) -> None:
         content = """
             import calendar
