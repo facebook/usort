@@ -280,9 +280,9 @@ numpy = ["numpy", "pandas"]
                 #comment
                 from . import first_party
             """,
+            # TODO: force a blank line here?
             """
                 from __future__ import division, unicode_literals
-
                 import sys
 
                 import third_party

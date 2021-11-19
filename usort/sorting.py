@@ -153,11 +153,20 @@ class ImportSorter:
         are no duplicate names.
         """
         blocks: List[SortableBlock] = []
+        last: Optional[SortableImport] = None
         current: Optional[SortableBlock] = None
         for idx, stmt in enumerate(body):
             if self.is_sortable_import(stmt):
                 assert isinstance(stmt, cst.SimpleStatementLine)
                 imp = import_from_node(stmt, self.config)
+
+                # implicit block split before and after __future__ imports
+                if last and (
+                    (last.stem == "__future__" and imp.stem != "__future__")
+                    or (imp.stem == "__future__" and last.stem != "__future__")
+                ):
+                    current = None
+
                 if current is None:
                     current = SortableBlock(idx, idx + 1)
                     blocks.append(current)
@@ -169,8 +178,10 @@ class ImportSorter:
                     blocks.append(current)
 
                 current.add_import(imp, idx)
+                last = imp
             else:
                 current = None
+                last = None
         return blocks
 
     def partition_leading_lines(
