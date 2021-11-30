@@ -1,5 +1,5 @@
 black==21.11b1
-coverage==6.1.2
+coverage==6.2
 flake8==4.0.1
 mypy==0.910
 pessimist==0.9.0
