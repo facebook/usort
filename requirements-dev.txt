@@ -10,4 +10,4 @@ twine==3.6.0
 ufmt==1.3.0
 volatile==2.1.0
 wheel==0.37.0
-git+https://github.com/miyakogi/m2r@66f4a5a500cdd9fc59085106bff082c9cadafaf3
+git+https://github.com/jreese/m2r2@0b47a42a79ebaee4541142816d7246822a93f565
