@@ -86,8 +86,6 @@ Merging
 
 After sorting import statements within a block, µsort will look for sequential imports
 of the same style from the same module, and merge them into a single statement.
-Individual names imported from that module will be deduplicated, and any associated
-inline comments will be merged.
 
 For a simple example, starting with the following imports::
 
@@ -101,7 +99,119 @@ After running µsort, these imports would be merged together::
     from typing import Dict, List, Mapping, Set
     from unittest import expectedFailure, TestCase, skip
 
-If desired, this behavior can be disabled in your project `configuration`_.
+Individual names imported from that module will be deduplicated, and any associated
+inline comments will be merged at best effort (see `Comments`_ for association details).
+µsort will ensure that it keeps one and only one of each unique imported name,
+including any aliases. Given the following import statements::
+
+    from foo import alpha, beta, gamma
+    from foo import alpha as a
+    from foo import alpha as egg
+    from foo import alpha as a
+    from foo import beta, gamma, delta
+
+µsort will merge all of the import statements above into a single statement, preserving
+all three aliases of `alpha` (expanded here for clarity)::
+
+    from foo import (
+        alpha,
+        alpha as a,
+        alpha as egg,
+        beta,
+        delta,
+        gamma,
+    )
+
+If desired, merging behavior can be disabled in your project `configuration`_.
+
+Merging Comments
+^^^^^^^^^^^^^^^^
+
+µsort will attempt to preserve any comments associated with an import statement, or any
+imported names, and merge them with comments from the same name or same part from the
+the other statement. See `Comment Associations`_ for details on association rules.
+
+For sake of simplicity in the implementation, comments are not deduplicated, and will
+be reproduced in their entirety, including the comment prefix. Their final order is
+arbitrary, and based on the order of statements they originate from after an initial
+round of sorting.
+
+An example showing some, but not all, possible ways comments will be moved or merged::
+
+    # alpha
+    from foo import (  # beta
+        # gamma
+        bar,  # delta
+        baz,
+        # epsilon
+    )  # zeta
+
+    # eta
+    from foo import (  # theta
+        # iota
+        bar,  # kappa
+        # lambda
+        buzz,
+        # mu
+    )  # nu
+
+Both statements will be merged, and comments will follow their respective elements::
+
+    # alpha
+    # eta
+    from foo import (  # beta  # theta
+        # gamma
+        # iota
+        bar,  # delta  # kappa
+        baz,
+        # lambda
+        buzz,
+        # epsilon
+        # mu
+    )  # zeta  # nu
+
+Comment Associations
+--------------------
+
+When moving or merging imports, µsort will attempt to associate and preserve comments
+based on simple heuristics for ownership:
+
+* Whole-line, or block, comments:
+
+  * outside of a multi-line statement are associated with the statement that follows
+    the comment.
+  * inside a multi-line statement, that precede an imported name, will be associated
+    with the imported name.
+  * inside a multi-line statement, that precede the closing braces for the statement,
+    will be associated with the end of the statement.
+  * inside a multi-line statement, that precede a comma, will be associated with the
+    imported name preceding the comma.
+
+* Inline, or trailing, comments:
+
+  * immediately following the opening brace of a multi-line statement are associated
+    with the statement.
+  * following an imported name, or comma, will be associated with the imported name
+    that precedes the comment.
+
+Given the number of possible places for comments in the Python grammar for a single
+import statement, it may be easier to follow this example::
+
+    # IMPORT
+    from foo import (  # IMPORT
+        # BETA
+        beta,  # BETA
+
+        # ALPHA
+        alpha  # ALPHA
+        # ALPHA
+        , # ALPHA
+
+        # IMPORT
+    )  # IMPORT
+
+Be aware that blank lines do not impact association rules, and the blank lines in the
+example above are purely for clarity.
 
 Configuration
 -------------
