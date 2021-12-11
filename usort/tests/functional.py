@@ -11,7 +11,7 @@ from textwrap import dedent
 from typing import Optional
 
 from ..api import usort
-from ..config import Config
+from ..config import Config, CAT_FUTURE
 from ..translate import import_from_node
 from ..util import parse_import
 
@@ -776,6 +776,30 @@ numpy = ["numpy", "pandas"]
                 from eta import eta
                 from phi import phi
             """,
+        )
+
+    def test_sort_future_block(self) -> None:
+        """Ensure we won't sort things across __future__, even with bad config"""
+        config = Config(
+            known={
+                "___foo___": CAT_FUTURE,
+            },
+        )
+        self.assertUsortResult(
+            """
+                import sys
+                from __future__ import print_function
+                from ___foo___ import bar
+                import os
+            """,
+            """
+                import sys
+                from __future__ import print_function
+                from ___foo___ import bar
+
+                import os
+            """,
+            config=config,
         )
 
 
