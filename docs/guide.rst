@@ -174,6 +174,20 @@ Both statements will be merged, and comments will follow their respective elemen
 Comments
 --------
 
+Directives
+^^^^^^^^^^
+
+µsort will obey simple `# usort:skip` directives to prevent moving import statements,
+including moving any other statements across the skipped statement::
+
+    import math
+
+    import important_thing  # usort: skip
+
+    import difflib
+
+See `Import Blocks`_ for details on how this affects sorting behavior.
+
 Associations
 ^^^^^^^^^^^^
 
@@ -217,7 +231,7 @@ import statement, it may be easier to follow this example::
 Be aware that blank lines do not impact association rules, and the blank lines in the
 example above are purely for clarity.
 
-.. note:: block comments at the beginning of a source file will not be associated with
+.. note:: Block comments at the beginning of a source file will not be associated with
     any statement, due to behavior in LibCST [#libcst405]_.
 
     This means the `# alpha` comment below will not move with the import statement
@@ -263,8 +277,13 @@ example above are purely for clarity.
 Import Blocks
 -------------
 
-µsort uses a set of simple heuristics to detect "blocks" of imports, and will
-only rearrange imports within these distinct blocks.
+µsort groups imports into one or more "blocks" of imports. µsort will only move imports
+within the distinct block they were originally located. The boundaries of blocks are
+treated as "barriers", and imports will never move across these boundaries from one
+block to another.
+
+µsort uses a set of simple heuristics to define blocks of imports, based on common
+idioms and special behaviors that ensure a reasonable level of "safety" when sorting.
 
 Comment Directives
 ^^^^^^^^^^^^^^^^^^
@@ -281,6 +300,13 @@ containing the directives, which will remain unchanged::
 Both ``# usort:skip`` and ``# isort:skip`` (with any amount of whitespace),
 will trigger this behavior, so existing comments intended for isort will still
 work with µsort.
+
+.. note:: The ``# isort:skip_file`` directive **is ignored** by µsort, and there
+    is no supported equivalent. We believe that µsort's behavior is safe enough that
+    all files can be safely sortable, given an appropriate `configuration`_ that
+    includes any known modules with import-time side effects.
+
+    If there are files you absolutely don't want sorted; don't run µsort on them.
 
 Statements
 ^^^^^^^^^^
