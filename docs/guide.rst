@@ -260,92 +260,6 @@ example above are purely for clarity.
     .. [#libcst405] https://github.com/Instagram/LibCST/issues/405
 
 
-Configuration
--------------
-
-µsort shouldn't require configuration for most projects, but offers some basic
-options to customize sorting and categorization behaviors.
-
-:file:`pyproject.toml`
-^^^^^^^^^^^^^^^^^^^^^^
-
-The preferred method of configuring µsort is in your project's
-:file:`pyproject.toml`, in the ``tool.usort`` table.
-When sorting each file, µsort will look for the "nearest" :file:`pyproject.toml`
-to the file being sorted, looking upwards until the project root is found, or
-until the root of the filesystem is reached.
-
-``[tool.usort]``
-%%%%%%%%%%%%%%%%
-
-The following options are valid for the main ``tool.usort`` table:
-
-.. attribute:: categories
-    :type: List[str]
-    :value: ["future", "standard_library", "third_party", "first_party"]
-
-    If given, this list of categories overrides the default list of categories
-    that µsort provides. New categories may be added, but any of the default
-    categories *not* listed here will be removed.
-
-.. attribute:: default_category
-    :type: str
-    :value: "third_party"
-
-    The default category to classify any modules that aren't already known by
-    µsort as part of the standard library or otherwise listed in the
-    ``tool.usort.known`` table.
-
-.. attribute:: side_effect_modules
-    :type: List[str]
-
-    An optional list of known modules that have dangerous import-time side
-    effects. Any module in this list will create implicit block separators from
-    any import statement matching one of these modules.
-
-    See :ref:`side-effect-imports`.
-
-.. attribute:: first_party_detection
-    :type: bool
-    :value: true
-
-    Whether to run a heuristic to detect the top-level name of the file being sorted,
-    and consider that name as first-party.  This heuristic happens after other options
-    are loaded, so such names cannot be overridden to another category if this is
-    enabled.
-
-.. attribute:: merge_imports
-    :type: bool
-    :value: true
-
-    Whether to merge sequential imports from the same base module.
-    See `Merging`_ for details on how this works.
-
-
-``[tool.usort.known]``
-%%%%%%%%%%%%%%%%%%%%%%
-
-The ``tool.usort.known`` table allows for providing a custom list of known
-modules for each category defined by :attr:`categories` above. These modules
-should be a list of module names assigned to a property named matching the
-category they should be assigned to. If a module is listed under multiple
-catergories, the last category it appears in will take precedence.
-
-As an example, this creates a fifth category "numpy", and adds both :mod:`numpy`
-and :mod:`pandas` to the known modules list for the "numpy" category, as well
-as adding the :mod:`example` module to the "first_party" category:
-
-.. code-block:: toml
-
-    [tool.usort]
-    categories = ["future", "standard_library", numpy", "third_party", "first_party"]
-    default_category = "third_party"
-
-    [tool.usort.known]
-    numpy = ["numpy", "pandas"]
-    first_party = ["example"]
-
-
 Import Blocks
 -------------
 
@@ -439,6 +353,92 @@ can be added to the :attr:`side_effect_modules` configuration option:
 This may result in less-obvious sorting results for users unaware of the
 context, so it is recommended to use this sparingly. The ``list-imports``
 command may be useful for understanding how this affects your source files.
+
+
+Configuration
+-------------
+
+µsort shouldn't require configuration for most projects, but offers some basic
+options to customize sorting and categorization behaviors.
+
+:file:`pyproject.toml`
+^^^^^^^^^^^^^^^^^^^^^^
+
+The preferred method of configuring µsort is in your project's
+:file:`pyproject.toml`, in the ``tool.usort`` table.
+When sorting each file, µsort will look for the "nearest" :file:`pyproject.toml`
+to the file being sorted, looking upwards until the project root is found, or
+until the root of the filesystem is reached.
+
+``[tool.usort]``
+%%%%%%%%%%%%%%%%
+
+The following options are valid for the main ``tool.usort`` table:
+
+.. attribute:: categories
+    :type: List[str]
+    :value: ["future", "standard_library", "third_party", "first_party"]
+
+    If given, this list of categories overrides the default list of categories
+    that µsort provides. New categories may be added, but any of the default
+    categories *not* listed here will be removed.
+
+.. attribute:: default_category
+    :type: str
+    :value: "third_party"
+
+    The default category to classify any modules that aren't already known by
+    µsort as part of the standard library or otherwise listed in the
+    ``tool.usort.known`` table.
+
+.. attribute:: side_effect_modules
+    :type: List[str]
+
+    An optional list of known modules that have dangerous import-time side
+    effects. Any module in this list will create implicit block separators from
+    any import statement matching one of these modules.
+
+    See :ref:`side-effect-imports`.
+
+.. attribute:: first_party_detection
+    :type: bool
+    :value: true
+
+    Whether to run a heuristic to detect the top-level name of the file being sorted,
+    and consider that name as first-party.  This heuristic happens after other options
+    are loaded, so such names cannot be overridden to another category if this is
+    enabled.
+
+.. attribute:: merge_imports
+    :type: bool
+    :value: true
+
+    Whether to merge sequential imports from the same base module.
+    See `Merging`_ for details on how this works.
+
+
+``[tool.usort.known]``
+%%%%%%%%%%%%%%%%%%%%%%
+
+The ``tool.usort.known`` table allows for providing a custom list of known
+modules for each category defined by :attr:`categories` above. These modules
+should be a list of module names assigned to a property named matching the
+category they should be assigned to. If a module is listed under multiple
+catergories, the last category it appears in will take precedence.
+
+As an example, this creates a fifth category "numpy", and adds both :mod:`numpy`
+and :mod:`pandas` to the known modules list for the "numpy" category, as well
+as adding the :mod:`example` module to the "first_party" category:
+
+.. code-block:: toml
+
+    [tool.usort]
+    categories = ["future", "standard_library", numpy", "third_party", "first_party"]
+    default_category = "third_party"
+
+    [tool.usort.known]
+    numpy = ["numpy", "pandas"]
+    first_party = ["example"]
 
 
 Troubleshooting
