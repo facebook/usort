@@ -100,7 +100,7 @@ After running µsort, these imports would be merged together::
     from unittest import expectedFailure, TestCase, skip
 
 Individual names imported from that module will be deduplicated, and any associated
-inline comments will be merged at best effort (see `Comments`_ for association details).
+inline comments will be merged at best effort (see `Merging Comments`_ below).
 µsort will ensure that it keeps one and only one of each unique imported name,
 including any aliases. Given the following import statements::
 
@@ -129,7 +129,7 @@ Merging Comments
 
 µsort will attempt to preserve any comments associated with an import statement, or any
 imported names, and merge them with comments from the same name or same part from the
-the other statement. See `Comment Associations`_ for details on association rules.
+the other statement. See `Associations`_ for details on comment association rules.
 
 For sake of simplicity in the implementation, comments are not deduplicated, and will
 be reproduced in their entirety, including the comment prefix. Their final order is
@@ -170,8 +170,12 @@ Both statements will be merged, and comments will follow their respective elemen
         # mu
     )  # zeta  # nu
 
-Comment Associations
---------------------
+
+Comments
+--------
+
+Associations
+^^^^^^^^^^^^
 
 When moving or merging imports, µsort will attempt to associate and preserve comments
 based on simple heuristics for ownership:
@@ -212,6 +216,49 @@ import statement, it may be easier to follow this example::
 
 Be aware that blank lines do not impact association rules, and the blank lines in the
 example above are purely for clarity.
+
+.. note:: block comments at the beginning of a source file will not be associated with
+    any statement, due to behavior in LibCST [#libcst405]_.
+
+    This means the `# alpha` comment below will not move with the import statement
+    it would otherwise be associated with::
+
+        #!/usr/bin/env python
+
+        # alpha
+        import foo
+        import bar
+
+    This would unexpectedly result in the following file after sorting::
+
+        #!/usr/bin/env python
+
+        # alpha
+        import bar
+        import foo
+
+    To guarantee the expected behavior, a simple docstring can be added at the top of
+    the file, and any comments after the docstring will be associated with the
+    appropriate statements::
+
+        #!/usr/bin/env python
+        """ This is a module """
+
+        # alpha
+        import foo
+        import bar
+
+    This would then allow µsort to correctly move the comment as expected::
+
+        #!/usr/bin/env python
+        """ This is a module """
+
+        import bar
+        # alpha
+        import foo
+
+    .. [#libcst405] https://github.com/Instagram/LibCST/issues/405
+
 
 Configuration
 -------------
