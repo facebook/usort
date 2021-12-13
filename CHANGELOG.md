@@ -1,10 +1,18 @@
-## 1.0.0a2
+## 1.0.0b1
 
-Alpha release
+Beta release
 
 * Deprecation: `usort_bytes()` and `usort_string()` replaced by `usort()` (#88)
+* Improved documentation in user guide for sorting, merging, comments, and associations (#91)
 * Fixed bug when merging imports and subsequent blocks (#86)
 * Fixed output of basic imports that exceed line length (#87)
+
+```shell-session
+$ git shortlog -sn v1.0.0a1...
+    28  John Reese
+    13  dependabot[bot]
+     3  Jason Fried
+```
 
 ## 1.0.0a1
 
