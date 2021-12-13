@@ -177,7 +177,7 @@ Comments
 Directives
 ^^^^^^^^^^
 
-µsort will obey simple `# usort:skip` directives to prevent moving import statements,
+µsort will obey simple ``#usort:skip`` directives to prevent moving import statements,
 including moving any other statements across the skipped statement::
 
     import math
@@ -187,6 +187,18 @@ including moving any other statements across the skipped statement::
     import difflib
 
 See `Import Blocks`_ for details on how this affects sorting behavior.
+
+.. note:: 
+    For compatibility with existing codebases previously using isort, the
+    ``#isort:skip`` directive is also supported, with the same behavior as
+    ``#usort:skip``.
+    
+    However, the ``#isort:skip_file`` directive **is ignored** by µsort, and there
+    is no supported equivalent. We believe that µsort's behavior is safe enough that
+    all files can be safely sortable, given an appropriate `configuration`_ that
+    includes any known modules with import-time side effects.
+
+    If there are files you absolutely don't want sorted; don't run µsort on them.
 
 Associations
 ^^^^^^^^^^^^
@@ -297,16 +309,9 @@ containing the directives, which will remain unchanged::
 
     import difflib
 
-Both ``# usort:skip`` and ``# isort:skip`` (with any amount of whitespace),
+Both ``#usort:skip`` and ``#isort:skip`` (with any amount of whitespace),
 will trigger this behavior, so existing comments intended for isort will still
 work with µsort.
-
-.. note:: The ``# isort:skip_file`` directive **is ignored** by µsort, and there
-    is no supported equivalent. We believe that µsort's behavior is safe enough that
-    all files can be safely sortable, given an appropriate `configuration`_ that
-    includes any known modules with import-time side effects.
-
-    If there are files you absolutely don't want sorted; don't run µsort on them.
 
 Statements
 ^^^^^^^^^^
