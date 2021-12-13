@@ -54,8 +54,8 @@ Within each category, imports are sorted first by "style" of import statement:
 * "basic" imports (``import foo``)
 * "from" imports (``from foo import bar``)
 
-And lastly, imports of the same style are sorted lexicographically by source
-module name, and then by name of element being imported.
+And lastly, imports of the same style are sorted lexicographically, and case-
+insensitively, by source module name, and then by name of element being imported.
 
 Altogether, this will result each block of imports sorted roughly according
 to this example, for a module in the namespace :mod:`something`::
