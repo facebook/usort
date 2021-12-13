@@ -10,10 +10,16 @@ try:
 except ImportError:
     __version__ = "dev"
 
-from .api import usort_bytes, usort_file, usort_path, usort_stdin, usort_string
+from .api import usort, usort_bytes, usort_file, usort_path, usort_stdin, usort_string
+from .config import Config
+from .types import Result, SortWarning
 
 __all__ = [
     "__version__",
+    "Config",
+    "Result",
+    "SortWarning",
+    "usort",
     "usort_bytes",
     "usort_file",
     "usort_path",

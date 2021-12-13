@@ -54,8 +54,8 @@ Within each category, imports are sorted first by "style" of import statement:
 * "basic" imports (``import foo``)
 * "from" imports (``from foo import bar``)
 
-And lastly, imports of the same style are sorted lexicographically by source
-module name, and then by name of element being imported.
+And lastly, imports of the same style are sorted lexicographically, and case-
+insensitively, by source module name, and then by name of element being imported.
 
 Altogether, this will result each block of imports sorted roughly according
 to this example, for a module in the namespace :mod:`something`::
@@ -68,6 +68,7 @@ to this example, for a module in the namespace :mod:`something`::
     import sys
     from datetime import date, datetime, timedelta
     from pathlib import Path
+    from unittest import expectedFailure, TestCase, skip
 
     # third-party
     import requests
@@ -77,7 +78,7 @@ to this example, for a module in the namespace :mod:`something`::
     # first-party
     from something import other_function, some_function
     from . import some_module
-    from .other_module import some_name, that_thing
+    from .other_module import SomeClass, some_thing, TestFixture
 
 
 Merging
@@ -85,12 +86,305 @@ Merging
 
 After sorting import statements within a block, µsort will look for sequential imports
 of the same style from the same module, and merge them into a single statement.
+
+For a simple example, starting with the following imports::
+
+    from unittest import expectedFailure, skip
+    from typing import List, Dict
+    from unittest import TestCase
+    from typing import Set, Mapping
+
+After running µsort, these imports would be merged together::
+
+    from typing import Dict, List, Mapping, Set
+    from unittest import expectedFailure, TestCase, skip
+
 Individual names imported from that module will be deduplicated, and any associated
-inline comments will be merged.
+inline comments will be merged at best effort (see `Merging Comments`_ below).
+µsort will ensure that it keeps one and only one of each unique imported name,
+including any aliases. Given the following import statements::
 
-*todo*
+    from foo import alpha, beta, gamma
+    from foo import alpha as a
+    from foo import alpha as egg
+    from foo import alpha as a
+    from foo import beta, gamma, delta
 
-If desired, this behavior can be disabled in your project `configuration`_.
+µsort will merge all of the import statements above into a single statement, preserving
+all three aliases of `alpha` (expanded here for clarity)::
+
+    from foo import (
+        alpha,
+        alpha as a,
+        alpha as egg,
+        beta,
+        delta,
+        gamma,
+    )
+
+If desired, merging behavior can be disabled in your project `configuration`_.
+
+Merging Comments
+^^^^^^^^^^^^^^^^
+
+µsort will attempt to preserve any comments associated with an import statement, or any
+imported names, and merge them with comments from the same name or same part from the
+the other statement. See `Associations`_ for details on comment association rules.
+
+For sake of simplicity in the implementation, comments are not deduplicated, and will
+be reproduced in their entirety, including the comment prefix. Their final order is
+arbitrary, and based on the order of statements they originate from after an initial
+round of sorting.
+
+An example showing some, but not all, possible ways comments will be moved or merged::
+
+    # alpha
+    from foo import (  # beta
+        # gamma
+        bar,  # delta
+        baz,
+        # epsilon
+    )  # zeta
+
+    # eta
+    from foo import (  # theta
+        # iota
+        bar,  # kappa
+        # lambda
+        buzz,
+        # mu
+    )  # nu
+
+Both statements will be merged, and comments will follow their respective elements::
+
+    # alpha
+    # eta
+    from foo import (  # beta  # theta
+        # gamma
+        # iota
+        bar,  # delta  # kappa
+        baz,
+        # lambda
+        buzz,
+        # epsilon
+        # mu
+    )  # zeta  # nu
+
+
+Comments
+--------
+
+Directives
+^^^^^^^^^^
+
+µsort will obey simple ``#usort:skip`` directives to prevent moving import statements,
+including moving any other statements across the skipped statement::
+
+    import math
+
+    import important_thing  # usort: skip
+
+    import difflib
+
+See `Import Blocks`_ for details on how this affects sorting behavior.
+
+.. note:: 
+    For compatibility with existing codebases previously using isort, the
+    ``#isort:skip`` directive is also supported, with the same behavior as
+    ``#usort:skip``.
+    
+    However, the ``#isort:skip_file`` directive **is ignored** by µsort, and there
+    is no supported equivalent. We believe that µsort's behavior is safe enough that
+    all files can be safely sortable, given an appropriate `configuration`_ that
+    includes any known modules with import-time side effects.
+
+    If there are files you absolutely don't want sorted; don't run µsort on them.
+
+Associations
+^^^^^^^^^^^^
+
+When moving or merging imports, µsort will attempt to associate and preserve comments
+based on simple heuristics for ownership:
+
+* Whole-line, or block, comments:
+
+  * outside of a multi-line statement are associated with the statement that follows
+    the comment.
+  * inside a multi-line statement, that precede an imported name, will be associated
+    with the imported name.
+  * inside a multi-line statement, that precede the closing braces for the statement,
+    will be associated with the end of the statement.
+  * inside a multi-line statement, that precede a comma, will be associated with the
+    imported name preceding the comma.
+
+* Inline, or trailing, comments:
+
+  * immediately following the opening brace of a multi-line statement are associated
+    with the statement.
+  * following an imported name, or comma, will be associated with the imported name
+    that precedes the comment.
+
+Given the number of possible places for comments in the Python grammar for a single
+import statement, it may be easier to follow this example::
+
+    # IMPORT
+    from foo import (  # IMPORT
+        # BETA
+        beta,  # BETA
+
+        # ALPHA
+        alpha  # ALPHA
+        # ALPHA
+        , # ALPHA
+
+        # IMPORT
+    )  # IMPORT
+
+Be aware that blank lines do not impact association rules, and the blank lines in the
+example above are purely for clarity.
+
+.. note:: Block comments at the beginning of a source file will not be associated with
+    any statement, due to behavior in LibCST [#libcst405]_.
+
+    This means the `# alpha` comment below will not move with the import statement
+    it would otherwise be associated with::
+
+        #!/usr/bin/env python
+
+        # alpha
+        import foo
+        import bar
+
+    This would unexpectedly result in the following file after sorting::
+
+        #!/usr/bin/env python
+
+        # alpha
+        import bar
+        import foo
+
+    To guarantee the expected behavior, a simple docstring can be added at the top of
+    the file, and any comments after the docstring will be associated with the
+    appropriate statements::
+
+        #!/usr/bin/env python
+        """ This is a module """
+
+        # alpha
+        import foo
+        import bar
+
+    This would then allow µsort to correctly move the comment as expected::
+
+        #!/usr/bin/env python
+        """ This is a module """
+
+        import bar
+        # alpha
+        import foo
+
+    .. [#libcst405] https://github.com/Instagram/LibCST/issues/405
+
+
+Import Blocks
+-------------
+
+µsort groups imports into one or more "blocks" of imports. µsort will only move imports
+within the distinct block they were originally located. The boundaries of blocks are
+treated as "barriers", and imports will never move across these boundaries from one
+block to another.
+
+µsort uses a set of simple heuristics to define blocks of imports, based on common
+idioms and special behaviors that ensure a reasonable level of "safety" when sorting.
+
+Comment Directives
+^^^^^^^^^^^^^^^^^^
+
+Comments with special directives create explicit blocks, separated by the line
+containing the directives, which will remain unchanged::
+
+    import math
+
+    import important_thing  # usort: skip
+
+    import difflib
+
+Both ``#usort:skip`` and ``#isort:skip`` (with any amount of whitespace),
+will trigger this behavior, so existing comments intended for isort will still
+work with µsort.
+
+Statements
+^^^^^^^^^^
+
+Any non-import statement positioned between imports will create an implicit
+block separator. This allows µsort to automatically preserve use of modules
+that must happen before other imports, such as filtering warnings or debug
+logging::
+
+    import warnings
+    warnings.filterwarnings(...)  # <-- implicit block separator
+
+    import noisy_module
+
+    print("in between imports")  # <-- implicit block separator
+
+    import other_module
+
+Shadowed Imports
+^^^^^^^^^^^^^^^^
+
+Any import that shadows a previous import will create an implicit block
+separator::
+
+    import foo as os
+    import os  # <-- implicit block separator
+
+Star Imports
+^^^^^^^^^^^^
+
+Star imports, which can potentially shadow or be shadowed by any other import,
+will also create implicit block separators::
+
+    import foo
+
+    from bar import *  # <-- implicit block separator
+
+    import dog
+
+.. _side-effect-imports:
+
+Side Effect Imports
+^^^^^^^^^^^^^^^^^^^
+
+Writing modules with import-time side effects is a bad practice; any side
+effects should ideally wait for a function in that module to be called, like
+with :func:`warnings.filterwarnings()`. In these cases, µsort will correctly
+find and create a block separator, preventing accidental changes in execution
+order when sorting.
+
+However, it's common for testing libraries and entry points to have well-known
+side effects when imported, and this can cause trouble with import sorting.
+Rather than adding ``# usort:skip`` comments to every occurence, these modules
+can be added to the :attr:`side_effect_modules` configuration option:
+
+.. code-block:: toml
+    :name: pyproject.toml
+
+    [tool.usort]
+    side_effect_modules = ["sir_kibble"]
+
+µsort will then treat any import of these modules as implicit block separators::
+
+    import foo
+
+    from sir_kibble import leash  # <-- implicit block separator
+
+    import dog
+
+This may result in less-obvious sorting results for users unaware of the
+context, so it is recommended to use this sparingly. The ``list-imports``
+command may be useful for understanding how this affects your source files.
+
 
 Configuration
 -------------
@@ -176,101 +470,6 @@ as adding the :mod:`example` module to the "first_party" category:
     [tool.usort.known]
     numpy = ["numpy", "pandas"]
     first_party = ["example"]
-
-
-Import Blocks
--------------
-
-µsort uses a set of simple heuristics to detect "blocks" of imports, and will
-only rearrange imports within these distinct blocks.
-
-Comment Directives
-^^^^^^^^^^^^^^^^^^
-
-Comments with special directives create explicit blocks, separated by the line
-containing the directives, which will remain unchanged::
-
-    import math
-
-    import important_thing  # usort: skip
-
-    import difflib
-
-Both ``# usort:skip`` and ``# isort:skip`` (with any amount of whitespace),
-will trigger this behavior, so existing comments intended for isort will still
-work with µsort.
-
-Statements
-^^^^^^^^^^
-
-Any non-import statement positioned between imports will create an implicit
-block separator. This allows µsort to automatically preserve use of modules
-that must happen before other imports, such as filtering warnings or debug
-logging::
-
-    import warnings
-    warnings.filterwarnings(...)  # <-- implicit block separator
-
-    import noisy_module
-
-    print("in between imports")  # <-- implicit block separator
-
-    import other_module
-
-Shadowed Imports
-^^^^^^^^^^^^^^^^
-
-Any import that shadows a previous import will create an implicit block
-separator::
-
-    import foo as os
-    import os  # <-- implicit block separator
-
-Star Imports
-^^^^^^^^^^^^
-
-Star imports, which can potentially shadow or be shadowed by any other import,
-will also create implicit block separators::
-
-    import foo
-
-    from bar import *  # <-- implicit block separator
-
-    import dog
-
-.. _side-effect-imports:
-
-Side Effect Imports
-^^^^^^^^^^^^^^^^^^^
-
-Writing modules with import-time side effects is a bad practice; any side
-effects should ideally wait for a function in that module to be called, like
-with :func:`warnings.filterwarnings()`. In these cases, µsort will correctly
-find and create a block separator, preventing accidental changes in execution
-order when sorting.
-
-However, it's common for testing libraries and entry points to have well-known
-side effects when imported, and this can cause trouble with import sorting.
-Rather than adding ``# usort:skip`` comments to every occurence, these modules
-can be added to the :attr:`side_effect_modules` configuration option:
-
-.. code-block:: toml
-    :name: pyproject.toml
-
-    [tool.usort]
-    side_effect_modules = ["sir_kibble"]
-
-µsort will then treat any import of these modules as implicit block separators::
-
-    import foo
-
-    from sir_kibble import leash  # <-- implicit block separator
-
-    import dog
-
-This may result in less-obvious sorting results for users unaware of the
-context, so it is recommended to use this sparingly. The ``list-imports``
-command may be useful for understanding how this affects your source files.
 
 
 Troubleshooting

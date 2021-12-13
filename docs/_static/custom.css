@@ -20,3 +20,7 @@ div.facebook a, div.facebook a:hover, div.facebook-badges a:hover {
     color: #777;
     border: none;
 }
+
+dl.function, dl.attribute, dl.class, dl.method, dl.field-list, dl.data {
+    margin-bottom: 15px;
+}

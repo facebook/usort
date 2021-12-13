@@ -1,3 +1,11 @@
+## 1.0.0a2
+
+Alpha release
+
+* Deprecation: `usort_bytes()` and `usort_string()` replaced by `usort()` (#88)
+* Fixed bug when merging imports and subsequent blocks (#86)
+* Fixed output of basic imports that exceed line length (#87)
+
 ## 1.0.0a1
 
 Alpha release
