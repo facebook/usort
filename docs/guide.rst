@@ -186,7 +186,19 @@ including moving any other statements across the skipped statement::
 
     import difflib
 
-See `Import Blocks`_ for details on how this affects sorting behavior.
+Comment directives must be on the first or last line of multi-line imports::
+
+    from side_effect import (  # usort:skip  # here
+        thing_one,
+        thing_two,
+    )  # usort:skip  # or here
+
+Directives are also allowed anywhere in a comment, but must include another ``#``
+character if they are not the first element::
+
+    import side_effect  # noqa: F401  # usort:skip
+
+See `Import Blocks`_ for details on how skip directives affect sorting behavior.
 
 .. note:: 
     For compatibility with existing codebases previously using isort, the
@@ -312,6 +324,8 @@ containing the directives, which will remain unchanged::
 Both ``#usort:skip`` and ``#isort:skip`` (with any amount of whitespace),
 will trigger this behavior, so existing comments intended for isort will still
 work with µsort.
+
+See `directives`_ for details on supported comment directives.
 
 Statements
 ^^^^^^^^^^
