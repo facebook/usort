@@ -50,6 +50,10 @@ class UsortStringFunctionalTest(unittest.TestCase):
         config = config or DEFAULT_CONFIG
         result1 = usort(before.encode(), config)  # first pass
         result2 = usort(result1.output, config)  # enforce stable sorting on second pass
+        if result1.error:
+            raise result1.error
+        if result2.error:
+            raise result2.error
         if result2.output != result1.output:
             self.fail(
                 "µsort result was not stable on second pass:\n\n"
