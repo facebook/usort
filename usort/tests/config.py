@@ -171,6 +171,27 @@ foo = ["numpy", "pandas"]
             # from foo.bar import bazzy
             self.assertFalse(config.is_side_effect_import("foo.bar", ["bazzy"]))
 
+    def test_black_line_length(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            d_path = Path(d)
+            (d_path / "foo").mkdir(parents=True)
+            (d_path / "foo" / "bar.py").write_text("import os")
+
+            with self.subTest("default config"):
+                (d_path / "foo" / "pyproject.toml").write_text("")
+                conf = Config.find(d_path / "foo" / "bar.py")
+                self.assertEqual(Config.line_length, conf.line_length)
+
+            with self.subTest("with black config"):
+                (d_path / "foo" / "pyproject.toml").write_text(
+                    """\
+[tool.black]
+line-length = 120
+"""
+                )
+                conf = Config.find(d_path / "foo" / "bar.py")
+                self.assertEqual(120, conf.line_length)
+
     def test_config_parent_walk(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             d_path = Path(d)
