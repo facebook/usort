@@ -486,6 +486,23 @@ as adding the :mod:`example` module to the "first_party" category:
     first_party = ["example"]
 
 
+``[tool.black]``
+%%%%%%%%%%%%%%%%
+
+µsort will also recognize the following options for `Black`_:
+
+.. attribute:: line-length
+    :type: int
+    :value: 88
+
+    The target line length configured for Black will also be used by µsort when
+    rendering imports after merging and sorting. Imports that fit within this length,
+    including indentation and comments, will be rendered on a single line. Otherwise,
+    imports will be rendered as multi-line imports, with a single name per line.
+
+.. _Black: https://black.readthedocs.io
+
+
 Troubleshooting
 ---------------
 
