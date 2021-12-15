@@ -27,6 +27,18 @@ class ImportSorter:
         self.wrapper = cst.MetadataWrapper(module)
         self.transformer = ImportSortingTransformer(config, module, self)
 
+    def has_skip_comment(self, comment: Optional[cst.Comment]) -> bool:
+        if comment is None or not comment.value:
+            return False
+
+        directives = comment.value.split("#")
+        for directive in directives:
+            directive = directive.replace(" ", "")
+            if directive.startswith("usort:skip") or directive.startswith("isort:skip"):
+                return True
+
+        return False
+
     def is_sortable_import(self, stmt: cst.CSTNode) -> bool:
         """
         Determine if any individual statement is sortable or should be a barrier.
@@ -34,13 +46,12 @@ class ImportSorter:
         Handles skip directives, configured side effect modules, and star imports.
         """
         if isinstance(stmt, cst.SimpleStatementLine):
-            com = stmt.trailing_whitespace.comment
-            if com:
-                com_str = com.value.replace(" ", "")
-                if com_str.startswith("#usort:skip") or com_str.startswith(
-                    "#isort:skip"
-                ):
-                    return False
+            # from foo import (
+            #     bar,
+            # )  # usort:skip
+            comment = stmt.trailing_whitespace.comment
+            if self.has_skip_comment(comment):
+                return False
 
             # N.b. `body` is a list, because the SimpleStatementLine might have
             # semicolons.  We only look at the first, which is probably the most
@@ -51,6 +62,15 @@ class ImportSorter:
             # like noqa.  TODO do that before calling is_sortable_import, and assert
             # that it's not a compound statement line.
             if isinstance(stmt.body[0], cst.ImportFrom):
+                # from foo import (  # usort:skip
+                #     bar,
+                # )
+                if isinstance(stmt.body[0].lpar, cst.LeftParen) and isinstance(
+                    stmt.body[0].lpar.whitespace_after, cst.ParenthesizedWhitespace
+                ):
+                    comment = stmt.body[0].lpar.whitespace_after.first_line.comment
+                    if self.has_skip_comment(comment):
+                        return False
                 # `from x import *` is a barrier
                 if isinstance(stmt.body[0].names, cst.ImportStar):
                     return False

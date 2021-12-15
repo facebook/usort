@@ -50,6 +50,10 @@ class UsortStringFunctionalTest(unittest.TestCase):
         config = config or DEFAULT_CONFIG
         result1 = usort(before.encode(), config)  # first pass
         result2 = usort(result1.output, config)  # enforce stable sorting on second pass
+        if result1.error:
+            raise result1.error
+        if result2.error:
+            raise result2.error
         if result2.output != result1.output:
             self.fail(
                 "µsort result was not stable on second pass:\n\n"
@@ -793,6 +797,65 @@ numpy = ["numpy", "pandas"]
                 from beta import beta
                 from eta import eta
                 from phi import phi
+            """,
+        )
+
+    def test_skip_directives(self) -> None:
+        """Test both usort:skip and isort:skip on single line imports"""
+        self.assertUsortResult(
+            """
+                from os import path
+                import functools  # usort: skip
+                import asyncio
+                from collections import defaultdict  # isort:skip
+                from asyncio import gather
+            """,
+            """
+                from os import path
+                import functools  # usort: skip
+                import asyncio
+                from collections import defaultdict  # isort:skip
+                from asyncio import gather
+            """,
+        )
+
+    def test_skip_directives_after_noqa(self) -> None:
+        """Test that skips are obeyed, even if they aren't the first directive"""
+        self.assertUsortResult(
+            """
+                from os import path
+                import functools  # noqa  # usort: skip
+                import asyncio
+            """,
+            """
+                from os import path
+                import functools  # noqa  # usort: skip
+                import asyncio
+            """,
+        )
+
+    def test_skip_directives_multiline(self) -> None:
+        """Validate that skip work on both first and last line of multiline imports"""
+        self.assertUsortResult(
+            """
+                from unittest.mock import (
+                    Mock, MagicMock, call, patch, sentinel, ANY,
+                )  # usort:skip
+                from functools import wraps
+                from asyncio import (  # usort:skip
+                    gather, wait,
+                )
+                from collections import defaultdict
+            """,
+            """
+                from unittest.mock import (
+                    Mock, MagicMock, call, patch, sentinel, ANY,
+                )  # usort:skip
+                from functools import wraps
+                from asyncio import (  # usort:skip
+                    gather, wait,
+                )
+                from collections import defaultdict
             """,
         )
 
