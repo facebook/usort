@@ -177,7 +177,7 @@ class Config:
                     self.known[name] = cat
 
         # black config
-        tbl = conf.get("black", {})
+        tbl = tool.get("black", {})
         if "line-length" in tbl:
             self.line_length = int(tbl["line-length"])
 
