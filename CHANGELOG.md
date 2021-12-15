@@ -1,3 +1,12 @@
+## 1.0.0rc1
+
+Release Candidate:
+
+* Supports usort:skip directives on first and last line of multi-line imports (#108)
+* Supports usort:skip directives that aren't the first comment directive on a line (#108)
+* Fix reading the configured black line length from pyproject.toml (#110)
+* Documentation improvements (#108, #109)
+
 ## 1.0.0b1
 
 Beta release
