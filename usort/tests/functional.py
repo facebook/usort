@@ -10,7 +10,7 @@ from pathlib import Path
 from textwrap import dedent
 from typing import Optional
 
-from ..api import usort
+from ..api import usort, usort_path
 from ..config import Config
 from ..translate import import_from_node
 from ..util import parse_import
@@ -858,6 +858,43 @@ numpy = ["numpy", "pandas"]
                 from collections import defaultdict
             """,
         )
+
+    def test_excludes(self) -> None:
+        original_content = "import os\nimport asyncio\n"
+        sorted_content = b"import asyncio\nimport os\n"
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td).resolve()
+            (tdp / "pyproject.toml").write_text(
+                """\
+[tool.usort]
+excludes = [
+    "fixtures/",
+    "*generated.py",
+]
+"""
+            )
+            (tdp / "foo" / "tests" / "fixtures").mkdir(parents=True)
+
+            excluded_paths = (
+                (tdp / "foo" / "tests" / "fixtures" / "foo.py"),
+                (tdp / "foo" / "tests" / "foo_generated.py"),
+                (tdp / "foo" / "client_generated.py"),
+            )
+            sorted_paths = (
+                (tdp / "foo" / "tests" / "foo.py"),
+                (tdp / "foo" / "foo.py"),
+                (tdp / "foo" / "generated_client.py"),
+            )
+
+            for path in excluded_paths + sorted_paths:
+                path.write_text(original_content)
+
+            results = list(usort_path(tdp / "foo"))
+            for result in results:
+                self.assertIn(result.path, sorted_paths)
+                self.assertNotIn(result.path, excluded_paths)
+                self.assertEqual(sorted_content, result.output.replace(b"\r\n", b"\n"))
+            self.assertEqual(len(sorted_paths), len(results))
 
 
 if __name__ == "__main__":
