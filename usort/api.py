@@ -95,6 +95,8 @@ def usort_string(data: str, config: Config, path: Optional[Path] = None) -> str:
 def usort_file(path: Path, *, write: bool = False) -> Result:
     """
     Format a single file and return a Result object.
+
+    Ignores any configured :py:attr:`excludes` patterns.
     """
 
     try:
@@ -118,10 +120,15 @@ def usort_file(path: Path, *, write: bool = False) -> Result:
 def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
     """
     For a given path, format it, or any python files in it, and yield :class:`Result` s.
+
+    If given a directory, it will be searched, recursively, for any Python source files,
+    excluding any files or directories that match the project root's ``.gitignore`` or
+    any configured :py:attr:`excludes` patterns in the associated ``pyproject.toml``.
     """
     with timed(f"total for {path}"):
         with timed(f"walking {path}"):
-            paths = list(walk(path))
+            config = Config.find(path)
+            paths = list(walk(path, excludes=config.excludes))
 
         fn = partial(usort_file, write=write)
         results = [v for v in run(paths, fn).values()]

@@ -58,6 +58,9 @@ class Config:
     # Whether to merge imports when sorting
     merge_imports: bool = True
 
+    # gitignore-style filename patterns to exclude when sorting entire directories
+    excludes: List[str] = field(default_factory=list)
+
     # Needed for formatting final imports
     line_length: int = 88
 
@@ -155,6 +158,8 @@ class Config:
             self.first_party_detection = tbl["first_party_detection"]
         if "merge_imports" in tbl:
             self.merge_imports = tbl["merge_imports"]
+        if "excludes" in tbl:
+            self.excludes = tbl["excludes"]
 
         for cat, names in tbl.get("known", {}).items():
             typed_cat = Category(cat)

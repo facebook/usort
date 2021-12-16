@@ -461,6 +461,32 @@ The following options are valid for the main ``tool.usort`` table:
     Whether to merge sequential imports from the same base module.
     See `Merging`_ for details on how this works.
 
+.. attribute:: excludes
+    :type: List[str]
+
+    List of "gitignore" style filename patterns to exclude when sorting paths.
+    This will supplement any ignored paths from the project root's ``.gitignore`` file,
+    and any file or directory that matches these patterns will not be sorted.
+
+    Example:
+
+    .. code-block:: toml
+
+        [tool.usort]
+        excludes = [
+            "test/fixtures/",
+            "*_generated.py",
+        ]
+
+    This configuration would match and exclude the following files:
+
+    * ``test/fixtures/something_good.py``
+    * ``foo/test/fixtures/something_bad.py``
+    * ``foo/client/robot_generated.py``
+
+    See the :std:doc:`pathspec <pathspec:index>` and
+    :py:class:`GitWildPatchPattern <pathspec.patterns.gitwildmatch.GitWildMatchPattern>`
+    documentation for details of what patterns are allowed and how they are applied.
 
 ``[tool.usort.known]``
 %%%%%%%%%%%%%%%%%%%%%%
