@@ -1,3 +1,25 @@
+## 1.0.0
+
+Feature release
+
+* New feature: sorting items in a single import statement (#81)
+* New feature: merging imports from the same module (#81)
+* Supports usort:skip directives on first and last line of multi-line imports (#108)
+* Supports usort:skip directives that aren't the first comment directive on a line (#108)
+* Deprecation: `usort_bytes()` and `usort_string()` replaced by `usort()` (#88)
+* Fix reading the configured black line length from pyproject.toml (#110)
+* Improved performance by sorting multiple files in parallel (#70)
+* Officially support Python 3.10 (#74)
+* Documentation improvements (#91, #108, #109)
+
+```shell-session
+$ git shortlog -sn v0.6.4...
+   104  John Reese
+    18  dependabot[bot]
+     7  Tim Hatch
+     3  Jason Fried
+```
+
 ## 1.0.0rc1
 
 Release Candidate:
@@ -6,6 +28,11 @@ Release Candidate:
 * Supports usort:skip directives that aren't the first comment directive on a line (#108)
 * Fix reading the configured black line length from pyproject.toml (#110)
 * Documentation improvements (#108, #109)
+
+```shell-session
+git shortlog -sn v1.0.0b1...
+    10  John Reese
+```
 
 ## 1.0.0b1
 
