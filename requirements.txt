@@ -1,4 +1,4 @@
-attrs==21.2.0
+attrs==21.3.0
 click==8.0.3
 LibCST==0.3.23
 stdlibs==2021.4.1
