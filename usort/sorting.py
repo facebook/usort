@@ -315,6 +315,8 @@ class ImportSortingTransformer(cst.CSTTransformer):
         self.module = module
         self.sorter = sorter
         self.statement_map: Dict[cst.CSTNode, cst.SimpleStatementLine] = {}
+        self.default_indent: str = module.default_indent
+        self.indent: str = ""
 
     def get_line(self, node: cst.CSTNode) -> int:
         if node in self.statement_map:
@@ -323,12 +325,6 @@ class ImportSortingTransformer(cst.CSTTransformer):
             pos = self.get_metadata(PositionProvider, node)
 
         return pos.start.line
-
-    def get_indent(self, node: cst.CSTNode) -> str:
-        pos = self.get_metadata(PositionProvider, node)
-        indent_level = pos.start.column
-        indent = self.module.default_indent[0] * indent_level
-        return indent
 
     def leave_SimpleStatementLine(
         self,
@@ -341,17 +337,23 @@ class ImportSortingTransformer(cst.CSTTransformer):
     def leave_Module(
         self, original_node: cst.Module, updated_node: cst.Module
     ) -> cst.Module:
-        indent = self.get_indent(original_node)
         sorted_body = self.sorter.find_and_sort_blocks(
-            updated_node.body, module=self.module, indent=indent
+            updated_node.body, module=self.module, indent=""
         )
         return updated_node.with_changes(body=sorted_body)
+
+    def visit_IndentedBlock(self, node: cst.IndentedBlock) -> Optional[bool]:
+        node_indent = node.indent
+        self.indent += self.default_indent if node_indent is None else node_indent
 
     def leave_IndentedBlock(
         self, original_node: cst.IndentedBlock, updated_node: cst.IndentedBlock
     ) -> cst.BaseSuite:
-        indent = self.get_indent(original_node)
+        node_indent = original_node.indent
+        if node_indent is None:
+            node_indent = self.default_indent
         sorted_body = self.sorter.find_and_sort_blocks(
-            updated_node.body, module=self.module, indent=indent
+            updated_node.body, module=self.module, indent=self.indent
         )
+        self.indent = self.indent[: -len(node_indent)]
         return updated_node.with_changes(body=sorted_body)
