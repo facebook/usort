@@ -23,6 +23,7 @@ class ImportSorter:
         self.config = config
         self.module = module
         self.path = path
+        self.warning_nodes: List[Tuple[cst.CSTNode, str]] = []
         self.warnings: List[SortWarning] = []
         self.wrapper = cst.MetadataWrapper(module)
         self.transformer = ImportSortingTransformer(config, module, self)
@@ -110,10 +111,9 @@ class ImportSorter:
         for key, value in imp.imported_names.items():
             shadowed = block.imported_names.get(key)
             if shadowed and shadowed != value:
-                line = self.transformer.get_line(imp.node)
-                self.warnings.append(
-                    SortWarning(
-                        line,
+                self.warning_nodes.append(
+                    (
+                        imp.node,
                         f"Name {shadowed!r} shadowed by {value!r}; "
                         "implicit block split",
                     )
@@ -302,12 +302,19 @@ class ImportSorter:
     def sort_module(self) -> cst.Module:
         with timed(f"sorting {self.path}"):
             new_module = self.wrapper.visit(self.transformer)
+            if self.warning_nodes:
+                positions = self.wrapper.resolve(PositionProvider)
+                self.warnings = [
+                    SortWarning(
+                        positions[self.transformer.get_original_node(node)].start.line,
+                        msg,
+                    )
+                    for (node, msg) in self.warning_nodes
+                ]
             return new_module
 
 
 class ImportSortingTransformer(cst.CSTTransformer):
-    METADATA_DEPENDENCIES = (PositionProvider,)
-
     def __init__(
         self, config: Config, module: cst.Module, sorter: ImportSorter
     ) -> None:
@@ -318,13 +325,8 @@ class ImportSortingTransformer(cst.CSTTransformer):
         self.default_indent: str = module.default_indent
         self.indent: str = ""
 
-    def get_line(self, node: cst.CSTNode) -> int:
-        if node in self.statement_map:
-            pos = self.get_metadata(PositionProvider, self.statement_map[node])
-        else:
-            pos = self.get_metadata(PositionProvider, node)
-
-        return pos.start.line
+    def get_original_node(self, node: cst.CSTNode) -> cst.CSTNode:
+        return self.statement_map.get(node, node)
 
     def leave_SimpleStatementLine(
         self,
