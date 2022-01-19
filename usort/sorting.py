@@ -345,6 +345,7 @@ class ImportSortingTransformer(cst.CSTTransformer):
     def visit_IndentedBlock(self, node: cst.IndentedBlock) -> Optional[bool]:
         node_indent = node.indent
         self.indent += self.default_indent if node_indent is None else node_indent
+        return True
 
     def leave_IndentedBlock(
         self, original_node: cst.IndentedBlock, updated_node: cst.IndentedBlock
