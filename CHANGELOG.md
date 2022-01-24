@@ -1,3 +1,19 @@
+## 1.0.1
+
+Bugfix release
+
+* Handle single line from-imports with parens (#128)
+* Significant speedup when sorting files that don't produce warnings (#126)
+* Documentation for the "Why µsort" topic (#130)
+* Updated copyright, attribution, and logos to Meta Platforms, Inc (#131)
+* Dependency updates
+
+```shell-session
+    14  John Reese
+    12  dependabot[bot]
+     3  Zsolt Dollenstein
+```
+
 ## 1.0.0
 
 Feature release
