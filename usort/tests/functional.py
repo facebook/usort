@@ -564,6 +564,18 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_single_line_parens(self) -> None:
+        self.assertUsortResult(
+            """
+                from delta import echo, foxtrot
+                from alfa import (bravo, charlie)  # hello
+            """,
+            """
+                from alfa import bravo, charlie  # hello
+                from delta import echo, foxtrot
+            """,
+        )
+
     def test_single_line_import_long_comment(self) -> None:
         """
         Basic import statements can't be reflowed to multiple lines
