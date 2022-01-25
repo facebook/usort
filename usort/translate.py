@@ -53,22 +53,24 @@ def import_comments_from_node(node: cst.SimpleStatementLine) -> ImportComments:
 
     if isinstance(imp, cst.ImportFrom):
         if imp.lpar:
-            # from foo import (  # THIS PART
-            #     bar,
-            # )
-            ws = cst.ensure_type(imp.lpar.whitespace_after, cst.ParenthesizedWhitespace)
-            if ws.first_line.comment:
-                comments.first_inline.extend(
-                    split_inline_comment(ws.first_line.comment.value)
-                )
+            if isinstance(imp.lpar.whitespace_after, cst.ParenthesizedWhitespace):
+                ws = imp.lpar.whitespace_after
 
-            # from foo import (
-            #     # THIS PART
-            #     bar,
-            # )
-            comments.initial.extend(
-                line.comment.value for line in ws.empty_lines if line.comment
-            )
+                # from foo import (  # THIS PART
+                #     bar,
+                # )
+                if ws.first_line.comment:
+                    comments.first_inline.extend(
+                        split_inline_comment(ws.first_line.comment.value)
+                    )
+
+                # from foo import (
+                #     # THIS PART
+                #     bar,
+                # )
+                comments.initial.extend(
+                    line.comment.value for line in ws.empty_lines if line.comment
+                )
 
             assert imp.rpar is not None
             if isinstance(imp.rpar.whitespace_before, cst.ParenthesizedWhitespace):
