@@ -3,9 +3,14 @@
 
 .. toctree::
     :hidden:
-    :maxdepth: 2
+    :maxdepth: 1
 
     why
+
+.. toctree::
+    :hidden:
+    :maxdepth: 2
+
     guide
     api
 

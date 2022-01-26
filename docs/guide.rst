@@ -297,6 +297,7 @@ example above are purely for clarity.
 
     .. [#libcst405] https://github.com/Instagram/LibCST/issues/405
 
+.. _import-blocks:
 
 Import Blocks
 -------------
@@ -533,7 +534,7 @@ Troubleshooting
 ---------------
 
 If µsort behavior is unexpected, or you would like to see how µsort detects
-blocks in your code, the `list-imports` command may help.
+blocks in your code, the ``list-imports`` command may help.
 
 Given the file ``test.py``::
 
