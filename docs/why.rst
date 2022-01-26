@@ -1,13 +1,13 @@
 Why µsort?
 ==========
 
-µsort was originally designed with safety as the top priority–"first, do no harm".
+µsort was originally designed with safety as the top priority—"first, do no harm".
 Sorting imports should never result in breaking functionality of the module.
 
 µsort is designed to be as safe as possible when running on enterprise scale codebases
 with tens or hundreds of thousands of Python source files, and can be used either as a
-standalone formatting tool or linter, or as part of automated codemod toolchains or
-CI/CD pipelines. It is currently used in production by Meta for sorting all formatted
+standalone formatting tool or linter, or as part of automated codemod toolchains and
+CI/CD pipelines. It is currently used in production at Meta for sorting all formatted
 Python sources, with daily codemods enforcing sorting on all covered files.
 
 µsort achieves this by making a best effort at understanding common patterns in the
@@ -45,9 +45,10 @@ developers writing code:
 - No support for configuring output style. µsort works best when run before a
   dedicated code formatter like `Black`_ for enforcing style choices. µsort does use
   the configured line length for Black when rendering imports on one or more lines.
+  We use `µfmt`_ to combine µsort and Black into a single, atomic formatting step.
 
-- No vendored code. All dependencies are satisfied from PyPI, with liberal version
-  constraints whenever possible.
+- No vendored code. All dependencies are satisfied from PyPI, with unbound version
+  constraints, and validated in CI pipelines by `pessimist`_.
 
 
 Non-Goals
@@ -67,10 +68,12 @@ There are some features of alternative import sorters that µsort will not offer
 
 - Configurable output style. More options means more code paths to follow, and more
   test cases needed to cover all possible outputs. This is better left for dedicated
-  code formatters like `Black`_.
+  code formatters like `Black`_. We recommend using `µfmt`_ to combine µsort and Black
+  into a single, atomic formatting step for CI and linting.
 
 - Python 2 support. µsort's use of strict parsing and manipulation of syntax trees
-  makes supporting Python 2 grammar elements a non-starter.
+  makes supporting Python 2 dependent on support in `LibCST`_. Given the incompatible
+  grammar elements like print statements, upstream support for Python 2 is unlikely.
 
 
 Comparison to isort
@@ -94,18 +97,62 @@ the ``import foo`` statement to the top, breaking the module if ``foo`` isn't av
 in the default search path, and requiring addition of ``isort: skip`` directives to
 maintain functionality.
 
+This also extends to common debugging, testing, or performance techniques::
+
+    import a
+    print("after a")
+    import b
+
+Or::
+
+    import lazy_import
+    module = lazy_import.lazy_module("module")
+
+    import sys
+
+Again, µsort will maintain these constructs as-is, without any need for skip directives.
+
+------
+
 µsort uses case-insensitive, lexicographical sorting for both module names and imported
 items within each statement. This means uppercase or titlecase names are mixed with
 lowercase names, but this also provides a more consistent ordering of names, and
-ensures that ``frog``, ``Frog``, and ``FROG`` will always sort next to each other:
+ensures that ``frog``, ``Frog``, and ``FROG`` will always sort next to each other::
 
-    from unittest.mock import ANY, AsyncMock, call, DEFAULT, Mock, patch
+    from unittest.mock import (
+        ANY,
+        AsyncMock,
+        call,
+        DEFAULT,
+        Mock,
+        patch,
+    )
 
-Lastly, µsort operates on a parsed syntax tree, rather than reading and parsing each
-line of text from each file. This guarantees that µsort is modifying the actual Python
-syntax elements, along with any associated comments, and generating grammatically
-correct results after sorting.
+------
+
+µsort operates on a strictly-parsed syntax tree of each file as a whole, rather than
+reading and parsing individual lines of text at a time. This guarantees that µsort is
+modifying the actual Python syntax elements, along with any associated comments, and
+generating grammatically correct results after sorting.
+
+This prevents an entire class of bugs that can result in generating syntax errors at
+best, and causing subtle runtime failures at worst:
+
+- `"Changes the content of multiline strings after a yield statement"`__
+- `"Introduces syntax error by removing closing paren"`__
+- `"Line break and tab indentation makes wrong fix"`__
+
+.. __: https://github.com/PyCQA/isort/issues/1507
+.. __: https://github.com/PyCQA/isort/issues/1539
+.. __: https://github.com/PyCQA/isort/issues/1714
+
+Many of these issues are due to parsing individual lines without the context of the
+grammar surrounding it. By parsing the entire file and modifying grammar objects,
+there is no chance of mistaking string contents for imports, or of modifying any
+elements of the source file that aren't import statements.
 
 .. _LibCST: https://libcst.readthedocs.io
 .. _Black: https://black.readthedocs.io
 .. _isort: https://pycqa.github.io/isort/
+.. _µfmt: https://ufmt.readthedocs.io
+.. _pessimist: https://pypi.org/project/pessimist/
