@@ -2,16 +2,16 @@
 
 **Safe, minimal import sorting for Python projects.**
 
+[![documentation](https://readthedocs.org/projects/usort/badge/?version=stable)](https://usort.readthedocs.io/en/stable/?badge=stable)
 [![version](https://img.shields.io/pypi/v/usort.svg)](https://pypi.org/project/usort)
-[![changelog](https://img.shields.io/badge/change-log-blue.svg)](https://github.com/facebookexperimental/usort/blob/main/CHANGELOG.md)
+[![changelog](https://img.shields.io/badge/change-log-blue.svg)](https://usort.readthedocs.io/en/latest/changelog.html)
 [![license](https://img.shields.io/pypi/l/usort.svg)](https://github.com/facebookexperimental/usort/blob/main/LICENSE)
-[![code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 μsort is a safe, minimal import sorter. Its primary goal is to make no "dangerous"
-changes to code, and to make no changes on code style. This is achieved by detecting
-distinct "blocks" of imports that are the most likely to be safely interchangeable, and
-only reordering imports within these blocks without altering formatting. Code style
-is left as an exercise for linters and formatters.
+changes to code. This is achieved by detecting distinct "blocks" of imports that are
+the most likely to be safely interchangeable, and only reordering imports within these
+blocks without altering formatting. Code style is left as an exercise for linters
+and formatters.
 
 Within a block, µsort will follow common Python conventions for grouping imports based
 on source (standard library, third-party, first-party, or relative), and then sorting
@@ -47,8 +47,8 @@ In this case, µsort detects two blocks–separated by the call to `filterwarnin
 and will only sort imports inside of each block. Running µsort on this code
 will generate no changes, because each block is already sorted.
 
-Imports can be excluded from blocks using the `# usort:skip` directive, or with
-`# isort:skip` for compatibility with existing codebases. µsort will leave
+Imports can be excluded from blocks using the `#usort:skip` directive, or with
+`#isort:skip` for compatibility with existing codebases. µsort will leave
 these imports unchanged, and treat them as block separators.
 
 See the [User Guide][] for more details about how blocks are detected,
@@ -89,4 +89,4 @@ $ usort check <path>
 μsort is MIT licensed, as found in the [LICENSE][] file.
 
 [LICENSE]: https://github.com/facebookexperimental/usort/tree/main/LICENSE
-[User Guide]: https://usort.readthedocs.io/
+[User Guide]: https://usort.readthedocs.io/en/stable/guide.html

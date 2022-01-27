@@ -3,6 +3,12 @@
 
 .. toctree::
     :hidden:
+    :maxdepth: 1
+
+    why
+
+.. toctree::
+    :hidden:
     :maxdepth: 2
 
     guide
