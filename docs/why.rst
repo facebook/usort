@@ -138,10 +138,12 @@ generating grammatically correct results after sorting.
 This prevents an entire class of bugs that can result in generating syntax errors at
 best, and causing subtle runtime failures at worst:
 
+- `"Can't handle backslash and bracket"`__
 - `"Changes the content of multiline strings after a yield statement"`__
 - `"Introduces syntax error by removing closing paren"`__
 - `"Line break and tab indentation makes wrong fix"`__
 
+.. __: https://github.com/PyCQA/isort/issues/575
 .. __: https://github.com/PyCQA/isort/issues/1507
 .. __: https://github.com/PyCQA/isort/issues/1539
 .. __: https://github.com/PyCQA/isort/issues/1714
@@ -150,6 +152,9 @@ Many of these issues are due to parsing individual lines without the context of 
 grammar surrounding it. By parsing the entire file and modifying grammar objects,
 there is no chance of mistaking string contents for imports, or of modifying any
 elements of the source file that aren't import statements.
+
+No project is free of bugs, including µsort, but design decisions have been made with
+the expectation that µsort bugs will tend towards non-destructive failure modes.
 
 .. _LibCST: https://libcst.readthedocs.io
 .. _Black: https://black.readthedocs.io
