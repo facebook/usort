@@ -1,5 +1,5 @@
 attrs==21.4.0
-click==8.0.3
+click==8.0.4
 LibCST==0.4.1
 stdlibs==2021.4.1
 moreorless==0.4.0
