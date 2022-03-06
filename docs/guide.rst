@@ -505,7 +505,7 @@ as adding the :mod:`example` module to the "first_party" category:
 .. code-block:: toml
 
     [tool.usort]
-    categories = ["future", "standard_library", numpy", "third_party", "first_party"]
+    categories = ["future", "standard_library", "numpy", "third_party", "first_party"]
     default_category = "third_party"
 
     [tool.usort.known]
