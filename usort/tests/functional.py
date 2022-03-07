@@ -628,6 +628,21 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_sorting_mixed_category_imports(self) -> None:
+        self.assertUsortResult(
+            """
+                import os, attr
+                import difflib
+                import third_party
+            """,
+            """
+                import difflib
+
+                import attr, os
+                import third_party
+            """,
+        )
+
     def test_merging_import_items(self) -> None:
         self.assertUsortResult(
             """

@@ -218,7 +218,7 @@ class SortableImport:
 
         return results
 
-    def __attrs_post_init__(self) -> None:
+    def calculate_sort_key(self) -> None:
         top: Optional[str] = None
         ndots = 0
 
@@ -238,6 +238,9 @@ class SortableImport:
             is_from_import=bool(self.stem),
             ndots=ndots,
         )
+
+    def __attrs_post_init__(self) -> None:
+        self.calculate_sort_key()
 
 
 @dataclass(repr=False)

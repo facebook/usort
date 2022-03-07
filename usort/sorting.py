@@ -261,6 +261,7 @@ class ImportSorter:
         # Sort items within each remaining statement
         for imp in imports:
             imp.items.sort()
+            imp.calculate_sort_key()
 
         return imports
 
