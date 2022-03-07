@@ -1,3 +1,18 @@
+## 1.0.2
+
+Bugfix release
+
+* Fix unstable sorting from basic imports with mixed categories (#145, #146)
+* Fix documentation examples (#142)
+* Updated stdlibs for Python 3.10 (#138)
+
+```shell-session
+$ git shortlog -sn v1.0.1...
+     7  dependabot[bot]
+     5  John Reese
+     2  Tim Hatch
+```
+
 ## 1.0.1
 
 Bugfix release
@@ -9,6 +24,7 @@ Bugfix release
 * Dependency updates
 
 ```shell-session
+$ git shortlog -sn v1.0.0...
     14  John Reese
     12  dependabot[bot]
      3  Zsolt Dollenstein
