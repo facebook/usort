@@ -681,6 +681,20 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_splitting_and_merging_with_comments(self) -> None:
+        self.assertUsortResult(
+            """
+                import math, usort  # noqa
+                import black, math  # fun
+            """,
+            """
+                import math  # noqa  # fun
+
+                import black  # fun
+                import usort  # noqa
+            """,
+        )
+
     def test_merging_import_items(self) -> None:
         self.assertUsortResult(
             """
