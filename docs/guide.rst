@@ -101,6 +101,20 @@ After running µsort, these imports would be split apart::
     import bar
     import foo
 
+For imports with associated comments (See `Associations`_), µsort will duplicate those
+comments to all imports split out from the original statement, in order to preserve
+any semantic comment directives::
+
+    # something important
+    import foo, bar  # noqa
+
+After splitting, this becomes::
+
+    # something important
+    import bar  # noqa
+    # something important
+    import foo  # noqa
+
 
 Merging
 -------
@@ -258,7 +272,10 @@ based on simple heuristics for ownership:
     that precedes the comment.
 
 Given the number of possible places for comments in the Python grammar for a single
-import statement, it may be easier to follow this example::
+import statement, it may be easier to follow these examples::
+
+    # IMPORT
+    import alfa, bravo, charlie  # IMPORT
 
     # IMPORT
     from foo import (  # IMPORT
