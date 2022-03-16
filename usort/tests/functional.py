@@ -576,19 +576,6 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
-    def test_single_line_import_long_comment(self) -> None:
-        """
-        Basic import statements can't be reflowed to multiple lines
-        """
-        self.assertUsortResult(
-            """
-                import foo, bar, baz  # some really long inline comment that would can't be reflowed to a new line
-            """,
-            """
-                import bar, baz, foo  # some really long inline comment that would can't be reflowed to a new line
-            """,
-        )
-
     def test_sorting_import_items(self) -> None:
         self.assertUsortResult(
             """
@@ -598,7 +585,9 @@ numpy = ["numpy", "pandas"]
             """
                 from typing import Dict, List, Optional, Pattern, Set
 
-                import a, b, c
+                import a
+                import b
+                import c
             """,
         )
 
@@ -637,9 +626,72 @@ numpy = ["numpy", "pandas"]
             """,
             """
                 import difflib
+                import os
 
-                import attr, os
+                import attr
                 import third_party
+            """,
+        )
+
+    def test_splitting_imports_simple(self) -> None:
+        self.assertUsortResult(
+            """
+                import sys, os, fancy, time, re
+                import math, usort, bisect
+            """,
+            """
+                import bisect
+                import math
+                import os
+                import re
+                import sys
+                import time
+
+                import fancy
+                import usort
+            """,
+        )
+
+    def test_splitting_imports_comments(self) -> None:
+        self.assertUsortResult(
+            """
+                import difflib
+                # directive: foo
+                import sys, os, fancy, time, re
+                import math, usort, bisect  # noqa
+                # after
+            """,
+            """
+                import bisect  # noqa
+                import difflib
+                import math  # noqa
+                # directive: foo
+                import os
+                # directive: foo
+                import re
+                # directive: foo
+                import sys
+                # directive: foo
+                import time
+
+                # directive: foo
+                import fancy
+                import usort  # noqa
+                # after
+            """,
+        )
+
+    def test_splitting_and_merging_with_comments(self) -> None:
+        self.assertUsortResult(
+            """
+                import math, usort  # noqa
+                import black, math  # fun
+            """,
+            """
+                import math  # noqa  # fun
+
+                import black  # fun
+                import usort  # noqa
             """,
         )
 
