@@ -34,11 +34,12 @@ Sorting
 
 1. Look for all import statements in the module
 2. Group these statements into "blocks" of sortable imports
-   (See `Import Blocks`_ for details)
-3. Reorder import statements within each block
-4. Merge sequential import statements from the same module (See `Merging`_ for details)
-5. Reorder imported names within each statement
-6. Normalize whitespace between imports as needed
+   (See `Import Blocks`_)
+3. Split basic import statements within each block (See `Splitting`_)
+4. Reorder import statements within each block
+5. Merge sequential import statements from the same module (See `Merging`_)
+6. Reorder imported names within each statement
+7. Normalize whitespace between imports as needed
 
 When ordering imports within a block, µsort categorizes the imports by source
 into four major categories for imports, prioritized following common community
@@ -79,6 +80,26 @@ to this example, for a module in the namespace :mod:`something`::
     from something import other_function, some_function
     from . import some_module
     from .other_module import SomeClass, some_thing, TestFixture
+
+
+Splitting
+---------
+
+µsort will split basic imports into separate statements. This allows µsort to
+correctly categorize and sort basic imports with stable and consistent locations.
+
+For example, given the following imports::
+
+    import os, sys, traceback, foo, bar
+
+After running µsort, these imports would be split apart::
+
+    import os
+    import sys
+    import traceback
+
+    import bar
+    import foo
 
 
 Merging
