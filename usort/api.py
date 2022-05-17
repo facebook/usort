@@ -131,7 +131,7 @@ def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
             paths = list(walk(path, excludes=config.excludes))
 
         fn = partial(usort_file, write=write)
-        if len(paths) == 1:  
+        if len(paths) == 1:
             results = [fn(paths[0])]  # shave off multiprocessing overhead
         else:
             results = [v for v in run(paths, fn).values()]
