@@ -42,6 +42,7 @@ def sample_contents(s: AnyStr) -> Generator[str, None, None]:
 
 class CliTest(unittest.TestCase):
     def test_benchmark(self) -> None:
+        """Doesn't trigger multiprocessing (walk first in timings)"""
         with sample_contents("import sys\n") as dtmp:
             runner = CliRunner()
             with chdir(dtmp):
@@ -51,8 +52,48 @@ class CliTest(unittest.TestCase):
             result.output,
             dedent(
                 r"""
+                walking \.:\s+\d+ µs
                 parsing sample\.py:\s+\d+ µs
                 sorting sample\.py:\s+\d+ µs
+                total for \.:\s+\d+ µs
+                """
+            ).strip(),
+        )
+        self.assertEqual(0, result.exit_code)
+
+    def test_benchmark_multiple(self) -> None:
+        "Does trigger multiprocessing (walk after parsing/sorting in timings)"
+        with sample_contents("import sys\n") as dtmp:
+            (Path(dtmp) / "foo.py").write_text("print('hello')\n")
+
+            runner = CliRunner()
+            with chdir(dtmp):
+                result = runner.invoke(main, ["--benchmark", "check", "."])
+
+        self.assertRegex(
+            result.output,
+            dedent(
+                r"""
+                parsing foo\.py:\s+\d+ µs
+                sorting foo\.py:\s+\d+ µs
+                """
+            ).strip(),
+        )
+
+        self.assertRegex(
+            result.output,
+            dedent(
+                r"""
+                parsing sample\.py:\s+\d+ µs
+                sorting sample\.py:\s+\d+ µs
+                """
+            ).strip(),
+        )
+
+        self.assertRegex(
+            result.output,
+            dedent(
+                r"""
                 walking \.:\s+\d+ µs
                 total for \.:\s+\d+ µs
                 """
