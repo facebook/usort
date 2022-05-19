@@ -62,30 +62,29 @@ def main(ctx: click.Context, benchmark: bool, debug: bool) -> None:
 @main.command()
 @click.option("--multiples", is_flag=True, help="Only show files with multiple blocks")
 @click.option("--debug", is_flag=True, help="Show internal information")
-@click.argument("filenames", nargs=-1)
+@click.argument("paths", nargs=-1, type=click.Path(dir_okay=False, path_type=Path))
 @usort_command
-def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> int:
+def list_imports(multiples: bool, debug: bool, paths: List[Path]) -> int:
     """
     Troubleshoot sorting behavior and show import blocks
     """
     # This is used to debug the sort keys on the various lines, and understand
     # where the barriers are that produce different blocks.
 
-    for f in filenames:
-        path = Path(f)
+    for path in paths:
         config = Config.find(path)
         mod = try_parse(path)
         try:
             sorter = ImportSorter(module=mod, path=path, config=config)
             blocks = sorter.sortable_blocks(mod.body)
         except Exception as e:
-            print("Exception", f, e)
+            print("Exception", path, e)
             continue
 
         if multiples and len(blocks) < 2:
             continue
 
-        click.secho(f"{f} {len(blocks)} blocks:", fg="yellow")
+        click.secho(f"{path} {len(blocks)} blocks:", fg="yellow")
         for b in blocks:
             print(f"  body[{b.start_idx}:{b.end_idx}]")
             sorted_imports = sorted(b.imports)
@@ -107,17 +106,16 @@ def list_imports(multiples: bool, debug: bool, filenames: List[str]) -> int:
 
 
 @main.command()
-@click.argument("filenames", nargs=-1)
+@click.argument("paths", nargs=-1, type=click.Path(path_type=Path))
 @usort_command
-def check(filenames: List[str]) -> int:
+def check(paths: List[Path]) -> int:
     """
     Check imports for one or more path
     """
-    if not filenames:
+    if not paths:
         raise click.ClickException("Provide some filenames")
 
     return_code = 0
-    paths = [Path(f) for f in filenames]
     for result in usort_path(paths, write=False):
         if result.error:
             click.echo(f"Error sorting {result.path}: {result.error}")
@@ -137,17 +135,16 @@ def check(filenames: List[str]) -> int:
 
 @main.command()
 @click.pass_context
-@click.argument("filenames", nargs=-1)
+@click.argument("paths", nargs=-1, type=click.Path(path_type=Path))
 @usort_command
-def diff(ctx: click.Context, filenames: List[str]) -> int:
+def diff(ctx: click.Context, paths: List[Path]) -> int:
     """
     Output diff of changes for one or more path
     """
-    if not filenames:
+    if not paths:
         raise click.ClickException("Provide some filenames")
 
     return_code = 0
-    paths = [Path(f) for f in filenames]
     for result in usort_path(paths, write=False):
         if result.error:
             click.echo(f"Error sorting {result.path}: {result.error}")
@@ -173,9 +170,9 @@ def diff(ctx: click.Context, filenames: List[str]) -> int:
 
 
 @main.command()
-@click.argument("filenames", nargs=-1)
+@click.argument("paths", nargs=-1, type=click.Path(allow_dash=True, path_type=Path))
 @usort_command
-def format(filenames: List[str]) -> int:
+def format(paths: List[Path]) -> int:
     """
     Format one or more paths
 
@@ -183,15 +180,14 @@ def format(filenames: List[str]) -> int:
     We don't format them (aside from moving comments).  Black does the rest.
     When in doubt leave lines alone.
     """
-    if not filenames:
+    if not paths:
         raise click.ClickException("Provide some filenames")
 
-    if filenames[0].strip() == "-":
+    if paths[0] == Path("-"):
         success = usort_stdin()
         return 0 if success else 1
 
     return_code = 0
-    paths = [Path(f) for f in filenames]
     for result in usort_path(paths, write=True):
         if result.error:
             click.echo(f"Error sorting {result.path}: {result.error}")
