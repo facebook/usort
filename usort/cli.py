@@ -117,21 +117,20 @@ def check(filenames: List[str]) -> int:
         raise click.ClickException("Provide some filenames")
 
     return_code = 0
-    for f in filenames:
-        path = Path(f)
-        for result in usort_path(path, write=False):
-            if result.error:
-                click.echo(f"Error sorting {result.path}: {result.error}")
-                return_code |= 1
+    paths = [Path(f) for f in filenames]
+    for result in usort_path(paths, write=False):
+        if result.error:
+            click.echo(f"Error sorting {result.path}: {result.error}")
+            return_code |= 1
 
-            for warning in result.warnings:
-                click.echo(f"Warning at {result.path}:{warning.line} {warning.message}")
+        for warning in result.warnings:
+            click.echo(f"Warning at {result.path}:{warning.line} {warning.message}")
 
-            if result.content != result.output:
-                click.echo(f"Would sort {result.path}")
-                return_code |= 2
+        if result.content != result.output:
+            click.echo(f"Would sort {result.path}")
+            return_code |= 2
 
-            print_benchmark(result.timings)
+        print_benchmark(result.timings)
 
     return return_code
 
@@ -148,28 +147,27 @@ def diff(ctx: click.Context, filenames: List[str]) -> int:
         raise click.ClickException("Provide some filenames")
 
     return_code = 0
-    for f in filenames:
-        path = Path(f)
-        for result in usort_path(path, write=False):
-            if result.error:
-                click.echo(f"Error sorting {result.path}: {result.error}")
-                if ctx.obj.debug:
-                    click.echo(result.trace)
-                return_code |= 1
-                continue
+    paths = [Path(f) for f in filenames]
+    for result in usort_path(paths, write=False):
+        if result.error:
+            click.echo(f"Error sorting {result.path}: {result.error}")
+            if ctx.obj.debug:
+                click.echo(result.trace)
+            return_code |= 1
+            continue
 
-            for warning in result.warnings:
-                click.echo(f"Warning at {result.path}:{warning.line} {warning.message}")
+        for warning in result.warnings:
+            click.echo(f"Warning at {result.path}:{warning.line} {warning.message}")
 
-            if result.content != result.output:
-                assert result.encoding is not None
-                echo_color_unified_diff(
-                    result.content.decode(result.encoding),
-                    result.output.decode(result.encoding),
-                    result.path.as_posix(),
-                )
+        if result.content != result.output:
+            assert result.encoding is not None
+            echo_color_unified_diff(
+                result.content.decode(result.encoding),
+                result.output.decode(result.encoding),
+                result.path.as_posix(),
+            )
 
-            print_benchmark(result.timings)
+        print_benchmark(result.timings)
 
     return return_code
 
@@ -193,21 +191,20 @@ def format(filenames: List[str]) -> int:
         return 0 if success else 1
 
     return_code = 0
-    for f in filenames:
-        path = Path(f)
-        for result in usort_path(path, write=True):
-            if result.error:
-                click.echo(f"Error sorting {result.path}: {result.error}")
-                return_code |= 1
-                continue
+    paths = [Path(f) for f in filenames]
+    for result in usort_path(paths, write=True):
+        if result.error:
+            click.echo(f"Error sorting {result.path}: {result.error}")
+            return_code |= 1
+            continue
 
-            for warning in result.warnings:
-                click.echo(f"Warning at {result.path}:{warning.line} {warning.message}")
+        for warning in result.warnings:
+            click.echo(f"Warning at {result.path}:{warning.line} {warning.message}")
 
-            if result.content != result.output:
-                click.echo(f"Sorted {result.path}")
+        if result.content != result.output:
+            click.echo(f"Sorted {result.path}")
 
-            print_benchmark(result.timings)
+        print_benchmark(result.timings)
 
     return return_code
 

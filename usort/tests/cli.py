@@ -55,7 +55,7 @@ class CliTest(unittest.TestCase):
                 walking \.:\s+\d+ µs
                 parsing sample\.py:\s+\d+ µs
                 sorting sample\.py:\s+\d+ µs
-                total for \.:\s+\d+ µs
+                total:\s+\d+ µs
                 """
             ).strip(),
         )
@@ -95,7 +95,7 @@ class CliTest(unittest.TestCase):
             dedent(
                 r"""
                 walking \.:\s+\d+ µs
-                total for \.:\s+\d+ µs
+                total:\s+\d+ µs
                 """
             ).strip(),
         )

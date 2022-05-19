@@ -6,7 +6,7 @@
 import sys
 from functools import partial
 from pathlib import Path
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, Optional, Set, Tuple, Union
 from warnings import warn
 
 from trailrunner import run, walk
@@ -117,7 +117,9 @@ def usort_file(path: Path, *, write: bool = False) -> Result:
         )
 
 
-def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
+def usort_path(
+    paths: Union[Path, Iterable[Path]], write: bool = False
+) -> Iterable[Result]:
     """
     For a given path, format it, or any python files in it, and yield :class:`Result` s.
 
@@ -125,16 +127,25 @@ def usort_path(path: Path, *, write: bool = False) -> Iterable[Result]:
     excluding any files or directories that match the project root's ``.gitignore`` or
     any configured :py:attr:`excludes` patterns in the associated ``pyproject.toml``.
     """
-    with timed(f"total for {path}"):
-        with timed(f"walking {path}"):
-            config = Config.find(path)
-            paths = list(walk(path, excludes=config.excludes))
+    if isinstance(paths, Path):
+        source_paths: Iterable[Path] = [paths]
+    else:
+        source_paths = paths
+
+    with timed("total"):
+        materialized_paths: Set[Path] = set()
+
+        for path in source_paths:
+            with timed(f"walking {path}"):
+                config = Config.find(path)
+                materialized_paths.update(walk(path, excludes=config.excludes))
 
         fn = partial(usort_file, write=write)
-        if len(paths) == 1:
-            results = [fn(paths[0])]  # shave off multiprocessing overhead
+        if len(materialized_paths) == 1:
+            # shave off multiprocessing overhead
+            results = [fn(materialized_paths.pop())]
         else:
-            results = [v for v in run(paths, fn).values()]
+            results = [v for v in run(materialized_paths, fn).values()]
         return results
 
 
