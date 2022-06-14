@@ -25,7 +25,7 @@ class ImportSorter:
         self.path = path
         self.warning_nodes: List[Tuple[cst.CSTNode, str]] = []
         self.warnings: List[SortWarning] = []
-        self.wrapper = cst.MetadataWrapper(module)
+        self.wrapper = cst.MetadataWrapper(module, unsafe_skip_copy=True)
         self.transformer = ImportSortingTransformer(config, module, self)
 
     def has_skip_comment(self, comment: Optional[cst.Comment]) -> bool:
