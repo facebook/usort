@@ -30,6 +30,10 @@ When a PR has been accepted:
 
 ## Releasing New Versions
 
+Versioning for µsort is handled by the `setuptools_scm` project, based on git tags
+in the repo, but there's more to cutting a release than just tagging a commit.
+Please follow this guide when releasing new versions of µsort:
+
 1. Decide on the next version number, based on what has been added to the `main`
    branch since the previous release:
 
@@ -37,7 +41,8 @@ When a PR has been accepted:
      other two, eg `1.10.0 -> 2.0.0`.
    * New features should increment the second number and reset the third,
      eg `1.10.0 -> 1.11.0`.
-   * Bug fixes should only increment the third number, eg `1.10.0 -> 1.10.1`.
+   * Bug fixes or performance improvements should only increment the third number,
+     eg `1.10.0 -> 1.10.1`.
 
 2. Update `CHANGELOG.md` with the new version, following the same pattern as
    previous versions. Entries should reference both the PR number and any
@@ -46,17 +51,17 @@ When a PR has been accepted:
    Contributers to this release should be acknowledged by including the output
    of `git shortlog -sn <previous tag>...`.
 
-4. Commit the updated version number and changelog with a message following
-   the pattern "(Feature | bugfix) release v<version>".
+4. Commit the updated changelog with a message following the pattern
+   "(Feature | bugfix) release v<version>".
 
 5. Push this commit to upstream main branch and wait for CI to run/pass.
 
 6. Tag this commit with the version number (including the preceding "v")
    using `git tag -s v<version>`, and paste the contents of the changelog
-   for this version as the tag's message.  Be sure to make a signed tag (`-s`)
+   for this version as the tag's message. Be sure to make a signed tag (`-s`)
    using a GPG key attached to your Github profile.
 
 7. Push this tag to upstream using `git push --tags` and wait for CI to pass.
 
-8. Publish this release to PyPI using `make release` to build and upload
-   the source distribution and wheels.
+8. Publish this release to PyPI using `make release` to validate, build, and
+   upload the source distribution and wheels.
