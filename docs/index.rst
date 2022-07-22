@@ -21,3 +21,4 @@
     changelog
     contributing
     code-of-conduct
+    maintainers

@@ -46,7 +46,7 @@ deps:
 
 .PHONY: html
 html:
-	sphinx-build -b html docs html
+	sphinx-build -ab html docs html
 
 .PHONY: release
 release:
