@@ -1,3 +1,19 @@
+## 1.0.3
+
+Bugfix release
+
+* Skip visiting CST nodes that cannot have import statements (#187)
+* Skip deep copying CST after parsing (#167)
+* Optimize passing multiple paths to usort CLI (#161)
+* Don't use trailrunner to format exactly one file (#160)
+
+```shell-session
+$ git shortlog -sn v1.0.2...
+     2  John Reese
+     2  Zsolt Dollenstein
+     1  Arseny Boykov
+```
+
 ## 1.0.2
 
 Bugfix release
