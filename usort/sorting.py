@@ -352,7 +352,9 @@ class ImportSortingTransformer(cst.CSTTransformer):
         return self.statement_map.get(node, node)
 
     def on_visit(self, node: cst.CSTNode) -> bool:
-        return not isinstance(node, (cst.BaseExpression, cst.BaseSmallStatement))
+        if isinstance(node, (cst.BaseExpression, cst.BaseSmallStatement)):
+            return False
+        return super().on_visit(node)
 
     def leave_SimpleStatementLine(
         self,
