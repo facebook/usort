@@ -542,6 +542,24 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_multi_line_expand_but_not_very_long(self) -> None:
+        """
+        This test makes sure indentation is taken into account properly.
+        Without indentation, these lines wouldn't be too long.
+        """
+        self.assertUsortResult(
+            """
+                if foo:
+                    from aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa import bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+            """,
+            """
+                if foo:
+                    from aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa import (
+                        bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb,
+                    )
+            """,
+        )
+
     def test_multi_line_expand_inner_function(self) -> None:
         self.assertUsortResult(
             """
