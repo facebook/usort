@@ -1,3 +1,14 @@
+## 1.0.4
+
+Bugfix release
+
+* Make sure indentation is tracked (#188)
+
+```shell-session
+$ git shortlog -sn v1.0.3...
+     1  John Reese
+```
+
 ## 1.0.3
 
 Bugfix release
