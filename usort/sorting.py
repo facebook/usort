@@ -163,7 +163,14 @@ class ImportSorter:
             # move imported names metadata
             for imp in new.imports:
                 for key in list(imp.imported_names):
-                    new.imported_names[key] = block.imported_names.pop(key)
+                    name = block.imported_names.pop(key, None)
+                    if name is not None:
+                        # Normally we wouldn't see multiple copies of a key because that
+                        # would have caused a block split already, but if an import is
+                        # just verbatim repeated, it's not technically shadowing.
+                        # If that's the case, we've already popped it and achieved the
+                        # goal of this block.
+                        new.imported_names[key] = name
 
         return new
 

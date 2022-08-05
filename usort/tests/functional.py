@@ -897,6 +897,21 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_sort_merging_and_implicit_blocks(self) -> None:
+        self.assertUsortResult(
+            """
+                from a import x
+                from b import y
+                from b import y
+                from c import x
+            """,
+            """
+                from a import x
+                from b import y
+                from c import x
+            """,
+        )
+
     def test_skip_directives(self) -> None:
         """Test both usort:skip and isort:skip on single line imports"""
         self.assertUsortResult(
