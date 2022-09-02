@@ -1,7 +1,7 @@
 black==22.6.0
 coverage==6.2
 flake8==5.0.4
-mistune==2.0.3
+mistune==2.0.4
 mypy==0.971
 pessimist==0.9.3
 setuptools_scm==6.4.2
