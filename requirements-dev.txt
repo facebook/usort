@@ -1,6 +1,6 @@
 black==22.6.0
 coverage==6.2
-flake8==4.0.1
+flake8==5.0.4
 mistune==2.0.3
 mypy==0.971
 pessimist==0.9.3
