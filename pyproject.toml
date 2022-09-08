@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools >= 64", "setuptools-scm >= 6.4"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 [project]
 name = "usort"
@@ -41,6 +41,12 @@ Documentation="https://usort.readthedocs.io"
 Github="https://github.com/facebookexperimental/usort"
 Homepage="https://usort.readthedocs.io"
 
+[tool.hatch.build.hooks.vcs]
+version-file = "usort/version.py"
+
+[tool.hatch.version]
+source = "vcs"
+
 [tool.coverage.run]
 branch = true
 include = ["usort/*"]
@@ -54,12 +60,6 @@ skip_covered = true
 
 [tool.mypy]
 ignore_missing_imports = true
-
-[tool.setuptools]
-packages = ["usort"]
-
-[tool.setuptools_scm]
-write_to = "usort/version.py"
 
 [tool.tox]
 legacy_tox_ini = """
