@@ -1,6 +1,6 @@
 attrs==22.1.0
 click==8.0.4
-LibCST==0.4.1
+LibCST==0.4.7
 stdlibs==2022.6.8
 moreorless==0.4.0
 toml==0.10.2
