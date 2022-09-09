@@ -238,7 +238,7 @@ class ImportSorter:
             elif imp.sort_key.category_index != cur_category:
                 blanks = ("",)
             else:
-                blanks = _old_blanks[:1]
+                blanks = ()
 
             imp.comments.before = [*blanks, *old_comments]
 

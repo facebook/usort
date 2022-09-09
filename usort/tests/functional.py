@@ -365,11 +365,10 @@ numpy = ["numpy", "pandas"]
         """
         self.assertUsortResult(content, content, config)
 
-    def test_match_black_blank_line_before_comment(self) -> None:
+    def test_collapse_blank_line_before_comment(self) -> None:
         content = """
             import a
             import b
-
             # comment
             import c
         """
@@ -805,7 +804,6 @@ numpy = ["numpy", "pandas"]
             """,
             """
                 import a
-
                 # one
                 # apple
                 from foo import (  # two  # banana
@@ -1026,6 +1024,75 @@ excludes = [
                 self.assertEqual(sorted_content, result.output.replace(b"\r\n", b"\n"))
             self.assertEqual(len(sorted_paths), len(results))
 
+    def test_sorting_with_extra_blank_lines(self) -> None:
+        self.assertUsortResult(
+            """
+                import math
+
+                import beta
+                from . import foo
+                import alpha
+            """,
+            """
+                import math
+
+                import alpha
+                import beta
+
+                from . import foo
+            """,
+        )
+
+        self.assertUsortResult(
+            """
+                import math
+
+
+                import beta
+                from . import foo
+
+                import alpha
+            """,
+            """
+                import math
+
+                import alpha
+                import beta
+
+                from . import foo
+            """,
+        )
+
+        self.assertUsortResult(
+            """
+                import math
+
+                import gamma
+
+                import alpha
+
+
+                # special
+                import beta
+
+                from . import foo
+
+                import zeta
+
+            """,
+            """
+                import math
+
+                import alpha
+                # special
+                import beta
+                import gamma
+                import zeta
+
+                from . import foo
+
+            """,
+        )
 
 if __name__ == "__main__":
     unittest.main()
