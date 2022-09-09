@@ -1,0 +1,76 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "usort"
+description = "Safe, minimal import sorting"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {file="LICENSE"}
+authors = [
+    {name="Tim Hatch", email="thatch@fb.com"},
+    {name="Amethyst Reese", email="amethyst@fb.com"},
+    {name="Meta"},
+]
+keywords = ["imports", "usort", "isort"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Software Development",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+dependencies = [
+    "attrs >= 21.2.0",
+    "click >= 7.0.0",
+    "LibCST >= 0.3.7",
+    "moreorless >= 0.3.0",
+    "stdlibs >= 2021.4.1",
+    "toml >= 0.10.0",
+    "trailrunner >= 1.0",
+]
+dynamic = ["version"]
+
+[project.scripts]
+usort = "usort.__main__:main"
+
+[project.urls]
+Documentation="https://usort.readthedocs.io"
+Github="https://github.com/facebookexperimental/usort"
+Homepage="https://usort.readthedocs.io"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "usort/version.py"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.coverage.run]
+branch = true
+include = ["usort/*"]
+omit = ["usort/tests/*"]
+
+[tool.coverage.report]
+fail_under = 92
+precision = 0
+show_missing = true
+skip_covered = true
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py36, py37, py38
+
+[testenv]
+deps = -rrequirements-dev.txt
+whitelist_externals = make
+commands =
+    make test
+setenv =
+    py{36,37,38}: COVERAGE_FILE={envdir}/.coverage
+"""
