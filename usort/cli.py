@@ -13,7 +13,6 @@ import click
 from moreorless.click import echo_color_unified_diff
 
 from usort.translate import render_node
-
 from . import __version__
 from .api import usort_path, usort_stdin
 from .config import Config
