@@ -258,7 +258,7 @@ class TypesTest(unittest.TestCase):
                                 SortableImportItem(name='bar', asname=None, comments=ImportItemComments(before=[], inline=[], following=[])),
                                 SortableImportItem(name='baz', asname='buzz', comments=ImportItemComments(before=[], inline=[], following=[])),
                             ],
-                            comments = ImportComments(before=[], first_inline=[], initial=[], inline=[], final=[], last_inline=[]),
+                            comments = ImportComments(before=[], first_inline=[], initial=[], inline=[], final=[], last_inline=[], blanks_before=[], blanks_after=[]),
                             indent = '    ',
                         ),
                         SortableImport(
@@ -267,7 +267,7 @@ class TypesTest(unittest.TestCase):
                             items = [
                                 SortableImportItem(name='core', asname=None, comments=ImportItemComments(before=[], inline=[], following=[])),
                             ],
-                            comments = ImportComments(before=[], first_inline=[], initial=[], inline=[], final=[], last_inline=[]),
+                            comments = ImportComments(before=[], first_inline=[], initial=[], inline=[], final=[], last_inline=[], blanks_before=[], blanks_after=[]),
                             indent = '    ',
                         ),
                     ],

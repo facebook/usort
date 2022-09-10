@@ -16,6 +16,7 @@ from .config import CAT_FIRST_PARTY, Config
 from .util import stem_join, Timing, top_level_name
 
 COMMENT_INDENT = "  "
+ONE_BLANK = [""]
 
 
 def case_insensitive_ordering(text: Optional[str]) -> Optional[str]:
@@ -80,6 +81,8 @@ class ImportComments:
     inline: List[str] = field(factory=list)  # Only when no trailing comma
     final: List[str] = field(factory=list)
     last_inline: List[str] = field(factory=list)
+    blanks_before: List[str] = field(factory=list)
+    blanks_after: List[str] = field(factory=list)
 
     def __add__(self, other: "ImportComments") -> "ImportComments":
         if not isinstance(other, ImportComments):
@@ -92,6 +95,8 @@ class ImportComments:
             inline=[*self.inline, *other.inline],
             final=[*self.final, *other.final],
             last_inline=[*self.last_inline, *other.last_inline],
+            blanks_before=[*self.blanks_before, *other.blanks_before],
+            blanks_after=[*self.blanks_after, *other.blanks_after],
         )
 
 
@@ -250,6 +255,7 @@ class SortableBlock:
 
     imports: List[SortableImport] = field(factory=list)
     imported_names: Dict[str, str] = field(factory=dict)
+    initial_blanks: List[str] = field(factory=list)
 
     def __repr__(self) -> str:
         imports = indent("\n".join(f"{imp!r}," for imp in self.imports), "        ")

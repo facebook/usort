@@ -13,7 +13,7 @@ from libcst.metadata import PositionProvider
 
 from .config import Config
 from .translate import import_from_node, import_to_node
-from .types import SortableBlock, SortableImport, SortWarning
+from .types import ONE_BLANK, SortableBlock, SortableImport, SortWarning
 from .util import timed
 
 LOG = logging.getLogger(__name__)
@@ -182,65 +182,69 @@ class ImportSorter:
         """
         blocks: List[SortableBlock] = []
         current: Optional[SortableBlock] = None
+        prev: Optional[SortableImport] = None
         for idx, stmt in enumerate(body):
             if self.is_sortable_import(stmt):
                 assert isinstance(stmt, cst.SimpleStatementLine)
                 imp = import_from_node(stmt, self.config)
+
+                if prev:
+                    if (
+                        prev.comments.before
+                        and prev.comments.blanks_before
+                        and imp.comments.blanks_before
+                    ):
+                        prev.comments.blanks_after = ONE_BLANK
+
                 if current is None:
-                    current = SortableBlock(idx, idx + 1)
+                    current = SortableBlock(
+                        idx, idx + 1, initial_blanks=imp.comments.blanks_before
+                    )
+                    imp.comments.blanks_before = []
                     blocks.append(current)
+                    prev = None
 
                 overlap = self.name_overlap(current, imp)
                 if overlap:
                     # This overwrites an earlier name
                     current = self.split_inplace(current, overlap)
                     blocks.append(current)
+                    prev = None
 
                 current.add_import(imp, idx)
+                prev = imp
             else:
                 current = None
+                prev = None
         return blocks
 
-    def partition_leading_lines(
-        self,
-        lines: List[str],
-    ) -> Tuple[List[str], List[str]]:
-        """
-        Returns a tuple of the initial blank lines, and the comment lines.
-        """
-        for j in range(len(lines)):
-            if lines[j].startswith("#"):
-                break
-        else:
-            j = len(lines)
-
-        return lines[:j], lines[j:]
-
     def fixup_whitespace(
-        self, initial_blank: Sequence[str], imports: List[SortableImport]
+        self, initial_blank: List[str], imports: List[SortableImport]
     ) -> List[SortableImport]:
         """
         Normalize whitespace/comments on a block of imports before transforming back to CST.
         """
         cur_category = None
+        prev: Optional[SortableImport] = None
         # TODO if they've already been reshuffled, there may have been a blank
         # (separator) line between a non-block and the first import, that's now in
         # the middle.
         for imp in imports:
-            _old_blanks, old_comments = self.partition_leading_lines(
-                imp.comments.before
-            )
-
             if cur_category is None:
                 blanks = initial_blank
             elif imp.sort_key.category_index != cur_category:
-                blanks = ("",)
+                blanks = ONE_BLANK
+            elif imp.comments.before and imp.comments.blanks_before:
+                blanks = ONE_BLANK
+            elif prev and prev.comments.blanks_after:
+                blanks = ONE_BLANK
             else:
-                blanks = _old_blanks[:1]
+                blanks = []
 
-            imp.comments.before = [*blanks, *old_comments]
+            imp.comments.blanks_before = blanks
 
             cur_category = imp.sort_key.category_index
+            prev = imp
         return imports
 
     def merge_and_sort_imports(
@@ -306,18 +310,15 @@ class ImportSorter:
         blocks = list(self.sortable_blocks(body))
 
         for block in blocks:
-            initial_blank, initial_comment = self.partition_leading_lines(
-                block.imports[0].comments.before
-            )
-            block.imports[0].comments.before = initial_comment
             # Sort the imports first, so that imports from the same module line up, then
             # merge and sort imports/items, then re-sort the final set of imports again
             # in case unsorted items affected overall sorting.
             imports = self.split_imports(block.imports)
             imports = sorted(imports)
             imports = self.merge_and_sort_imports(imports)
-            imports = self.fixup_whitespace(initial_blank, imports)
-            block.imports = sorted(imports)
+            imports = sorted(imports)
+            imports = self.fixup_whitespace(block.initial_blanks, imports)
+            block.imports = imports
 
         # replace statements in reverse order in case some got merged, which throws off
         # indexes for statements past the merge

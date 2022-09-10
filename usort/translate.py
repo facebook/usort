@@ -49,7 +49,7 @@ def import_comments_from_node(node: cst.SimpleStatementLine) -> ImportComments:
         if line.comment:
             comments.before.append(line.comment.value)
         else:
-            comments.before.append("")
+            comments.blanks_before.append("")
 
     if isinstance(imp, cst.ImportFrom):
         if imp.lpar:
@@ -235,7 +235,7 @@ def import_to_node_single(imp: SortableImport, module: cst.Module) -> cst.BaseSt
         cst.EmptyLine(indent=True, comment=cst.Comment(line))
         if line.startswith("#")
         else cst.EmptyLine(indent=False)
-        for line in imp.comments.before
+        for line in [*imp.comments.blanks_before, *imp.comments.before]
     ]
 
     trailing_whitespace = cst.TrailingWhitespace()
