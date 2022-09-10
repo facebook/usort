@@ -9,7 +9,6 @@ from pathlib import Path
 import libcst as cst
 
 from ..config import Config
-
 from ..sorting import ImportSorter
 
 
