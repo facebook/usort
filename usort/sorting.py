@@ -56,14 +56,16 @@ class ImportSorter:
                 return False
 
             # N.b. `body` is a list, because the SimpleStatementLine might have
-            # semicolons.  We only look at the first, which is probably the most
-            # dangerous thing in here.
+            # semicolons. We treat lines with multiple statements as unsortable.
+            # This is the safest and easiest thing to do.
             #
             # If black is run, it will put the semicolon pieces on different lines,
             # but we don't want to do that until we reflow and handle directives
             # like noqa.  TODO do that before calling is_sortable_import, and assert
             # that it's not a compound statement line.
-            if isinstance(stmt.body[0], cst.ImportFrom):
+            if len(stmt.body) > 1:
+                return False
+            elif isinstance(stmt.body[0], cst.ImportFrom):
                 # from foo import (  # usort:skip
                 #     bar,
                 # )

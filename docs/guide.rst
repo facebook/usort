@@ -383,6 +383,14 @@ logging::
 
     import other_module
 
+Similarly, any line with multiple statements separated by semicolons will also
+create an implicit block separator. µsort will defer to a dedicated formatter
+for correctly splitting those statements onto separate lines::
+
+    import zipfile
+    import sys; import re  # <-- implicit block separator
+    import ast
+
 Shadowed Imports
 ^^^^^^^^^^^^^^^^
 

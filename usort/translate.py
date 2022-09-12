@@ -36,7 +36,7 @@ def name_to_node(name: str) -> Union[cst.Name, cst.Attribute]:
 def import_comments_from_node(node: cst.SimpleStatementLine) -> ImportComments:
     comments = ImportComments()
 
-    assert len(node.body) == 1
+    assert len(node.body) == 1, "lines with multiple statements are unsupported"
     assert isinstance(node.body[0], (cst.Import, cst.ImportFrom))
     imp: Union[cst.Import, cst.ImportFrom] = node.body[0]
 
