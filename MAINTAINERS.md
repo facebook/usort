@@ -45,7 +45,11 @@ Please follow this guide when releasing new versions of µsort:
    Contributers to this release should be acknowledged by including the output
    of `git shortlog -sn <previous tag>...`.
 
-4. Commit the updated changelog with a message following the pattern
+3. If releasing a new major version, ensure the ``check_backcompat.py`` test
+   script has been updated to match the intended backward compatibility
+   version target for future releases.
+
+4. Commit the updated content with a message following the pattern
    "(Feature | bugfix) release v<version>".
 
 5. Push this commit to upstream main branch and wait for CI to run/pass.
