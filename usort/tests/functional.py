@@ -186,6 +186,24 @@ class UsortStringFunctionalTest(unittest.TestCase):
             """,
         )
 
+    def test_semicolons(self) -> None:
+        self.assertUsortResult(
+            """
+                import zipfile
+                import re
+                import sys; print(sys)
+                import urllib
+                import difflib
+            """,
+            """
+                import re
+                import zipfile
+                import sys; print(sys)
+                import difflib
+                import urllib
+            """,
+        )
+
     def test_dot_handling(self) -> None:
         # Test that 'from .. import b' comes before 'from ..a import foo'
         self.assertUsortResult(
