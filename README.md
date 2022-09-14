@@ -5,7 +5,7 @@
 [![documentation](https://readthedocs.org/projects/usort/badge/?version=stable)](https://usort.readthedocs.io/en/stable/?badge=stable)
 [![version](https://img.shields.io/pypi/v/usort.svg)](https://pypi.org/project/usort)
 [![changelog](https://img.shields.io/badge/change-log-blue.svg)](https://usort.readthedocs.io/en/latest/changelog.html)
-[![license](https://img.shields.io/pypi/l/usort.svg)](https://github.com/facebookexperimental/usort/blob/main/LICENSE)
+[![license](https://img.shields.io/pypi/l/usort.svg)](https://github.com/facebook/usort/blob/main/LICENSE)
 
 μsort is a safe, minimal import sorter. Its primary goal is to make no "dangerous"
 changes to code. This is achieved by detecting distinct "blocks" of imports that are
@@ -88,5 +88,5 @@ $ usort check <path>
 
 μsort is MIT licensed, as found in the [LICENSE][] file.
 
-[LICENSE]: https://github.com/facebookexperimental/usort/tree/main/LICENSE
+[LICENSE]: https://github.com/facebook/usort/tree/main/LICENSE
 [User Guide]: https://usort.readthedocs.io/en/stable/guide.html
