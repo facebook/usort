@@ -45,6 +45,10 @@ lint:
 deps:
 	python -m pessimist --requirements= -c "python -m usort --help" .
 
+.PHONY: backcompat
+backcompat:
+	python check_backcompat.py
+
 .PHONY: html
 html:
 	sphinx-build -ab html docs html
