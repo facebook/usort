@@ -26,7 +26,7 @@ When a PR has been accepted:
 
 * Update PR title if necessary to clarify purpose.
 * Prefer using merge commits from Github to record PR name and number.
-* For automated PR's (like pyup.io), prefer using rebase from Github UI.
+* For automated PR's (like dependabot), prefer using rebase from Github UI.
 
 ## Releasing New Versions
 
@@ -35,14 +35,8 @@ in the repo, but there's more to cutting a release than just tagging a commit.
 Please follow this guide when releasing new versions of µsort:
 
 1. Decide on the next version number, based on what has been added to the `main`
-   branch since the previous release:
-
-   * Major breaking changes should increment the first number and reset the
-     other two, eg `1.10.0 -> 2.0.0`.
-   * New features should increment the second number and reset the third,
-     eg `1.10.0 -> 1.11.0`.
-   * Bug fixes or performance improvements should only increment the third number,
-     eg `1.10.0 -> 1.10.1`.
+   branch since the previous release. See the
+   [Versioning Guide](https://usort.rtfd.io/en/latest/versioning.html).
 
 2. Update `CHANGELOG.md` with the new version, following the same pattern as
    previous versions. Entries should reference both the PR number and any
@@ -51,7 +45,11 @@ Please follow this guide when releasing new versions of µsort:
    Contributers to this release should be acknowledged by including the output
    of `git shortlog -sn <previous tag>...`.
 
-4. Commit the updated changelog with a message following the pattern
+3. If releasing a new major version, ensure the ``check_backcompat.py`` test
+   script has been updated to match the intended backward compatibility
+   version target for future releases.
+
+4. Commit the updated content with a message following the pattern
    "(Feature | bugfix) release v<version>".
 
 5. Push this commit to upstream main branch and wait for CI to run/pass.

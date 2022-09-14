@@ -18,6 +18,7 @@
     :hidden:
     :maxdepth: 1
 
+    versioning
     changelog
     contributing
     code-of-conduct
