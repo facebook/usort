@@ -62,7 +62,7 @@ jobs:
           python -m pessimist --fast --requirements= -c 'python -m usort --help' .
           python -m pessimist --fast --requirements=importall.txt --fast -c 'importall --root=. usort' .
 
-  back-compat:
+  backward-compatibility:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

@@ -10,6 +10,8 @@ If any previous version triggers sorting/formatting changes, we consider that
 worthy of a major version bump, and should be reverted or at least reconsidered.
 
 See the Versioning Guide for details.
+
+TODO: include other projects as part of testing, like black, libcst, etc
 """
 
 import json
