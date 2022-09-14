@@ -78,4 +78,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Check backwards compatibility
         shell: bash
-        run: make backcompat
+        run: |
+          python -m pip install -U pip packaging
+          make backcompat
