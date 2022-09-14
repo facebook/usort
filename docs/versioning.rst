@@ -41,10 +41,10 @@ It is our intent to:
 2. Bump the patch version for:
 
     - garden-variety bugs, such as those where the previous behavior was an exception
-      (such as `#194 <https://github.com/facebookexperimental/usort/issues/194>`_)
+      (such as `#194 <https://github.com/facebook/usort/issues/194>`_)
     - any bug that produces output so mangled it would not have been accepted
-      by human review (such as `#187 <https://github.com/facebookexperimental/usort/issues/187>`_
-      fixed in `#188 <https://github.com/facebookexperimental/usort/issues/188>`_
+      by human review (such as `#187 <https://github.com/facebook/usort/issues/187>`_
+      fixed in `#188 <https://github.com/facebook/usort/issues/188>`_
       causing unnecessary reflow that disagreed with black)
     - performance optimizations that expect to have no impact on sorting behavior
 
@@ -58,7 +58,7 @@ It is our intent to:
     - new features that may change the output (at the byte level) for greenfield
       sorting, but produce output that can then be sorted with previous versions
       (see above) without producing additional changes
-      (such as `#140 <https://github.com/facebookexperimental/usort/issues/140>`_)
+      (such as `#140 <https://github.com/facebook/usort/issues/140>`_)
     - anything that includes a new config option (although the defaults for
       those config options must keep previous behavior); if a consumer project
       relies on a certain config option, it is on them to constrain to `>=`

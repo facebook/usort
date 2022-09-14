@@ -73,12 +73,12 @@ html_theme_options = {
     "fixed_sidebar": True,
     "badge_branch": "master",
     "github_button": False,
-    "github_user": "facebookexperimental",
+    "github_user": "facebook",
     "github_repo": "usort",
     "show_powered_by": False,
     "sidebar_collapse": False,
     "extra_nav_links": {
-        "Report Issues": "https://github.com/facebookexperimental/usort/issues",
+        "Report Issues": "https://github.com/facebook/usort/issues",
     },
 }
 

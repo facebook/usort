@@ -38,7 +38,7 @@ usort = "usort.__main__:main"
 
 [project.urls]
 Documentation="https://usort.readthedocs.io"
-Github="https://github.com/facebookexperimental/usort"
+Github="https://github.com/facebook/usort"
 Homepage="https://usort.readthedocs.io"
 
 [tool.hatch.build.hooks.vcs]

@@ -83,7 +83,7 @@ By contributing to µsort, you agree that your contributions will be licensed
 under the [LICENSE][] file in the root directory of this source tree.
 
 
-[license]: https://github.com/facebookexperimental/usort/tree/main/LICENSE
+[license]: https://github.com/facebook/usort/tree/main/LICENSE
 [pyenv]: https://github.com/pyenv/pyenv
 [rst]: https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html
 [sphinx]: https://www.sphinx-doc.org/
