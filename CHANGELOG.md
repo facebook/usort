@@ -1,3 +1,15 @@
+## 1.0.5
+
+Bugfix release
+
+* Fix AssertionError when sorting multiple statements on one line (#203, #204)
+* Deprecated: Python 3.6 support will be dropped in v1.1.0 (#154)
+
+```shell-session
+$ git shortlog -sn v1.0.4...
+     4  Amethyst Reese
+```
+
 ## 1.0.4
 
 Bugfix release
