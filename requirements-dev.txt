@@ -1,7 +1,7 @@
 black==22.8.0
 coverage==6.5.0
 flake8==5.0.4
-hatch==1.5.0
+hatch==1.6.3
 mistune==2.0.4
 mypy==0.981
 pessimist==0.9.3
