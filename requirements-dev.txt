@@ -3,7 +3,7 @@ coverage==6.5.0
 flake8==5.0.4
 hatch==1.6.3
 mistune==2.0.4
-mypy==0.981
+mypy==0.991
 pessimist==0.9.3
 sphinx==4.3.2
 sphinx-mdinclude==0.5.3
