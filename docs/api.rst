@@ -19,3 +19,7 @@ Advanced API
 .. autofunction:: usort_file
 .. autofunction:: usort_stdin
 .. autoclass:: Config
+
+.. module:: usort.util
+
+.. autofunction:: enable_libcst_native

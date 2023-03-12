@@ -55,7 +55,12 @@ def print_timings(
 
 def enable_libcst_native() -> bool:
     """
-    Attempt to enable LibCST's native parser if available.
+    Attempt to enable LibCST's faster, native PEG parser if available.
+
+    This enables parsing files with 3.10 match statements, or other new syntax features
+    dependent on having a PEG style parser. This is currently not the default parser
+    in LibCST, so this function must be called before parsing files with 3.10+ syntax,
+    or otherwise set the environment variable ``LIBCST_PARSER_TYPE="native"``.
 
     Returns ``True`` if the native parser was found and enabled, or ``False`` otherwise.
     """
