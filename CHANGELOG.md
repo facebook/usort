@@ -18,7 +18,7 @@ Bugfix release
 
 ```shell-session
 $ git shortlog -sn v1.0.3...
-     1  John Reese
+     1  Amethyst Reese
 ```
 
 ## 1.0.3
@@ -32,7 +32,7 @@ Bugfix release
 
 ```shell-session
 $ git shortlog -sn v1.0.2...
-     2  John Reese
+     2  Amethyst Reese
      2  Zsolt Dollenstein
      1  Arseny Boykov
 ```
@@ -48,7 +48,7 @@ Bugfix release
 ```shell-session
 $ git shortlog -sn v1.0.1...
      7  dependabot[bot]
-     5  John Reese
+     5  Amethyst Reese
      2  Tim Hatch
 ```
 
@@ -64,7 +64,7 @@ Bugfix release
 
 ```shell-session
 $ git shortlog -sn v1.0.0...
-    14  John Reese
+    14  Amethyst Reese
     12  dependabot[bot]
      3  Zsolt Dollenstein
 ```
@@ -85,7 +85,7 @@ Feature release
 
 ```shell-session
 $ git shortlog -sn v0.6.4...
-   104  John Reese
+   104  Amethyst Reese
     18  dependabot[bot]
      7  Tim Hatch
      3  Jason Fried
@@ -102,7 +102,7 @@ Release Candidate:
 
 ```shell-session
 git shortlog -sn v1.0.0b1...
-    10  John Reese
+    10  Amethyst Reese
 ```
 
 ## 1.0.0b1
@@ -116,7 +116,7 @@ Beta release
 
 ```shell-session
 $ git shortlog -sn v1.0.0a1...
-    28  John Reese
+    28  Amethyst Reese
     13  dependabot[bot]
      3  Jason Fried
 ```
@@ -132,7 +132,7 @@ Alpha release
 
 ```shell-session
 $ git shortlog -sn v0.6.4...
-    62  John Reese
+    62  Amethyst Reese
      7  Tim Hatch
      5  dependabot[bot]
 ```
@@ -145,7 +145,7 @@ Bugfix release
 
 ```shell-session
 $ git shortlog -sn v0.6.3...
-     1  John Reese
+     1  Amethyst Reese
      1  Tim Hatch
 ```
 
@@ -162,7 +162,7 @@ Bugfix release
 ```shell-session
 $ git shortlog -sn v0.6.2...
     11  Tim Hatch
-     3  John Reese
+     3  Amethyst Reese
 ```
 
 ## 0.6.2
@@ -173,7 +173,7 @@ Minor release
 
 ```shell-session
 $ git shortlog -sn v0.6.1...
-     1  John Reese
+     1  Amethyst Reese
      1  Tim Hatch
 ```
 
@@ -185,7 +185,7 @@ Minor release
 
 ```shell-session
 $ git shortlog -sn v0.6.0...
-     7  John Reese
+     7  Amethyst Reese
      1  Tim Hatch
 ```
 
@@ -196,7 +196,7 @@ $ git shortlog -sn v0.6.0...
 
 ```shell-session
 $ git shortlog -sn v0.5.0...
-    11  John Reese
+    11  Amethyst Reese
      2  Tim Hatch
 ```
 
@@ -212,7 +212,7 @@ Initial public release
 ```shell-session
 $ git shortlog -sn
     34  Tim Hatch
-    28  John Reese
+    28  Amethyst Reese
      2  Facebook Community Bot
 ```
 
