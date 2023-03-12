@@ -1,3 +1,22 @@
+## 1.1.0b1
+
+Beta release
+
+- Splits basic import statements with multiple names (#140)
+- Uniformly collapse blank lines within a category (#201)
+- Support 3.10+ syntax by enabling the LibCST native parser by default (#244)
+- Drop support for Python 3.6 (#154)
+
+```shell-session
+$ git shortlog -sn v1.0.5...
+    44  Amethyst Reese
+    37  dependabot[bot]
+     5  Zsolt Dollenstein
+     4  Loren Arthur
+     1  Arseny Boykov
+     1  Tim Hatch
+```
+
 ## 1.0.5
 
 Bugfix release
