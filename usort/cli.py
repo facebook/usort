@@ -18,7 +18,7 @@ from .api import usort_path, usort_stdin
 from .config import Config
 from .sorting import ImportSorter
 from .types import Options
-from .util import get_timings, print_timings, Timing, try_parse
+from .util import enable_libcst_native, get_timings, print_timings, Timing, try_parse
 
 BENCHMARK = False
 
@@ -48,7 +48,13 @@ def usort_command(fn: Callable[..., int]) -> Callable[..., None]:
 @click.version_option(__version__, "--version", "-V")
 @click.option("--debug", is_flag=True, help="Enable debug output")
 @click.option("--benchmark", is_flag=True, help="Output benchmark timing info")
-def main(ctx: click.Context, benchmark: bool, debug: bool) -> None:
+@click.option(
+    "--native / --no-native",
+    is_flag=True,
+    default=True,
+    help="Enable or disable the native parser",
+)
+def main(ctx: click.Context, benchmark: bool, debug: bool, native: bool) -> None:
     global BENCHMARK
     BENCHMARK = benchmark
 
@@ -56,6 +62,9 @@ def main(ctx: click.Context, benchmark: bool, debug: bool) -> None:
     logging.basicConfig(level=level, stream=sys.stderr)
 
     ctx.obj = Options(debug=debug)
+
+    if native:
+        enable_libcst_native()
 
 
 @main.command()

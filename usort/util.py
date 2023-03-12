@@ -3,6 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+
+import importlib
+import logging
+import os
 import re
 from contextlib import contextmanager
 from pathlib import Path
@@ -13,6 +17,8 @@ import libcst as cst
 
 Timing = Tuple[str, float]
 
+LOG = logging.getLogger(__name__)
+LIBCST_PARSER_TYPE = "LIBCST_PARSER_TYPE"
 INLINE_COMMENT_RE = re.compile(r"#+[^#]*")
 TIMINGS: List[Timing] = []
 
@@ -45,6 +51,34 @@ def print_timings(
     """
     for msg, duration in timings:
         fn(f"{msg + ':':50} {int(duration*1000000):7} µs")
+
+
+def enable_libcst_native() -> bool:
+    """
+    Attempt to enable LibCST's faster, native PEG parser if available.
+
+    This enables parsing files with 3.10 match statements, or other new syntax features
+    dependent on having a PEG style parser. This is currently not the default parser
+    in LibCST, so this function must be called before parsing files with 3.10+ syntax,
+    or otherwise set the environment variable ``LIBCST_PARSER_TYPE="native"``.
+
+    Returns ``True`` if the native parser was found and enabled, or ``False`` otherwise.
+    """
+
+    try:
+        LOG.debug("checking for libcst native parser")
+        # use importlib so that we can test/mock import errors
+        module = importlib.import_module("libcst.native")
+
+        if hasattr(module, "parse_module"):
+            os.environ[LIBCST_PARSER_TYPE] = "native"
+            LOG.debug("libcst native parser enabled")
+            return True
+
+    except ImportError:
+        LOG.debug("libcst native module not available")
+
+    return False
 
 
 def try_parse(path: Path, data: Optional[bytes] = None) -> cst.Module:

@@ -7,4 +7,4 @@ import unittest
 
 from usort.tests import *  # noqa: F401,F403
 
-unittest.main()
+unittest.main(verbosity=2)
