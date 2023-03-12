@@ -4,7 +4,7 @@ SOURCES=usort
 .PHONY: venv
 venv:
 	$(PYTHON) -m venv --clear .venv
-	source .venv/bin/activate && make setup
+	source .venv/bin/activate && make install
 	@echo 'run `source .venv/bin/activate` to use virtualenv'
 
 .PHONY: clean
@@ -18,12 +18,10 @@ distclean:
 # The rest of these are intended to be run within the venv, where python points
 # to whatever was used to set up the venv.
 
-.PHONY: setup
-setup:
+.PHONY: install
+install:
 	python -m pip install -U pip setuptools
-	python -m pip install -Ur requirements-dev.txt
-	python -m pip install -Ur requirements.txt
-	python -m pip install -e .
+	python -m pip install -e .[dev,docs]
 
 .PHONY: test
 test:

@@ -21,21 +21,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v1
       - name: Set Up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
+          cache: pip
+          cache-dependency-path: pyproject.toml
           python-version: ${{ matrix.python-version }}
       - name: Install
         run: |
           python -VV
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-dev.txt -r requirements.txt
-          python -m pip install -U .
+          python -m pip install -U pip
+          python -m pip install -U .[dev]
       - name: Test
         run: make test
       - name: Lint
         run: make lint
-      - name: Documentation
-        run: make html
 
   backward-compatibility:
     runs-on: ubuntu-latest
