@@ -3,7 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import os
 import unittest
+from unittest.mock import Mock, patch
 
 import libcst as cst
 
@@ -11,6 +13,43 @@ from .. import util
 
 
 class UtilTest(unittest.TestCase):
+    def test_enable_libcst_native(self) -> None:
+        with self.subTest("success"):
+            os.environ.pop(util.LIBCST_PARSER_TYPE, None)
+
+            module_mock = Mock(["parse_module"])
+            import_mock = Mock(return_value=module_mock)
+            with patch("usort.util.importlib.import_module", import_mock):
+                result = util.enable_libcst_native()
+
+                import_mock.assert_called_with("libcst.native")
+                self.assertIn(util.LIBCST_PARSER_TYPE, os.environ)
+                self.assertEqual(os.environ[util.LIBCST_PARSER_TYPE], "native")
+                self.assertTrue(result)
+
+        with self.subTest("import error"):
+            os.environ.pop(util.LIBCST_PARSER_TYPE, None)
+
+            import_mock = Mock(side_effect=ImportError())
+            with patch("usort.util.importlib.import_module", import_mock):
+                result = util.enable_libcst_native()
+
+                import_mock.assert_called_with("libcst.native")
+                self.assertNotIn(util.LIBCST_PARSER_TYPE, os.environ)
+                self.assertFalse(result)
+
+        with self.subTest("missing parse_module"):
+            os.environ.pop(util.LIBCST_PARSER_TYPE, None)
+
+            module_mock = Mock([])
+            import_mock = Mock(return_value=module_mock)
+            with patch("usort.util.importlib.import_module", import_mock):
+                result = util.enable_libcst_native()
+
+                import_mock.assert_called_with("libcst.native")
+                self.assertNotIn(util.LIBCST_PARSER_TYPE, os.environ)
+                self.assertFalse(result)
+
     def test_parse_import_simple(self) -> None:
         node = util.parse_import("import a")
         self.assertEqual(

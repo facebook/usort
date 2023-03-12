@@ -18,7 +18,7 @@ from .api import usort_path, usort_stdin
 from .config import Config
 from .sorting import ImportSorter
 from .types import Options
-from .util import get_timings, print_timings, Timing, try_parse
+from .util import enable_libcst_native, get_timings, print_timings, Timing, try_parse
 
 BENCHMARK = False
 
@@ -56,6 +56,7 @@ def main(ctx: click.Context, benchmark: bool, debug: bool) -> None:
     logging.basicConfig(level=level, stream=sys.stderr)
 
     ctx.obj = Options(debug=debug)
+    enable_libcst_native()
 
 
 @main.command()
