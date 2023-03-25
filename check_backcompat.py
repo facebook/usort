@@ -25,15 +25,19 @@ from typing import List, Optional
 from urllib.request import urlopen
 
 from packaging.version import Version
+from usort import __version__
 
 REPO_ROOT = Path(__file__).parent.resolve()
+CURRENT_VERSION = Version(__version__)
 TARGET_VERSION = Version("1.0.0")
 PYPI_JSON_URL = "https://pypi.org/pypi/usort/json"
 
 
 def get_public_versions() -> List[Version]:
     """
-    Find all non-yanked versions of usort >= TARGET_VERSION
+    Find all non-yanked versions of usort.
+
+    Limits results such that TARGET_VERSION <= CANDIDATE_VERSION <= CURRENT_VERSION
     """
     with urlopen(PYPI_JSON_URL) as request:
         data = json.loads(request.read())
@@ -43,7 +47,7 @@ def get_public_versions() -> List[Version]:
         version = Version(version_str)
         if all(dist["yanked"] for dist in data["releases"][version_str]):
             continue
-        if version >= TARGET_VERSION:
+        if TARGET_VERSION <= version <= CURRENT_VERSION:
             versions.append(version)
 
     return sorted(versions, reverse=True)
@@ -89,7 +93,7 @@ def check_versions(versions: List[Version]) -> List[Version]:
             subprocess.run((usort, "format", "usort"), check=True)
             print("done\n")
         except Exception as e:
-            return [("local", e)]
+            return [(CURRENT_VERSION, e)]
 
         failures: List[Version] = []
         for version in versions:
@@ -106,6 +110,8 @@ def check_versions(versions: List[Version]) -> List[Version]:
 
 
 def main() -> None:
+    print(f"{CURRENT_VERSION = !s}\n{TARGET_VERSION = !s}\n")
+
     versions = get_public_versions()
     versions_str = ", ".join(str(v) for v in versions)
     print(f"discovered versions {versions_str}\n")
