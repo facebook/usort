@@ -736,6 +736,46 @@ numpy = ["numpy", "pandas"]
             """,
         )
 
+    def test_magic_commas_disabled(self) -> None:
+        self.assertUsortResult(
+            """
+                from a import (
+                    b,
+                    c,
+                )
+                from foo import ( # important comment
+                    bar,
+                    baz  # @manual
+                )
+            """,
+            """
+                from a import b, c
+                from foo import bar, baz  # important comment  # @manual
+            """,
+        )
+
+    def test_magic_commas_enabled(self) -> None:
+        self.assertUsortResult(
+            """
+                from a import (
+                    b,
+                    c,
+                )
+                from foo import (  # important comment
+                    bar,
+                    baz  # @manual
+                )
+            """,
+            """
+                from a import (
+                    b,
+                    c,
+                )
+                from foo import bar, baz  # important comment  # @manual
+            """,
+            Config(magic_commas=True),
+        )
+
     def test_merging_import_items(self) -> None:
         self.assertUsortResult(
             """

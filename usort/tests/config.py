@@ -171,6 +171,48 @@ foo = ["numpy", "pandas"]
             # from foo.bar import bazzy
             self.assertFalse(config.is_side_effect_import("foo.bar", ["bazzy"]))
 
+    def test_config_magic_commas(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            d_path = Path(d)
+            (d_path / "foo").mkdir(parents=True)
+            (d_path / "foo" / "bar.py").write_text("import os")
+
+            with self.subTest("default"):
+                (d_path / "foo" / "pyproject.toml").write_text("")
+                conf = Config.find(d_path / "foo" / "bar.py")
+                self.assertFalse(conf.magic_commas)
+
+            with self.subTest("enabled"):
+                (d_path / "foo" / "pyproject.toml").write_text(
+                    """\
+[tool.usort]
+magic_commas = true
+"""
+                )
+                conf = Config.find(d_path / "foo" / "bar.py")
+                self.assertTrue(conf.magic_commas)
+
+    def test_config_merge_imports(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            d_path = Path(d)
+            (d_path / "foo").mkdir(parents=True)
+            (d_path / "foo" / "bar.py").write_text("import os")
+
+            with self.subTest("default"):
+                (d_path / "foo" / "pyproject.toml").write_text("")
+                conf = Config.find(d_path / "foo" / "bar.py")
+                self.assertTrue(conf.merge_imports)
+
+            with self.subTest("disabled"):
+                (d_path / "foo" / "pyproject.toml").write_text(
+                    """\
+[tool.usort]
+merge_imports = false
+"""
+                )
+                conf = Config.find(d_path / "foo" / "bar.py")
+                self.assertFalse(conf.merge_imports)
+
     def test_config_excludes(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             d_path = Path(d)
