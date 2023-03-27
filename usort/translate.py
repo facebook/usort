@@ -74,12 +74,20 @@ def import_comments_from_node(node: cst.SimpleStatementLine) -> ImportComments:
 
             assert imp.rpar is not None
             if isinstance(imp.rpar.whitespace_before, cst.ParenthesizedWhitespace):
+                # from foo import (
+                #     bar
+                #     # THIS PART
+                # )
                 comments.final.extend(
                     line.comment.value
                     for line in imp.rpar.whitespace_before.empty_lines
                     if line.comment
                 )
 
+                # from foo import (
+                #     bar,
+                #     baz  # THIS PART (NO COMMA!)
+                # )
                 if imp.rpar.whitespace_before.first_line.comment:
                     comments.inline.extend(
                         split_inline_comment(
@@ -203,6 +211,10 @@ def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableI
             item.comments.before.extend(prev.comments.following)
             prev.comments.following.clear()
         prev = item
+    # inline comments after the last import (without a comma)
+    if prev is not None and comments.inline:
+        prev.comments.inline.extend(comments.inline)
+        comments.inline.clear()
     # following comments on the last item should maybe be on the import itself
     if prev is not None and prev.comments.following:
         comments.final.extend(prev.comments.following)
@@ -251,6 +263,7 @@ def import_to_node_single(imp: SortableImport, module: cst.Module) -> cst.BaseSt
         trailing_comments += item.comments.inline
         trailing_comments += item.comments.following
 
+    trailing_comments += imp.comments.inline
     trailing_comments += imp.comments.final
     trailing_comments += imp.comments.last_inline
     if trailing_comments:
@@ -324,7 +337,9 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
             )
 
         if idx == item_count - 1:
-            following = item.comments.following + imp.comments.final
+            following = (
+                item.comments.following + imp.comments.inline + imp.comments.final
+            )
         else:
             following = item.comments.following
 
