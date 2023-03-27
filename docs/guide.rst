@@ -501,6 +501,35 @@ The following options are valid for the main ``tool.usort`` table:
     are loaded, so such names cannot be overridden to another category if this is
     enabled.
 
+.. attribute:: magic_commas
+    :type: bool
+    :value: false
+
+    Whether to follow black's "magic trailing comma" behavior when sorting
+    multi-line imports.
+
+    When set to ``false`` (the default), µsort will automatically collapse
+    multi-line imports into a single line if they fit within the configured
+    line length, regardless of trailing commas, with the intent that imports
+    are managed by tools rather than humans. This enables µsort to keep imports
+    as compact as possible, even if users or tools add or remove import items.
+
+    When set to ``true``, µsort will expand and maintain multi-line imports
+    if they have a trailing comma on the last import item, enabling humans
+    to more easily read and manage longer lists of imports. Removing trailing
+    commas will enable µsort to collapse the import to a single line, while
+    adding parentheses and a trailing comma to a single line import will force
+    µsort to expand it to a multi-line import, matching black's behavior for
+    normal collection literals.
+
+    .. note::
+
+        This feature is a "backward incompatible" sorting change, as versions
+        of µsort before 1.1.0 will not obey this feature flag, and will
+        potentially collapse these multi-line imports. Be sure that all
+        developers and CI systems have upgraded to µsort 1.1.0 or newer before
+        enabling this feature in a production codebase.
+
 .. attribute:: merge_imports
     :type: bool
     :value: true
