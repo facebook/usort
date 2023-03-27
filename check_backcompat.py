@@ -25,15 +25,19 @@ from typing import List, Optional
 from urllib.request import urlopen
 
 from packaging.version import Version
-from usort import __version__
 
 REPO_ROOT = Path(__file__).parent.resolve()
-CURRENT_VERSION = Version(__version__)
-TARGET_VERSION = Version("1.0.0")
+MINIMUM_VERSION = Version("1.0.0")
 PYPI_JSON_URL = "https://pypi.org/pypi/usort/json"
 
+def get_current_version() -> Version:
+    version_file = REPO_ROOT / "usort" / "version.py"
+    code = compile(version_file.read_text(), version_file, mode="exec")
+    values = {}
+    exec(code, {}, values)
+    return Version(values.get("__version__", "0"))
 
-def get_public_versions() -> List[Version]:
+def get_public_versions(current_version: Version, minimum_version: Version) -> List[Version]:
     """
     Find all non-yanked versions of usort.
 
@@ -47,7 +51,7 @@ def get_public_versions() -> List[Version]:
         version = Version(version_str)
         if all(dist["yanked"] for dist in data["releases"][version_str]):
             continue
-        if TARGET_VERSION <= version <= CURRENT_VERSION:
+        if minimum_version <= version <= current_version:
             versions.append(version)
 
     return sorted(versions, reverse=True)
@@ -93,7 +97,7 @@ def check_versions(versions: List[Version]) -> List[Version]:
             subprocess.run((usort, "format", "usort"), check=True)
             print("done\n")
         except Exception as e:
-            return [(CURRENT_VERSION, e)]
+            return [("local", e)]
 
         failures: List[Version] = []
         for version in versions:
@@ -104,15 +108,17 @@ def check_versions(versions: List[Version]) -> List[Version]:
                 subprocess.run((usort, "check", "usort"), check=True)
                 print("clean\n")
             except Exception as e:
-                failures.append(version)
+                failures.append((version, e))
 
         return failures
 
 
 def main() -> None:
-    print(f"{CURRENT_VERSION = !s}\n{TARGET_VERSION = !s}\n")
+    current_version = get_current_version()
+    minimum_version = MINIMUM_VERSION
+    print(f"{current_version = !s}\n{minimum_version = !s}\n")
 
-    versions = get_public_versions()
+    versions = get_public_versions(current_version, minimum_version)
     versions_str = ", ".join(str(v) for v in versions)
     print(f"discovered versions {versions_str}\n")
 
