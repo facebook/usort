@@ -409,29 +409,31 @@ numpy = ["numpy", "pandas"]
     def test_multi_line_maintain(self) -> None:
         self.assertUsortResult(
             """
-                from fuzz import buzz
+                from phi import rho
                 # one
-                from foo import (  # two
+                from alpha import (  # two
                     # three
-                    bar,  # four
+                    beta,  # four
                     # five
-                    baz # six
+                    delta # six
                     , # seven
-                    # eight
-                )  # nine
-                # ten
+                    gamma # eight
+                    # nine
+                )  # ten
+                # eleven
             """,
             """
                 # one
-                from foo import (  # two
+                from alpha import (  # two
                     # three
-                    bar,  # four
+                    beta,  # four
                     # five
-                    baz,  # six  # seven
-                    # eight
-                )  # nine
-                from fuzz import buzz
-                # ten
+                    delta,  # six  # seven
+                    gamma,  # eight
+                    # nine
+                )  # ten
+                from phi import rho
+                # eleven
             """,
         )
 
@@ -439,30 +441,32 @@ numpy = ["numpy", "pandas"]
         self.assertUsortResult(
             """
                 def foo():
-                    from fuzz import buzz
+                    from phi import rho
                     # one
-                    from foo import (  # two
+                    from alpha import (  # two
                         # three
-                        bar,  # four
+                        beta,  # four
                         # five
-                        baz # six
+                        delta # six
                         , # seven
-                        # eight
-                    )  # nine
-                    # ten
+                        gamma # eight
+                        # nine
+                    )  # ten
+                    # eleven
             """,
             """
                 def foo():
                     # one
-                    from foo import (  # two
+                    from alpha import (  # two
                         # three
-                        bar,  # four
+                        beta,  # four
                         # five
-                        baz,  # six  # seven
-                        # eight
-                    )  # nine
-                    from fuzz import buzz
-                    # ten
+                        delta,  # six  # seven
+                        gamma,  # eight
+                        # nine
+                    )  # ten
+                    from phi import rho
+                    # eleven
             """,
         )
 
@@ -471,20 +475,22 @@ numpy = ["numpy", "pandas"]
             """
                 from fuzz import buzz
                 # 1
-                from foo import (  # 2
+                from a import (  # 2
                     # 3
-                    bar,  # 4
+                    b,  # 4
                     # 5
-                    baz # 6
+                    c # 6
                     , # 7
-                )  # 8
-                # 9
+                    d # 8
+                    # 9
+                )  # 10
+                # 11
             """,
             """
                 # 1
-                from foo import bar, baz  # 2  # 3  # 4  # 5  # 6  # 7  # 8
+                from a import b, c, d  # 2  # 3  # 4  # 5  # 6  # 7  # 8  # 9  # 10
                 from fuzz import buzz
-                # 9
+                # 11
             """,
         )
 
