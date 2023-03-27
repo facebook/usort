@@ -11,6 +11,7 @@ import libcst as cst
 from ..config import Config
 from ..sorting import ImportSorter
 from ..translate import import_from_node
+from ..types import SortableImport, SortableImportItem
 from ..util import parse_import
 
 
@@ -80,6 +81,27 @@ class SortableImportTest(unittest.TestCase):
         self.assertEqual("a", imp.items[0].name)
         self.assertEqual("b", imp.items[0].asname)
         self.assertEqual({"b": ".a"}, imp.imported_names)
+
+    def test_import_from_node_multiline(self) -> None:
+        imp = import_from_node(parse_import("from a import (\n  b,\n  c\n)"), Config())
+        expected = SortableImport(
+            stem="a",
+            items=[
+                SortableImportItem(name="b", asname="", stem="a", comma=True),
+                SortableImportItem(name="c", asname="", stem="a", comma=False),
+            ],
+        )
+        self.assertListEqual(expected.items, imp.items)
+
+        imp = import_from_node(parse_import("from a import (\n  b,\n  c,\n)"), Config())
+        expected = SortableImport(
+            stem="a",
+            items=[
+                SortableImportItem(name="b", asname="", stem="a", comma=True),
+                SortableImportItem(name="c", asname="", stem="a", comma=True),
+            ],
+        )
+        self.assertListEqual(expected.items, imp.items)
 
 
 class IsSortableTest(unittest.TestCase):

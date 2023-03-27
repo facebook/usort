@@ -129,8 +129,10 @@ def item_from_node(
     asname = with_dots(node.asname.name) if node.asname else ""
     comments = ImportItemComments()
     comments.before.extend(before)
+    comma = False
 
     if isinstance(node.comma, cst.Comma):
+        comma = True
         if (
             isinstance(node.comma.whitespace_before, cst.ParenthesizedWhitespace)
             and node.comma.whitespace_before.first_line.comment
@@ -166,7 +168,9 @@ def item_from_node(
                 line.comment.value for line in ws.empty_lines if line.comment
             )
 
-    return SortableImportItem(name=name, asname=asname, comments=comments, stem=stem)
+    return SortableImportItem(
+        name=name, asname=asname, comments=comments, stem=stem, comma=comma
+    )
 
 
 def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableImport:
@@ -234,6 +238,8 @@ def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableI
 def import_to_node(
     imp: SortableImport, module: cst.Module, indent: str, config: Config
 ) -> cst.BaseStatement:
+    if config.magic_commas and imp.stem and imp.trailing_comma:
+        return import_to_node_multi(imp, module)
     node = import_to_node_single(imp, module)
     content = indent + render_node(node, module).rstrip()
     # basic imports can't be reflowed, so only deal with from-imports

@@ -106,8 +106,11 @@ class SortKey:
 class SortableImportItem:
     name: str = field(order=str.casefold)
     asname: Optional[str] = field(eq=True, order=case_insensitive_ordering)
-    comments: ImportItemComments = field(eq=False, order=False)
+    comments: ImportItemComments = field(
+        eq=False, order=False, factory=ImportItemComments
+    )
     stem: Optional[str] = field(order=False, default=None, repr=False)
+    comma: bool = field(eq=False, order=False, default=False, repr=False)
 
     @property
     def fullname(self) -> str:
@@ -133,8 +136,8 @@ class SortableImport:
     sort_key: SortKey = field(init=False)
     stem: Optional[str] = field(order=case_insensitive_ordering)  # "from" imports
     items: List[SortableImportItem] = field()
-    comments: ImportComments = field(order=False)
-    indent: str = field(order=False)
+    comments: ImportComments = field(order=False, factory=ImportComments)
+    indent: str = field(order=False, default="")
     config: Config = field(eq=False, order=False, factory=Config)
 
     # for cli/debugging only
@@ -202,6 +205,12 @@ class SortableImport:
             config=self.config,
             node=self.node,
         )
+
+    @property
+    def trailing_comma(self) -> bool:
+        if self.items:
+            return self.items[-1].comma
+        return False
 
     @property
     def imported_names(self) -> Dict[str, str]:

@@ -214,6 +214,27 @@ class TypesTest(unittest.TestCase):
             ):
                 a += 10  # type: ignore
 
+    def test_sortable_import_trailing_comma(self) -> None:
+        imp = types.SortableImport(
+            stem="a",
+            items=[
+                types.SortableImportItem(name="b", asname="", stem="a", comma=True),
+                types.SortableImportItem(name="c", asname="", stem="a", comma=True),
+                types.SortableImportItem(name="d", asname="", stem="a", comma=False),
+            ],
+        )
+        self.assertFalse(imp.trailing_comma)
+
+        imp = types.SortableImport(
+            stem="a",
+            items=[
+                types.SortableImportItem(name="b", asname="", stem="a", comma=True),
+                types.SortableImportItem(name="c", asname="", stem="a", comma=True),
+                types.SortableImportItem(name="d", asname="", stem="a", comma=True),
+            ],
+        )
+        self.assertTrue(imp.trailing_comma)
+
     def test_sortable_block_repr(self) -> None:
         imp = types.SortableBlock(
             start_idx=0,
