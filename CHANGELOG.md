@@ -17,6 +17,17 @@ $ git shortlog -sn v1.0.5...
      1  Tim Hatch
 ```
 
+## 1.0.6
+
+Bugfix release
+
+* Fix dropped inline comments on last import item without trailing comma (#251, #249)
+
+```shell-session
+$ git shortlog -sn v1.0.5...
+     4  Amethyst Reese
+```
+
 ## 1.0.5
 
 Bugfix release
