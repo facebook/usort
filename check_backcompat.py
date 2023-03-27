@@ -27,13 +27,27 @@ from urllib.request import urlopen
 from packaging.version import Version
 
 REPO_ROOT = Path(__file__).parent.resolve()
-TARGET_VERSION = Version("1.0.0")
+MINIMUM_VERSION = Version("1.0.0")
 PYPI_JSON_URL = "https://pypi.org/pypi/usort/json"
 
 
-def get_public_versions() -> List[Version]:
+def get_current_version() -> Version:
+    with TemporaryDirectory() as td:
+        root = Path(td).resolve()
+        usort = setup_virtualenv(root)
+        proc = subprocess.run(
+            (usort, "--version"), encoding="utf-8", capture_output=True, check=True
+        )
+        return Version(proc.stdout.rpartition(" ")[-1])
+
+
+def get_public_versions(
+    current_version: Version, minimum_version: Version
+) -> List[Version]:
     """
-    Find all non-yanked versions of usort >= TARGET_VERSION
+    Find all non-yanked versions of usort.
+
+    Limits results such that TARGET_VERSION <= CANDIDATE_VERSION <= CURRENT_VERSION
     """
     with urlopen(PYPI_JSON_URL) as request:
         data = json.loads(request.read())
@@ -43,7 +57,7 @@ def get_public_versions() -> List[Version]:
         version = Version(version_str)
         if all(dist["yanked"] for dist in data["releases"][version_str]):
             continue
-        if version >= TARGET_VERSION:
+        if minimum_version <= version <= current_version:
             versions.append(version)
 
     return sorted(versions, reverse=True)
@@ -100,13 +114,17 @@ def check_versions(versions: List[Version]) -> List[Version]:
                 subprocess.run((usort, "check", "usort"), check=True)
                 print("clean\n")
             except Exception as e:
-                failures.append(version)
+                failures.append((version, e))
 
         return failures
 
 
 def main() -> None:
-    versions = get_public_versions()
+    current_version = get_current_version()
+    minimum_version = MINIMUM_VERSION
+    print(f"{current_version = !s}\n{minimum_version = !s}\n")
+
+    versions = get_public_versions(current_version, minimum_version)
     versions_str = ", ".join(str(v) for v in versions)
     print(f"discovered versions {versions_str}\n")
 
