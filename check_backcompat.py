@@ -30,6 +30,7 @@ REPO_ROOT = Path(__file__).parent.resolve()
 MINIMUM_VERSION = Version("1.0.0")
 PYPI_JSON_URL = "https://pypi.org/pypi/usort/json"
 
+
 def get_current_version() -> Version:
     version_file = REPO_ROOT / "usort" / "version.py"
     code = compile(version_file.read_text(), version_file, mode="exec")
@@ -37,7 +38,10 @@ def get_current_version() -> Version:
     exec(code, {}, values)
     return Version(values.get("__version__", "0"))
 
-def get_public_versions(current_version: Version, minimum_version: Version) -> List[Version]:
+
+def get_public_versions(
+    current_version: Version, minimum_version: Version
+) -> List[Version]:
     """
     Find all non-yanked versions of usort.
 
