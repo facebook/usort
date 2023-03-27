@@ -1,3 +1,15 @@
+## 1.1.0b2
+
+Beta release
+
+- New `magic_commas` option to force multi-line import style like black (#252, #247)
+- Fix dropped inline comments on last import item without trailing comma (#251, #249)
+
+```shell-session
+$ git shortlog -sn v1.1.0b1...
+     5  Amethyst Reese
+```
+
 ## 1.1.0b1
 
 Beta release
