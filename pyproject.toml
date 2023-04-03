@@ -35,7 +35,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
-    "black==23.1.0",
+    "black==23.3.0",
     "coverage==7.2.1",
     "flake8==5.0.4",
     "hatch==1.6.3",
