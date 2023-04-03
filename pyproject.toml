@@ -42,7 +42,7 @@ dev = [
     "mistune==2.0.5",
     "mypy==1.1.1",
     "pessimist==0.9.3",
-    "ufmt==2.0.1",
+    "ufmt==2.1.0",
     "volatile==2.1.0",
 ]
 docs = [
