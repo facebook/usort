@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
+from typing import Sequence
 
 import libcst as cst
 
@@ -31,7 +32,7 @@ class UtilTest(unittest.TestCase):
             cst.ImportFrom,
         )
         self.assertEqual(cst.ensure_type(inner.module, cst.Name).value, "a")
-        assert isinstance(inner.names, list)
+        assert isinstance(inner.names, Sequence), f"{type(inner.names)} is not Sequence"
         name = inner.names[0]
         self.assertEqual(
             cst.ensure_type(

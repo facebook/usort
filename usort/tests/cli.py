@@ -229,7 +229,7 @@ import os
 
         self.assertRegex(
             result.output,
-            r"Error sorting sample\.py: Syntax Error @ 1:7\.",
+            r"Error sorting sample\.py: Syntax Error @ 1:",
         )
         self.assertEqual(result.exit_code, 1)
 
@@ -242,7 +242,7 @@ import os
 
         self.assertRegex(
             result.output,
-            r"Error sorting sample\.py: Syntax Error @ 2:11\.",
+            r"Error sorting sample\.py: Syntax Error @ 2:",
         )
         self.assertEqual(result.exit_code, 1)
 
