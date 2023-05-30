@@ -40,7 +40,7 @@ dev = [
     "flake8==5.0.4",
     "hatch==1.7.0",
     "mistune==2.0.5",
-    "mypy==1.2.0",
+    "mypy==1.3.0",
     "pessimist==0.9.3",
     "ufmt==2.1.0",
     "volatile==2.1.0",
