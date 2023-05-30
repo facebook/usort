@@ -1,0 +1,9 @@
+- id: usort
+  name: Sort imports with µsort
+  description: Safe, minimal import sorting
+  language: python
+  types_or:
+    - python
+    - pyi
+  entry: usort format
+  require_serial: true
