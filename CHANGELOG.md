@@ -1,3 +1,15 @@
+## 1.0.7
+
+Maintenance release
+
+* Added pre-commit hook for usort (#261, #260)
+* Fixed tests for LibCST 1.0 release and native parser
+
+```shell-session
+$ git shortlog -sn v1.0.6...
+     3  Amethyst Reese
+```
+
 ## 1.0.6
 
 Bugfix release
