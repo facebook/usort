@@ -84,7 +84,20 @@ To just validate that files are formatted correctly, like during CI:
 $ usort check <path>
 ```
 
-# License
+### pre-commit
+
+µsort provides a [pre-commit](https://pre-commit.com/) hook. To enforce sorted
+imports before every commit, add the following to your `.pre-commit-config.yaml`
+file:
+
+```yaml
+- repo: https://github.com/facebook/usort
+  rev: v1.0.7
+  hooks:
+    - id: usort
+```
+
+## License
 
 μsort is MIT licensed, as found in the [LICENSE][] file.
 
