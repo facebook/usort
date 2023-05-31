@@ -125,8 +125,11 @@ def main() -> None:
     print(f"{current_version = !s}\n{minimum_version = !s}\n")
 
     versions = get_public_versions(current_version, minimum_version)
-    versions_str = ", ".join(str(v) for v in versions)
-    print(f"discovered versions {versions_str}\n")
+    if not versions:
+        print("error: no versions found")
+        sys.exit(1)
+    versions_str = "\n  ".join(str(v) for v in versions)
+    print(f"discovered versions:\n  {versions_str}\n")
 
     failures = check_versions(versions)
     if failures:

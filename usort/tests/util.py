@@ -5,6 +5,7 @@
 
 import os
 import unittest
+from typing import Sequence
 from unittest.mock import Mock, patch
 
 import libcst as cst
@@ -70,7 +71,7 @@ class UtilTest(unittest.TestCase):
             cst.ImportFrom,
         )
         self.assertEqual(cst.ensure_type(inner.module, cst.Name).value, "a")
-        assert isinstance(inner.names, list)
+        assert isinstance(inner.names, Sequence), f"{type(inner.names)} is not Sequence"
         name = inner.names[0]
         self.assertEqual(
             cst.ensure_type(
