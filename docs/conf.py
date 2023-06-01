@@ -25,7 +25,7 @@
 import datetime
 
 project = "µsort"
-copyright = f"{datetime.date.today().year}, Meta Platforms, Inc. and affiliates."
+copyright = f"{datetime.date.today().year} Meta Platforms, Inc."
 author = "Tim Hatch"
 
 
