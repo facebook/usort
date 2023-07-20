@@ -5,6 +5,6 @@
 
 from typing import FrozenSet
 
-from stdlibs import py27, py3
+from stdlibs import py3
 
-STDLIB_TOP_LEVEL_NAMES: FrozenSet[str] = py27.module_names | py3.module_names
+STDLIB_TOP_LEVEL_NAMES: FrozenSet[str] = py3.module_names

@@ -11,7 +11,7 @@ from usort.stdlibs import STDLIB_TOP_LEVEL_NAMES
 class StdlibsTest(unittest.TestCase):
     def test_expected(self) -> None:
         # Py2 module
-        self.assertIn("StringIO", STDLIB_TOP_LEVEL_NAMES)
+        self.assertNotIn("StringIO", STDLIB_TOP_LEVEL_NAMES)
 
         # This is specialcased, it appears to be a packaging decision for distros but I
         # don't want to include it.
@@ -23,6 +23,6 @@ class StdlibsTest(unittest.TestCase):
         self.assertIn("os", STDLIB_TOP_LEVEL_NAMES)
 
         # Py2 module
-        self.assertIn("sre", STDLIB_TOP_LEVEL_NAMES)
+        self.assertNotIn("sre", STDLIB_TOP_LEVEL_NAMES)
         for name in ("re", "sre_parse", "_sre"):
             self.assertIn(name, STDLIB_TOP_LEVEL_NAMES)
