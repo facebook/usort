@@ -12,6 +12,8 @@ class StdlibsTest(unittest.TestCase):
     def test_expected(self) -> None:
         # Py2 module
         self.assertNotIn("StringIO", STDLIB_TOP_LEVEL_NAMES)
+        # See https://github.com/omnilib/stdlibs/issues/57
+        self.assertNotIn("panel", STDLIB_TOP_LEVEL_NAMES)
 
         # This is specialcased, it appears to be a packaging decision for distros but I
         # don't want to include it.
