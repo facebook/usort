@@ -38,7 +38,7 @@ dev = [
     "click==8.1.6",  # pinning until mypy issues blow over
     "black==23.12.1",
     "coverage==7.2.7",
-    "flake8==5.0.4",
+    "flake8==7.0.0",
     "hatch==1.7.0",
     "mistune==2.0.5",
     "mypy==1.8.0",
