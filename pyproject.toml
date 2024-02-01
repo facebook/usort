@@ -43,7 +43,7 @@ dev = [
     "mistune==3.0.2",
     "mypy==1.8.0",
     "pessimist==0.9.3",
-    "ufmt==2.1.0",
+    "ufmt==2.3.0",
     "volatile==2.1.0",
 ]
 docs = [
