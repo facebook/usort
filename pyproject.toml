@@ -40,13 +40,13 @@ dev = [
     "coverage==7.4.1",
     "flake8==7.0.0",
     "hatch==1.9.3",
-    "mistune==3.0.2",
     "mypy==1.8.0",
     "pessimist==0.9.3",
     "ufmt==2.3.0",
     "volatile==2.1.0",
 ]
 docs = [
+    "mistune==2.0.5",
     "sphinx==7.2.6",
     "sphinx-mdinclude==0.5.3",
 ]
@@ -78,3 +78,4 @@ skip_covered = true
 
 [tool.mypy]
 ignore_missing_imports = true
+strict = true
