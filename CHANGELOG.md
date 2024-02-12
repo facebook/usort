@@ -29,6 +29,18 @@ $ git shortlog -sn v1.0.5...
      1  Tim Hatch
 ```
 
+## 1.0.8
+
+Maintenance release
+
+- Added py.typed marker
+- Updated RTD build config
+
+```shell-session
+$ git shortlog -sn v1.0.7...
+     2  Amethyst Reese
+```
+
 ## 1.0.7
 
 Maintenance release
