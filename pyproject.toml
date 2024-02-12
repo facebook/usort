@@ -39,7 +39,7 @@ dev = [
     "black==23.12.1",
     "coverage==7.4.0",
     "flake8==7.0.0",
-    "hatch==1.9.1",
+    "hatch==1.9.3",
     "mistune==3.0.2",
     "mypy==1.8.0",
     "pessimist==0.9.3",
