@@ -1,2 +1,2 @@
 include *.md LICENSE
-recursive-include usort *.txt
+recursive-include usort *.txt py.typed
