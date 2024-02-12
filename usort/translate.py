@@ -250,9 +250,11 @@ def import_to_node(
 
 def import_to_node_single(imp: SortableImport, module: cst.Module) -> cst.BaseStatement:
     leading_lines = [
-        cst.EmptyLine(indent=True, comment=cst.Comment(line))
-        if line.startswith("#")
-        else cst.EmptyLine(indent=False)
+        (
+            cst.EmptyLine(indent=True, comment=cst.Comment(line))
+            if line.startswith("#")
+            else cst.EmptyLine(indent=False)
+        )
         for line in imp.comments.before
     ]
 
@@ -413,9 +415,11 @@ def import_to_node_multi(imp: SortableImport, module: cst.Module) -> cst.BaseSta
 
     # comment lines above import
     leading_lines = [
-        cst.EmptyLine(indent=True, comment=cst.Comment(line))
-        if line.startswith("#")
-        else cst.EmptyLine(indent=False)
+        (
+            cst.EmptyLine(indent=True, comment=cst.Comment(line))
+            if line.startswith("#")
+            else cst.EmptyLine(indent=False)
+        )
         for line in imp.comments.before
     ]
 
