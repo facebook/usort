@@ -46,9 +46,8 @@ dev = [
     "volatile==2.1.0",
 ]
 docs = [
-    "mistune==2.0.5",
     "sphinx==7.2.6",
-    "sphinx-mdinclude==0.5.3",
+    "sphinx-mdinclude==0.6.1",
 ]
 
 [project.scripts]
