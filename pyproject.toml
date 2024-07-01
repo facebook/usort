@@ -42,7 +42,7 @@ dev = [
     "hatch==1.12.0",
     "mypy==1.10.0",
     "pessimist==0.9.3",
-    "ufmt==2.6.0",
+    "ufmt==2.7.0",
     "volatile==2.1.0",
 ]
 docs = [
