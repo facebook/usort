@@ -47,7 +47,7 @@ dev = [
 ]
 docs = [
     "sphinx==7.3.7",
-    "sphinx-mdinclude==0.6.1",
+    "sphinx-mdinclude==0.6.2",
 ]
 
 [project.scripts]
