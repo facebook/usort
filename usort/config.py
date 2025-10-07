@@ -4,11 +4,15 @@
 # LICENSE file in the root directory of this source tree.
 
 import re
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, NewType, Optional, Pattern, Sequence, Set
 
-import toml
+if sys.version_info < (3, 11):
+    import tomli as tomllib
+else:
+    import tomllib
 
 from .stdlibs import STDLIB_TOP_LEVEL_NAMES
 
@@ -147,7 +151,7 @@ class Config:
         return self
 
     def update_from_config(self, toml_path: Path) -> None:
-        conf = toml.loads(toml_path.read_text())
+        conf = tomllib.loads(toml_path.read_text())
         tool = conf.get("tool", {})
         tbl = tool.get("usort", {})
 
