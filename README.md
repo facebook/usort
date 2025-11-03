@@ -57,7 +57,7 @@ and how sorting is performed.
 
 ## Install
 
-µsort requires Python 3.8 or newer to run. Install µsort with:
+µsort requires Python 3.10 or newer to run. Install µsort with:
 
 ```shell-session
 $ pip install usort
