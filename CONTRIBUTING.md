@@ -4,7 +4,7 @@ possible.
 
 ## Getting Started
 
-µsort requires Python 3.8 or newer. [pyenv][] can help install and manage
+µsort requires Python 3.10 or newer. [pyenv][] can help install and manage
 multiple versions of Python.
 
 Clone the repository and set up your local workspace:
