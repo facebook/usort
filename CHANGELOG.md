@@ -1,3 +1,7 @@
+## 1.1.0
+
+- In addition to changes in 1.1.0b1 and 1.1.0b2, this release drops support for Python versions below 3.9.
+
 ## 1.1.0b2
 
 Beta release
