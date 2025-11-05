@@ -28,7 +28,7 @@ dependencies = [
     "LibCST >= 0.3.7",
     "moreorless >= 0.3.0",
     "stdlibs >= 2021.4.1",
-    "toml >= 0.10.0",
+    "tomli;python_version<'3.11'",
     "trailrunner >= 1.0, < 2.0",
 ]
 dynamic = ["version"]
