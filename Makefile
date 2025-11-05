@@ -20,32 +20,32 @@ distclean:
 
 .PHONY: install
 install:
-	python -m pip install -U pip setuptools
-	python -m pip install -e .[dev,docs]
+	$(PYTHON) -m pip install -U pip setuptools
+	$(PYTHON) -m pip install -e .[dev,docs]
 
 .PHONY: test
 test:
-	python -m coverage run -m usort.tests $(TESTOPTS)
-	python -m coverage report
-	python -m mypy --strict usort --install-types --non-interactive
+	$(PYTHON) -m coverage run -m usort.tests $(TESTOPTS)
+	$(PYTHON) -m coverage report
+	$(PYTHON) -m mypy --strict usort --install-types --non-interactive
 
 .PHONY: format
 format:
-	python -m ufmt format $(SOURCES)
+	$(PYTHON) -m ufmt format $(SOURCES)
 
 .PHONY: lint
 lint:
-	python -m ufmt check $(SOURCES)
-	python -m flake8 $(SOURCES)
+	$(PYTHON) -m ufmt check $(SOURCES)
+	$(PYTHON) -m flake8 $(SOURCES)
 	/bin/bash check_copyright.sh
 
 .PHONY: deps
 deps:
-	python -m pessimist --requirements= -c "python -m usort --help" .
+	$(PYTHON) -m pessimist --requirements= -c "python -m usort --help" .
 
 .PHONY: backcompat
 backcompat:
-	python check_backcompat.py
+	$(PYTHON) check_backcompat.py
 
 .PHONY: html
 html:
