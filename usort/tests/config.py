@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from usort.config import CAT_FIRST_PARTY, CAT_FUTURE, CAT_THIRD_PARTY, Config
+
 from .cli import chdir
 
 
@@ -59,44 +60,6 @@ third_party = ["psutil", "cocoa"]
 
             new_conf = Config.find(Path(d))
             self.assertEqual(conf, new_conf)
-
-    def test_first_party_root_finding(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            (Path(d) / "a" / "b" / "c").mkdir(parents=True)
-            (Path(d) / "a" / "b" / "__init__.py").write_text("")
-            (Path(d) / "a" / "b" / "c" / "__init__.py").write_text("from b import zzz")
-
-            f = Path(d) / "a" / "b" / "c" / "__init__.py"
-
-            conf = Config.find(f)
-            self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
-            conf = Config.find(f.parent)  # c
-            self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
-            conf = Config.find(f.parent.parent)  # b
-            self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
-            conf = Config.find(Path("/"))
-            self.assertNotIn("b", conf.known)
-
-    def test_first_party_root_finding_disable(self) -> None:
-        with tempfile.TemporaryDirectory() as d:
-            (Path(d) / "a" / "b" / "c").mkdir(parents=True)
-            (Path(d) / "a" / "b" / "__init__.py").write_text("")
-            (Path(d) / "a" / "b" / "c" / "__init__.py").write_text("from b import zzz")
-
-            f = Path(d) / "a" / "b" / "c" / "__init__.py"
-
-            conf = Config.find(f)
-            self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
-
-            (Path(d) / "pyproject.toml").write_text(
-                """\
-[tool.usort]
-first_party_detection = false
-"""
-            )
-
-            conf = Config.find(f)
-            self.assertNotIn("b", conf.known)
 
     def test_new_category_names(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -277,19 +240,84 @@ first_party = ["x"]
             (d_path / "b" / "c" / "d").symlink_to(d_path / "a")
 
             # This is behavior that's worked for ages, if given an absolute path
-            conf = Config.find(d_path / "b" / "c" / "d" / "__init__.py")
+            conf = Config.find(
+                d_path / "b" / "c" / "d" / "__init__.py"
+            ).with_first_party(Path.cwd() / d_path / "b" / "c" / "d" / "__init__.py")
             self.assertEqual(CAT_FIRST_PARTY, conf.known["x"])
             self.assertEqual(CAT_FIRST_PARTY, conf.known["d"])
 
             # This is also something that's worked for ages, a relative path with cwd
             # above the pyproject.toml
             with chdir(d):
-                conf = Config.find(Path("b") / "c" / "d" / "__init__.py")
+                conf = Config.find(
+                    Path("b") / "c" / "d" / "__init__.py"
+                ).with_first_party(Path.cwd() / Path("b") / "c" / "d" / "__init__.py")
                 self.assertEqual(CAT_FIRST_PARTY, conf.known["x"])
                 self.assertEqual(CAT_FIRST_PARTY, conf.known["d"])
 
             # This is an instance of issue 43
             with chdir((d_path / "b" / "c").as_posix()):
-                conf = Config.find(Path("d") / "__init__.py")
+                conf = Config.find(Path("d") / "__init__.py").with_first_party(
+                    Path.cwd() / Path("d") / "__init__.py"
+                )
                 self.assertEqual(CAT_FIRST_PARTY, conf.known["x"])
                 self.assertEqual(CAT_FIRST_PARTY, conf.known["d"])
+
+    def test_load_explicit_config(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            d_path = Path(d)
+            config_file = d_path / "custom.toml"
+
+            with self.subTest("with tool.usort"):
+                config_file.write_text(
+                    """
+[tool.usort]
+merge_imports = false
+known_third_party = ["pandas"]
+"""
+                )
+                conf = Config.load(config_file)
+                self.assertFalse(conf.merge_imports)
+                self.assertEqual(CAT_THIRD_PARTY, conf.known["pandas"])
+
+            with self.subTest("with tool.black only"):
+                config_file.write_text(
+                    """
+[tool.black]
+line-length = 100
+"""
+                )
+                # Config should still work with black settings
+                conf = Config.load(config_file)
+                self.assertEqual(100, conf.line_length)
+
+            with self.subTest("with both tool.usort and tool.black"):
+                config_file.write_text(
+                    """
+[tool.usort]
+merge_imports = false
+
+[tool.black]
+line-length = 120
+"""
+                )
+                conf = Config.load(config_file)
+                self.assertFalse(conf.merge_imports)
+                self.assertEqual(120, conf.line_length)
+
+            with self.subTest("missing file"):
+                missing = d_path / "nonexistent.toml"
+                with self.assertRaises(FileNotFoundError):
+                    Config.load(missing)
+
+            with self.subTest("empty config file"):
+                config_file.write_text("# empty\n")
+                import warnings
+
+                with warnings.catch_warnings(record=True) as w:
+                    warnings.simplefilter("always")
+                    conf = Config.load(config_file)
+                    self.assertEqual(1, len(w))
+                    self.assertIn("missing", str(w[0].message).lower())
+                # Should still create a valid config with defaults
+                self.assertTrue(conf.merge_imports)  # default value

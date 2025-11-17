@@ -5,7 +5,12 @@
 
 from .cli import CliTest
 from .config import ConfigTest
-from .functional import BasicOrderingTest, UsortStringFunctionalTest
+from .functional import (
+    BasicOrderingTest,
+    UsortFileFirstPartyTest,
+    UsortStdinFirstPartyTest,
+    UsortStringFunctionalTest,
+)
 from .sorting import SplitTest
 from .stdlibs import StdlibsTest
 from .translate import IsSortableTest, SortableImportTest
@@ -16,6 +21,8 @@ __all__ = [
     "CliTest",
     "ConfigTest",
     "BasicOrderingTest",
+    "UsortFileFirstPartyTest",
+    "UsortStdinFirstPartyTest",
     "UsortStringFunctionalTest",
     "IsSortableTest",
     "SortableImportTest",
