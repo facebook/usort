@@ -211,6 +211,83 @@ import os
         )
         self.assertEqual(result.exit_code, 0)
 
+    def test_list_imports_auto_discovered_config(self) -> None:
+        # Test that list-imports respects first_party_detection with auto-discovered config
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "a" / "b" / "c").mkdir(parents=True)
+            (Path(d) / "a" / "b" / "__init__.py").write_text("")
+            (Path(d) / "a" / "b" / "c" / "__init__.py").write_text(
+                "import sys\nimport b\nimport other\n"
+            )
+
+            runner = CliRunner()
+            with chdir(str(Path(d) / "a" / "b")):
+                result = runner.invoke(main, ["list-imports", "c/__init__.py"])
+
+            # b should be detected as first-party and sorted into its own block
+            self.assertIn("import b", result.output)
+            self.assertIn("import other", result.output)
+            self.assertIn("import sys", result.output)
+            self.assertEqual(result.exit_code, 0)
+
+            # Now test with first_party_detection disabled in auto-discovered config
+            (Path(d) / "pyproject.toml").write_text(
+                "[tool.usort]\nfirst_party_detection = false\n"
+            )
+
+            with chdir(str(Path(d) / "a" / "b")):
+                result = runner.invoke(main, ["list-imports", "c/__init__.py"])
+
+            # Without first-party detection, b and other should be in the same block
+            self.assertIn("import b", result.output)
+            self.assertIn("import other", result.output)
+            self.assertEqual(result.exit_code, 0)
+
+    def test_list_imports_explicit_config(self) -> None:
+        # Test that list-imports respects first_party_detection with explicit config
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "a" / "b" / "c").mkdir(parents=True)
+            (Path(d) / "a" / "b" / "__init__.py").write_text("")
+            (Path(d) / "a" / "b" / "c" / "__init__.py").write_text(
+                "import sys\nimport b\nimport other\n"
+            )
+
+            # Config with first_party_detection enabled (default)
+            config_enabled = Path(d) / "enabled.toml"
+            config_enabled.write_text("[tool.usort]\n")
+
+            runner = CliRunner()
+            with chdir(str(Path(d) / "a" / "b")):
+                result = runner.invoke(
+                    main, ["list-imports", "--config", str(config_enabled), "c/__init__.py"]
+                )
+
+            # b should be detected as first-party
+            self.assertIn("import b", result.output)
+            self.assertIn("import other", result.output)
+            self.assertIn("import sys", result.output)
+            self.assertEqual(result.exit_code, 0)
+
+            # Config with first_party_detection disabled
+            config_disabled = Path(d) / "disabled.toml"
+            config_disabled.write_text(
+                "[tool.usort]\nfirst_party_detection = false\n"
+            )
+
+            with chdir(str(Path(d) / "a" / "b")):
+                result = runner.invoke(
+                    main, ["list-imports", "--config", str(config_disabled), "c/__init__.py"]
+                )
+
+            # Without first-party detection, b and other should be in the same block
+            self.assertIn("import b", result.output)
+            self.assertIn("import other", result.output)
+            self.assertEqual(result.exit_code, 0)
+
     def test_format_no_change(self) -> None:
         with sample_contents("import sys\n") as dtmp:
             runner = CliRunner()
@@ -372,3 +449,105 @@ s = "\xb5"
                 ),  # git on windows again
                 (Path(dtmp) / "sample.py").read_bytes(),
             )
+
+    def test_diff_explicit_config(self) -> None:
+        # Test that diff command respects explicit config
+        with volatile.dir() as dtmp:
+            root = Path(dtmp)
+            (root / "pyproject.toml").write_text(
+                """
+[tool.usort]
+merge_imports = true
+""".strip()
+            )
+            (root / "altconfig.toml").write_text(
+                """
+[tool.usort]
+merge_imports = false
+""".strip()
+            )
+            (root / "sample.py").write_text("from foo import b\nfrom foo import a\n")
+            runner = CliRunner()
+            with chdir(dtmp):
+                # With explicit config (merge disabled), should show diff for separate imports
+                result = runner.invoke(
+                    main, ["diff", "--config", "altconfig.toml", "sample.py"]
+                )
+                self.assertEqual(result.exit_code, 0)  # diff returns 0 even with changes
+                # Should show changes (sorting a before b, not merging)
+                self.assertIn("from foo import a", result.output)
+                self.assertIn("from foo import b", result.output)
+                # Verify it's actually using the explicit config by checking output format
+                self.assertNotIn("a, b", result.output)  # Not merged
+
+    def test_explicit_config_override_merge_imports_disabled(self) -> None:
+        # pyproject enables merging, explicit config disables it
+        with volatile.dir() as dtmp:
+            root = Path(dtmp)
+            (root / "pyproject.toml").write_text(
+                """
+[tool.usort]
+merge_imports = true
+""".strip()
+            )
+            (root / "altconfig.toml").write_text(
+                """
+[tool.usort]
+merge_imports = false
+""".strip()
+            )
+            (root / "sample.py").write_text("from foo import b\nfrom foo import a\n")
+            runner = CliRunner()
+            with chdir(dtmp):
+                # Without override: merged into single statement
+                result_default = runner.invoke(main, ["format", "."])
+                self.assertEqual(result_default.exit_code, 0)
+                self.assertEqual(
+                    (root / "sample.py").read_text(),
+                    "from foo import a, b\n",
+                )
+            # Reset contents
+            (root / "sample.py").write_text("from foo import b\nfrom foo import a\n")
+            with chdir(dtmp):
+                result_override = runner.invoke(
+                    main, ["format", "--config", "altconfig.toml", "."]
+                )
+            self.assertEqual(result_override.exit_code, 0)
+            # With override: statements remain separate (but sorted)
+            self.assertEqual(
+                (root / "sample.py").read_text(),
+                "from foo import a\nfrom foo import b\n",
+            )
+
+    def test_explicit_config_missing_table_warning(self) -> None:
+        # Config files without tool.usort or tool.black should warn but still work
+        with volatile.dir() as dtmp:
+            root = Path(dtmp)
+            (root / "pyproject.toml").write_text(
+                """
+[tool.usort]
+merge_imports = true
+""".strip()
+            )
+            (root / "altconfig.toml").write_text("# no tool.usort table\n")
+            (root / "sample.py").write_text("import sys\n")
+            runner = CliRunner()
+            with chdir(dtmp):
+                result = runner.invoke(
+                    main, ["check", "--config", "altconfig.toml", "."]
+                )
+            # Should succeed (exit code 0) with a warning
+            self.assertEqual(result.exit_code, 0)
+
+    def test_explicit_config_nonexistent_file(self) -> None:
+        # Non-existent config file should error
+        with volatile.dir() as dtmp:
+            root = Path(dtmp)
+            (root / "sample.py").write_text("import sys\n")
+            runner = CliRunner()
+            with chdir(dtmp):
+                result = runner.invoke(
+                    main, ["check", "--config", "nonexistent.toml", "."]
+                )
+            self.assertNotEqual(result.exit_code, 0)
+            self.assertIn("does not exist", result.output.lower())

@@ -8,6 +8,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, NewType, Optional, Pattern, Sequence, Set
+from warnings import warn
 
 if sys.version_info < (3, 11):
     import tomli as tomllib
@@ -56,7 +57,7 @@ class Config:
     side_effect_modules: List[str] = field(default_factory=list)
     side_effect_re: Pattern[str] = field(default=re.compile(""))
 
-    # Whether to perform the first-party heuristic during find()
+    # Whether to perform the first-party heuristic
     first_party_detection: bool = True
 
     # Whether to follow black-style for magic trailing commas
@@ -85,9 +86,10 @@ class Config:
         )
 
     @classmethod
-    def find(
-        cls, filename: Optional[Path] = None, with_first_party: bool = True
-    ) -> "Config":
+    def find(cls, filename: Optional[Path] = None) -> "Config":
+        """
+        Find and load configuration by walking up from the given path.
+        """
         rv = cls()
 
         # TODO This logic should be split out to a separate project, as it's
@@ -113,15 +115,6 @@ class Config:
                 break
 
             p = p.parent
-
-        # Either param or config can force off.
-        if with_first_party and rv.first_party_detection:
-            if filename is None:
-                # directory
-                rv = rv.with_first_party(Path.cwd())
-            else:
-                # filename, ideally
-                rv = rv.with_first_party(Path.cwd() / filename)
 
         return rv
 
@@ -211,6 +204,26 @@ class Config:
 
         # make sure generated regexes get updated
         self.__post_init__()
+
+    @classmethod
+    def load(cls, path: Path) -> "Config":
+        """Load a config from an explicit TOML file path.
+
+        Warns if the file does not contain a [tool.usort] or [tool.black] table.
+        """
+        if not path.exists():
+            raise FileNotFoundError(f"Config file not found: {path}")
+
+        text = path.read_text()
+        conf = tomllib.loads(text)
+        tool = conf.get("tool", {})
+        if "tool" not in conf or ("usort" not in tool and "black" not in tool):
+            warn(f"Config file {path} is missing [tool.usort] or [tool.black] table")
+
+        rv = cls()
+        # Re-parse via update_from_config to leverage existing logic
+        rv.update_from_config(path)
+        return rv
 
     def category(self, dotted_import: str) -> Category:
         """

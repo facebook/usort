@@ -91,7 +91,9 @@ def usort_string(data: str, config: Config, path: Optional[Path] = None) -> str:
     return result.output.decode()
 
 
-def usort_file(path: Path, *, write: bool = False) -> Result:
+def usort_file(
+    path: Path, *, write: bool = False, config: Optional[Config] = None
+) -> Result:
     """
     Format a single file and return a Result object.
 
@@ -99,7 +101,13 @@ def usort_file(path: Path, *, write: bool = False) -> Result:
     """
 
     try:
-        config = Config.find(path.parent)
+        if config is None:
+            config = Config.find(path.parent)
+
+        # Apply first-party detection when enabled
+        if config.first_party_detection:
+            config = config.with_first_party(Path.cwd() / path.parent)
+
         data = path.read_bytes()
         result = usort(data, config, path)
 
@@ -117,7 +125,9 @@ def usort_file(path: Path, *, write: bool = False) -> Result:
 
 
 def usort_path(
-    paths: Union[Path, Iterable[Path]], write: bool = False
+    paths: Union[Path, Iterable[Path]],
+    write: bool = False,
+    config: Optional[Config] = None,
 ) -> Iterable[Result]:
     """
     For a given path, format it, or any python files in it, and yield :class:`Result` s.
@@ -134,12 +144,19 @@ def usort_path(
     with timed("total"):
         materialized_paths: Set[Path] = set()
 
-        for path in source_paths:
-            with timed(f"walking {path}"):
-                config = Config.find(path)
-                materialized_paths.update(walk(path, excludes=config.excludes))
+        if config is None:
+            # discover config per-root
+            for path in source_paths:
+                with timed(f"walking {path}"):
+                    discovered = Config.find(path)
+                    materialized_paths.update(walk(path, excludes=discovered.excludes))
+        else:
+            # use global config
+            for path in source_paths:
+                with timed(f"walking {path}"):
+                    materialized_paths.update(walk(path, excludes=config.excludes))
 
-        fn = partial(usort_file, write=write)
+        fn = partial(usort_file, write=write, config=config)
         if len(materialized_paths) == 1:
             # shave off multiprocessing overhead
             results = [fn(materialized_paths.pop())]
@@ -148,7 +165,7 @@ def usort_path(
         return results
 
 
-def usort_stdin() -> bool:
+def usort_stdin(config: Optional[Config] = None) -> bool:
     """
     Read file contents from stdin, format it, and write the resulting file to stdout
 
@@ -161,7 +178,10 @@ def usort_stdin() -> bool:
         print("Warning: stdin is a tty", file=sys.stderr)
 
     try:
-        config = Config.find()
+        if config is None:
+            config = Config.find()
+        if config.first_party_detection:
+            config = config.with_first_party(Path.cwd())
         data = sys.stdin.read()
         result = usort_string(data, config, Path("<stdin>"))
         sys.stdout.write(result)

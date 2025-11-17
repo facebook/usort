@@ -3,14 +3,17 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import os
 import tempfile
 import unittest
 from dataclasses import replace
+from io import StringIO
 from pathlib import Path
 from textwrap import dedent
 from typing import Optional
+from unittest.mock import patch
 
-from ..api import usort, usort_path
+from ..api import usort, usort_file, usort_path, usort_stdin
 from ..config import CAT_FIRST_PARTY, Config
 from ..translate import import_from_node
 from ..util import parse_import
@@ -1321,6 +1324,159 @@ excludes = [
             """,
             config,
         )
+
+
+class UsortFileFirstPartyTest(unittest.TestCase):
+    """Test that usort_file respects first_party_detection with auto-discovered and explicit configs"""
+
+    def test_auto_discovered_config(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "a" / "b" / "c").mkdir(parents=True)
+            (Path(d) / "a" / "b" / "__init__.py").write_text("")
+            (Path(d) / "a" / "b" / "c" / "__init__.py").write_text(
+                "import sys\nimport b\nimport other\n"
+            )
+
+            # First verify default behavior (detection enabled)
+            result = usort_file(Path(d) / "a" / "b" / "c" / "__init__.py")
+            self.assertIsNone(result.error)
+            expected = "import sys\n\nimport other\n\nimport b\n"
+            self.assertEqual(result.output.decode("utf-8"), expected)
+
+            # Now disable first-party detection in config
+            (Path(d) / "pyproject.toml").write_text(
+                """\
+[tool.usort]
+first_party_detection = false
+"""
+            )
+
+            # usort_file should NOT detect 'b' as first-party
+            result = usort_file(Path(d) / "a" / "b" / "c" / "__init__.py")
+            self.assertIsNone(result.error)
+            # b should be treated as third-party
+            expected = "import sys\n\nimport b\nimport other\n"
+            self.assertEqual(result.output.decode("utf-8"), expected)
+
+    def test_explicit_config(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "a" / "b" / "c").mkdir(parents=True)
+            (Path(d) / "a" / "b" / "__init__.py").write_text("")
+            (Path(d) / "a" / "b" / "c" / "__init__.py").write_text(
+                "import sys\nimport b\nimport other\n"
+            )
+
+            # Config with first_party_detection enabled (default)
+            config_enabled = Path(d) / "enabled.toml"
+            config_enabled.write_text("[tool.usort]\n")
+
+            result = usort_file(
+                Path(d) / "a" / "b" / "c" / "__init__.py",
+                config=Config.load(config_enabled),
+            )
+            self.assertIsNone(result.error)
+            # b should be in its own section (first-party)
+            expected = "import sys\n\nimport other\n\nimport b\n"
+            self.assertEqual(result.output.decode("utf-8"), expected)
+
+            # Config with first_party_detection disabled
+            config_disabled = Path(d) / "disabled.toml"
+            config_disabled.write_text(
+                "[tool.usort]\nfirst_party_detection = false\n"
+            )
+
+            result = usort_file(
+                Path(d) / "a" / "b" / "c" / "__init__.py",
+                config=Config.load(config_disabled),
+            )
+            self.assertIsNone(result.error)
+            # b should NOT be detected as first-party, treated as third-party
+            expected = "import sys\n\nimport b\nimport other\n"
+            self.assertEqual(result.output.decode("utf-8"), expected)
+
+
+class UsortStdinFirstPartyTest(unittest.TestCase):
+    """Test that usort_stdin respects first_party_detection with auto-discovered and explicit configs"""
+
+    def test_auto_discovered_config(self) -> None:
+        # Test that usort_stdin respects first_party_detection with auto-discovered config
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "a" / "b" / "c").mkdir(parents=True)
+            (Path(d) / "a" / "b" / "__init__.py").write_text("")
+
+            # Simulate stdin with imports
+            input_text = "import sys\nimport b\nimport other\n"
+
+            orig_cwd = os.getcwd()
+            try:
+                os.chdir(Path(d) / "a" / "b")
+
+                # Default behavior: auto-detect first-party
+                with patch("sys.stdin", StringIO(input_text)):
+                    with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                        result = usort_stdin()
+
+                    self.assertTrue(result)
+                    # b should be detected as first-party
+                    expected = "import sys\n\nimport other\n\nimport b\n"
+                    self.assertEqual(mock_stdout.getvalue(), expected)
+
+                # Create config with first_party_detection disabled
+                (Path(d) / "pyproject.toml").write_text(
+                    "[tool.usort]\nfirst_party_detection = false\n"
+                )
+
+                with patch("sys.stdin", StringIO(input_text)):
+                    with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                        result = usort_stdin()
+
+                    self.assertTrue(result)
+                    # b should NOT be detected as first-party
+                    expected = "import sys\n\nimport b\nimport other\n"
+                    self.assertEqual(mock_stdout.getvalue(), expected)
+            finally:
+                os.chdir(orig_cwd)
+
+    def test_explicit_config(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "a" / "b" / "c").mkdir(parents=True)
+            (Path(d) / "a" / "b" / "__init__.py").write_text("")
+
+            # Config with first_party_detection enabled (default)
+            config_enabled = Path(d) / "enabled.toml"
+            config_enabled.write_text("[tool.usort]\n")
+
+            # Simulate stdin with imports
+            input_text = "import sys\nimport b\nimport other\n"
+
+            orig_cwd = os.getcwd()
+            try:
+                os.chdir(Path(d) / "a" / "b")
+                with patch("sys.stdin", StringIO(input_text)):
+                    with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                        result = usort_stdin(config=Config.load(config_enabled))
+
+                    self.assertTrue(result)
+                    # b should be detected as first-party
+                    expected = "import sys\n\nimport other\n\nimport b\n"
+                    self.assertEqual(mock_stdout.getvalue(), expected)
+
+                # Config with first_party_detection disabled
+                config_disabled = Path(d) / "disabled.toml"
+                config_disabled.write_text(
+                    "[tool.usort]\nfirst_party_detection = false\n"
+                )
+
+                with patch("sys.stdin", StringIO(input_text)):
+                    with patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+                        result = usort_stdin(config=Config.load(config_disabled))
+
+                    self.assertTrue(result)
+                    # b should NOT be detected as first-party
+                    expected = "import sys\n\nimport b\nimport other\n"
+                    self.assertEqual(mock_stdout.getvalue(), expected)
+            finally:
+                os.chdir(orig_cwd)
 
 
 if __name__ == "__main__":
