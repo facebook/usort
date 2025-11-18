@@ -537,6 +537,17 @@ The following options are valid for the main ``tool.usort`` table:
     Whether to merge sequential imports from the same base module.
     See `Merging`_ for details on how this works.
 
+.. attribute:: line_length
+    :type: int
+    :value: 88
+
+    The maximum line length µsort should target when rendering imports. Imports
+    that fit within this limit, including indentation and inline comments, will
+    collapse to a single line. Longer imports render as multi-line imports with
+    one name per line. When both ``[tool.usort]`` ``line_length`` and
+    ``[tool.black]`` ``line-length`` are provided, the value from Black takes
+    precedence.
+
 .. attribute:: excludes
     :type: List[str]
 
@@ -597,10 +608,11 @@ as adding the :mod:`example` module to the "first_party" category:
     :type: int
     :value: 88
 
-    The target line length configured for Black will also be used by µsort when
-    rendering imports after merging and sorting. Imports that fit within this length,
-    including indentation and comments, will be rendered on a single line. Otherwise,
-    imports will be rendered as multi-line imports, with a single name per line.
+    The target line length configured for Black takes precedence over
+    ``[tool.usort]`` ``line_length``. µsort uses this value when rendering imports
+    after merging and sorting. Imports that fit within this length, including
+    indentation and comments, will be rendered on a single line. Otherwise, imports
+    will be rendered as multi-line imports, with a single name per line.
 
 .. _Black: https://black.readthedocs.io
 

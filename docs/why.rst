@@ -44,7 +44,8 @@ developers writing code:
 
 - No support for configuring output style. µsort works best when run before a
   dedicated code formatter like `Black`_ for enforcing style choices. µsort does use
-  the configured line length for Black when rendering imports on one or more lines.
+  its configured line length when rendering imports on one or more lines, honoring
+  ``[tool.usort]`` ``line_length`` unless ``[tool.black]`` ``line-length`` is present.
   We use `µfmt`_ to combine µsort and Black into a single, atomic formatting step.
 
 - No vendored code. All dependencies are satisfied from PyPI, with unbound version

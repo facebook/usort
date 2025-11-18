@@ -238,7 +238,7 @@ excludes = [
                 expected = ["fixtures/", "*generated.py"]
                 self.assertEqual(expected, conf.excludes)
 
-    def test_black_line_length(self) -> None:
+    def test_line_length_config_precedence(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             d_path = Path(d)
             (d_path / "foo").mkdir(parents=True)
@@ -249,6 +249,16 @@ excludes = [
                 conf = Config.find(d_path / "foo" / "bar.py")
                 self.assertEqual(Config.line_length, conf.line_length)
 
+            with self.subTest("with usort config"):
+                (d_path / "foo" / "pyproject.toml").write_text(
+                    """\
+[tool.usort]
+line_length = 120
+"""
+                )
+                conf = Config.find(d_path / "foo" / "bar.py")
+                self.assertEqual(120, conf.line_length)
+
             with self.subTest("with black config"):
                 (d_path / "foo" / "pyproject.toml").write_text(
                     """\
@@ -258,6 +268,19 @@ line-length = 120
                 )
                 conf = Config.find(d_path / "foo" / "bar.py")
                 self.assertEqual(120, conf.line_length)
+
+            with self.subTest("black overrides usort"):
+                (d_path / "foo" / "pyproject.toml").write_text(
+                    """\
+[tool.usort]
+line_length = 120
+
+[tool.black]
+line-length = 90
+"""
+                )
+                conf = Config.find(d_path / "foo" / "bar.py")
+                self.assertEqual(90, conf.line_length)
 
     def test_config_parent_walk(self) -> None:
         with tempfile.TemporaryDirectory() as d:

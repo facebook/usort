@@ -169,6 +169,10 @@ class Config:
             self.merge_imports = bool(tbl["merge_imports"])
         if "excludes" in tbl:
             self.excludes = tbl["excludes"]
+        if "line_length" in tbl:
+            self.line_length = int(tbl["line_length"])
+        elif "line-length" in tbl:
+            self.line_length = int(tbl["line-length"])
 
         for cat, names in tbl.get("known", {}).items():
             typed_cat = Category(cat)
