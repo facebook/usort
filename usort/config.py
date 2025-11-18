@@ -8,6 +8,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, NewType, Optional, Pattern, Sequence, Set
+from warnings import warn
 
 if sys.version_info < (3, 11):
     import tomli as tomllib
@@ -197,6 +198,26 @@ class Config:
 
         # make sure generated regexes get updated
         self.__post_init__()
+
+    @classmethod
+    def load(cls, path: Path) -> "Config":
+        """Load a config from an explicit TOML file path.
+
+        Warns if the file does not contain a [tool.usort] or [tool.black] table.
+        """
+        if not path.exists():
+            raise FileNotFoundError(f"Config file not found: {path}")
+
+        text = path.read_text()
+        conf = tomllib.loads(text)
+        tool = conf.get("tool", {})
+        if "tool" not in conf or ("usort" not in tool and "black" not in tool):
+            warn(f"Config file {path} is missing [tool.usort] or [tool.black] table")
+
+        rv = cls()
+        # Re-parse via update_from_config to leverage existing logic
+        rv.update_from_config(path)
+        return rv
 
     def category(self, dotted_import: str) -> Category:
         """

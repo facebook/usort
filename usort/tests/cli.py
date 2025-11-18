@@ -372,3 +372,75 @@ s = "\xb5"
                 ),  # git on windows again
                 (Path(dtmp) / "sample.py").read_bytes(),
             )
+
+    def test_explicit_config_override_merge_imports_disabled(self) -> None:
+        # pyproject enables merging, explicit config disables it
+        with volatile.dir() as dtmp:
+            root = Path(dtmp)
+            (root / "pyproject.toml").write_text(
+                """
+[tool.usort]
+merge_imports = true
+""".strip()
+            )
+            (root / "altconfig.toml").write_text(
+                """
+[tool.usort]
+merge_imports = false
+""".strip()
+            )
+            (root / "sample.py").write_text("from foo import b\nfrom foo import a\n")
+            runner = CliRunner()
+            with chdir(dtmp):
+                # Without override: merged into single statement
+                result_default = runner.invoke(main, ["format", "."])
+                self.assertEqual(result_default.exit_code, 0)
+                self.assertEqual(
+                    (root / "sample.py").read_text(),
+                    "from foo import a, b\n",
+                )
+            # Reset contents
+            (root / "sample.py").write_text("from foo import b\nfrom foo import a\n")
+            with chdir(dtmp):
+                result_override = runner.invoke(
+                    main, ["format", "--config", "altconfig.toml", "."]
+                )
+            self.assertEqual(result_override.exit_code, 0)
+            # With override: statements remain separate (but sorted)
+            self.assertEqual(
+                (root / "sample.py").read_text(),
+                "from foo import a\nfrom foo import b\n",
+            )
+
+    def test_explicit_config_missing_table_warning(self) -> None:
+        # Config files without tool.usort or tool.black should warn but still work
+        with volatile.dir() as dtmp:
+            root = Path(dtmp)
+            (root / "pyproject.toml").write_text(
+                """
+[tool.usort]
+merge_imports = true
+""".strip()
+            )
+            (root / "altconfig.toml").write_text("# no tool.usort table\n")
+            (root / "sample.py").write_text("import sys\n")
+            runner = CliRunner()
+            with chdir(dtmp):
+                result = runner.invoke(
+                    main, ["check", "--config", "altconfig.toml", "."]
+                )
+            # Should succeed (exit code 0) with a warning
+            self.assertEqual(result.exit_code, 0)
+
+    def test_explicit_config_nonexistent_file(self) -> None:
+        # Non-existent config file should error
+        with volatile.dir() as dtmp:
+            root = Path(dtmp)
+            (root / "sample.py").write_text("import sys\n")
+            runner = CliRunner()
+            with chdir(dtmp):
+                result = runner.invoke(
+                    main, ["check", "--config", "nonexistent.toml", "."]
+                )
+            self.assertNotEqual(result.exit_code, 0)
+            self.assertIn("not found", result.output.lower())

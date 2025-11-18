@@ -12,19 +12,19 @@ To format one or more files or directories in-place:
 
 .. code-block:: shell-session
 
-    $ usort format <path> [<path> ...]
+    $ usort format [--config config/usort.toml] <path> [<path> ...]
 
 To generate a diff of changes without modifying files:
 
 .. code-block:: shell-session
 
-    $ usort diff <path> [<path> ...]
+    $ usort diff [--config config/usort.toml] <path> [<path> ...]
 
 µsort can also be used to validate formatting as part of CI:
 
 .. code-block:: shell-session
 
-    $ usort check <path> [<path> ...]
+    $ usort check [--config config/usort.toml] <path> [<path> ...]
 
 
 Sorting
@@ -461,6 +461,17 @@ The preferred method of configuring µsort is in your project's
 When sorting each file, µsort will look for the "nearest" :file:`pyproject.toml`
 to the file being sorted, looking upwards until the project root is found, or
 until the root of the filesystem is reached.
+
+Explicit config files
+%%%%%%%%%%%%%%%%%%%%%
+
+You can specify a configuration file using the ``--config`` CLI option to point 
+commands like ``format``, ``check``, ``diff`` and ``list-imports`` at a specific
+TOML file:
+
+.. code-block:: shell-session
+
+    $ usort format --config config/usort.toml src/
 
 ``[tool.usort]``
 %%%%%%%%%%%%%%%%
