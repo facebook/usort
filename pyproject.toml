@@ -37,7 +37,7 @@ dynamic = ["version"]
 dev = [
     "click==8.1.8",  # pinning until mypy issues blow over
     "black==25.9.0",
-    "coverage==7.11.0",
+    "coverage==7.13.1",
     "flake8==7.3.0",
     "hatch==1.15.1",
     "mypy==1.18.2",
