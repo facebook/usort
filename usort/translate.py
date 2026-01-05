@@ -201,9 +201,21 @@ def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableI
         if node.body[0].relative:
             stem = "." * len(node.body[0].relative) + stem
 
-        for name in node.body[0].names:
+        # For single-line imports with preserve_inline_comments, attach trailing
+        # comments to the specific item instead of the import level
+        is_single_line = not node.body[0].lpar
+        single_item_count = len(node.body[0].names)
+
+        for idx, name in enumerate(node.body[0].names):
             items.append(item_from_node(name, stem, comments.initial))
             comments.initial = []
+
+            # If preserving inline comments and this is a single-line import with
+            # one item, move first_inline comments to the item's inline comments
+            if (config.preserve_inline_comments and is_single_line and
+                single_item_count == 1 and idx == 0 and comments.first_inline):
+                items[-1].comments.inline.extend(comments.first_inline)
+                comments.first_inline.clear()
 
     else:
         raise TypeError
@@ -240,6 +252,14 @@ def import_to_node(
 ) -> cst.BaseStatement:
     if config.magic_commas and imp.stem and imp.trailing_comma:
         return import_to_node_multi(imp, module)
+
+    # If preserve_inline_comments is enabled and any item has inline comments,
+    # use multi-line format to preserve them
+    if config.preserve_inline_comments and imp.stem:
+        has_item_comments = any(item.comments.inline for item in imp.items)
+        if has_item_comments:
+            return import_to_node_multi(imp, module)
+
     node = import_to_node_single(imp, module)
     content = indent + render_node(node, module).rstrip()
     # basic imports can't be reflowed, so only deal with from-imports
