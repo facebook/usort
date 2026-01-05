@@ -1140,6 +1140,58 @@ excludes = [
             """,
         )
 
+    def test_preserve_inline_comments(self) -> None:
+        config = replace(DEFAULT_CONFIG, preserve_inline_comments=True)
+        self.assertUsortResult(
+            """
+                from torch._C import _linalg  # pyrefly:
+                from torch._C import (
+                    _LinAlgError as LinAlgError,  # pyrefly: ignore  # missing-module-attribute
+                )
+                from torch._C import _add_docstr
+            """,
+            """
+                from torch._C import (
+                    _add_docstr,
+                    _linalg,  # pyrefly:
+                    _LinAlgError as LinAlgError,  # pyrefly: ignore  # missing-module-attribute
+                )
+            """,
+            config,
+        )
+
+    def test_preserve_inline_comments_multiple_modules(self) -> None:
+        config = replace(DEFAULT_CONFIG, preserve_inline_comments=True)
+        self.assertUsortResult(
+            """
+                from foo import bar  # comment1
+                from foo import baz  # comment2
+                from foo import alpha
+            """,
+            """
+                from foo import (
+                    alpha,
+                    bar,  # comment1
+                    baz,  # comment2
+                )
+            """,
+            config,
+        )
+
+    def test_preserve_inline_comments_disabled(self) -> None:
+        # Without preserve_inline_comments, comments become import-level
+        config = replace(DEFAULT_CONFIG, preserve_inline_comments=False)
+        self.assertUsortResult(
+            """
+                from torch._C import _linalg  # pyrefly:
+                from torch._C import _add_docstr
+            """,
+            """
+                from torch._C import _add_docstr, _linalg  # pyrefly:
+            """,
+            config,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

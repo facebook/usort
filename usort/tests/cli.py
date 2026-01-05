@@ -332,8 +332,8 @@ import a
 s = "\xb5"
 """.replace(
                 b"\r", b""
-            )  # git on windows might make \r\n
-        ) as dtmp:
+            )
+        ) as dtmp:  # git on windows might make \r\n
             runner = CliRunner()
 
             # Diff output is unicode

@@ -65,6 +65,9 @@ class Config:
     # Whether to merge imports when sorting
     merge_imports: bool = True
 
+    # Whether to preserve inline comments on individual imports when sorting
+    preserve_inline_comments: bool = False
+
     # gitignore-style filename patterns to exclude when sorting entire directories
     excludes: List[str] = field(default_factory=list)
 
@@ -167,6 +170,8 @@ class Config:
             self.magic_commas = bool(tbl["magic_commas"])
         if "merge_imports" in tbl:
             self.merge_imports = bool(tbl["merge_imports"])
+        if "preserve_inline_comments" in tbl:
+            self.preserve_inline_comments = bool(tbl["preserve_inline_comments"])
         if "excludes" in tbl:
             self.excludes = tbl["excludes"]
 
