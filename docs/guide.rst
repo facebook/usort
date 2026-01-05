@@ -537,6 +537,57 @@ The following options are valid for the main ``tool.usort`` table:
     Whether to merge sequential imports from the same base module.
     See `Merging`_ for details on how this works.
 
+.. attribute:: preserve_inline_comments
+    :type: bool
+    :value: false
+
+    Whether to preserve the placement of inline comments with their associated
+    import items when sorting and merging imports.
+
+    When set to ``false`` (the default), inline comments from single-line imports
+    are treated as import-level comments and will be placed at the end of the
+    merged import statement::
+
+        # Before
+        from foo import bar  # comment1
+        from foo import baz  # comment2
+
+        # After (default behavior)
+        from foo import bar, baz  # comment1  # comment2
+
+    When set to ``true``, inline comments are associated with their specific
+    import items and will remain attached to those items after sorting and
+    merging::
+
+        # Before
+        from foo import bar  # comment1
+        from foo import baz  # comment2
+
+        # After (preserve_inline_comments = true)
+        from foo import (
+            bar,  # comment1
+            baz,  # comment2
+        )
+
+    This is particularly useful when using inline comments for directives like
+    type checker annotations or linter suppressions that are specific to individual
+    imports::
+
+        # Before
+        from torch._C import _linalg  # pyrefly:
+        from torch._C import _LinAlgError as LinAlgError  # pyrefly: ignore
+        from torch._C import _add_docstr
+
+        # After (preserve_inline_comments = true)
+        from torch._C import (
+            _add_docstr,
+            _linalg,  # pyrefly:
+            _LinAlgError as LinAlgError,  # pyrefly: ignore
+        )
+
+    Note that this option only affects inline comments on single-line imports.
+    Comments on multi-line imports are always preserved with their associated items.
+
 .. attribute:: excludes
     :type: List[str]
 
