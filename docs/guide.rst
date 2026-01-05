@@ -573,23 +573,16 @@ The following options are valid for the main ``tool.usort`` table:
     type checker annotations or linter suppressions that are specific to individual
     imports::
 
-        # Original Code
-        from example._C import _linalg  # pyrefly: ignore [missing-attribute]
-        from example._C import _LinAlgError as LinAlgError  # pyrefly: ignore
-        from example._C import _add_docstr
-
-        # Without preserving inline comments 
-        from example._C import ( # pyrefly: ignore [missing-attribute]
-            _add_docstr,
-            _linealg,
-            _LineAlgError as LinAlgError,  # pyrefly: ignore
-        )
+        # Before
+        from torch._C import _linalg  # pyrefly:
+        from torch._C import _LinAlgError as LinAlgError  # pyrefly: ignore
+        from torch._C import _add_docstr
 
         # After (preserve_inline_comments = true)
-        from example._C import (
+        from torch._C import (
             _add_docstr,
-            _linealg,  # pyrefly: ignore [missing-attribute]
-            _LineAlgError as LineAlgError,  # pyrefly: ignore
+            _linalg,  # pyrefly:
+            _LinAlgError as LinAlgError,  # pyrefly: ignore
         )
 
     Note that this option only affects inline comments on single-line imports.
