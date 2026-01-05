@@ -16,7 +16,6 @@ from .sorting import ImportSorter
 from .types import Result
 from .util import get_timings, timed, try_parse
 
-
 __all__ = ["usort_bytes", "usort_string", "usort_path", "usort_stdin"]
 
 

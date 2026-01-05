@@ -228,14 +228,12 @@ class UsortStringFunctionalTest(unittest.TestCase):
 
     def test_customized_sections(self) -> None:
         with tempfile.TemporaryDirectory() as d:
-            (Path(d) / "pyproject.toml").write_text(
-                """\
+            (Path(d) / "pyproject.toml").write_text("""\
 [tool.usort]
 categories = ["future", "standard_library", "numpy", "third_party", "first_party"]
 [tool.usort.known]
 numpy = ["numpy", "pandas"]
-"""
-            )
+""")
             sample = Path(d) / "sample.py"
             conf = Config.find(sample)
             self.assertUsortResult(
@@ -1038,15 +1036,13 @@ numpy = ["numpy", "pandas"]
         sorted_content = b"import asyncio\nimport os\n"
         with tempfile.TemporaryDirectory() as td:
             tdp = Path(td).resolve()
-            (tdp / "pyproject.toml").write_text(
-                """\
+            (tdp / "pyproject.toml").write_text("""\
 [tool.usort]
 excludes = [
     "fixtures/",
     "*generated.py",
 ]
-"""
-            )
+""")
             (tdp / "foo" / "tests" / "fixtures").mkdir(parents=True)
 
             excluded_paths = (
