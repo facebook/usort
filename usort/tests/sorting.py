@@ -14,12 +14,14 @@ from ..sorting import ImportSorter
 
 class SplitTest(unittest.TestCase):
     def test_split_block(self) -> None:
-        mod = cst.parse_module(b"""\
+        mod = cst.parse_module(
+            b"""\
 from a import x
 from b import y
 from b import y
 from c import x
-""")
+"""
+        )
         x = ImportSorter(module=mod, path=Path(), config=Config())
         blocks = x.sortable_blocks(mod.children)  # type: ignore
         self.assertEqual(2, len(blocks))

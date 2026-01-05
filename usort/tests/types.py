@@ -266,7 +266,8 @@ class TypesTest(unittest.TestCase):
             ],
         )
 
-        expected_repr = dedent("""
+        expected_repr = dedent(
+            """
                 SortableBlock(
                     start_idx = 0,
                     end_idx = 2,
@@ -293,5 +294,6 @@ class TypesTest(unittest.TestCase):
                     ],
                     imported_names = {},
                 )
-            """).strip()
+            """
+        ).strip()
         self.assertEqual(expected_repr, repr(imp))

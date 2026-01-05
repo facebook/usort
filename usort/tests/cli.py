@@ -50,12 +50,14 @@ class CliTest(unittest.TestCase):
 
         self.assertRegex(
             result.output,
-            dedent(r"""
+            dedent(
+                r"""
                 walking \.:\s+\d+ µs
                 parsing sample\.py:\s+\d+ µs
                 sorting sample\.py:\s+\d+ µs
                 total:\s+\d+ µs
-                """).strip(),
+                """
+            ).strip(),
         )
         self.assertEqual(0, result.exit_code)
 
@@ -70,26 +72,32 @@ class CliTest(unittest.TestCase):
 
         self.assertRegex(
             result.output,
-            dedent(r"""
+            dedent(
+                r"""
                 parsing foo\.py:\s+\d+ µs
                 sorting foo\.py:\s+\d+ µs
-                """).strip(),
+                """
+            ).strip(),
         )
 
         self.assertRegex(
             result.output,
-            dedent(r"""
+            dedent(
+                r"""
                 parsing sample\.py:\s+\d+ µs
                 sorting sample\.py:\s+\d+ µs
-                """).strip(),
+                """
+            ).strip(),
         )
 
         self.assertRegex(
             result.output,
-            dedent(r"""
+            dedent(
+                r"""
                 walking \.:\s+\d+ µs
                 total:\s+\d+ µs
-                """).strip(),
+                """
+            ).strip(),
         )
         self.assertEqual(0, result.exit_code)
 
@@ -170,7 +178,9 @@ class CliTest(unittest.TestCase):
 +import os
  import sys
 -import os
-""".replace("\r", ""),
+""".replace(
+                "\r", ""
+            ),
             result.output,
         )
 
@@ -274,11 +284,13 @@ import sys
 
     def test_format_utf8(self) -> None:
         # the string is "µ" as in "µsort"
-        with sample_contents(b"""\
+        with sample_contents(
+            b"""\
 import b
 import a
 s = "\xc2\xb5"
-""") as dtmp:
+"""
+        ) as dtmp:
             runner = CliRunner()
             with chdir(dtmp):
                 result = runner.invoke(main, ["diff", "."])
@@ -312,12 +324,16 @@ s = "\xc2\xb5"
 
     def test_format_latin_1(self) -> None:
         # the string is "µ" as in "µsort"
-        with sample_contents(b"""\
+        with sample_contents(
+            b"""\
 # -*- coding: latin-1 -*-
 import b
 import a
 s = "\xb5"
-""".replace(b"\r", b"")) as dtmp:  # git on windows might make \r\n
+""".replace(
+                b"\r", b""
+            )
+        ) as dtmp:  # git on windows might make \r\n
             runner = CliRunner()
 
             # Diff output is unicode
@@ -335,7 +351,9 @@ s = "\xb5"
  import b
 -import a
  s = "\u00b5"
-""".replace("\r", ""),  # git on windows again
+""".replace(
+                    "\r", ""
+                ),  # git on windows again
                 result.output,
             )
 
@@ -349,6 +367,8 @@ s = "\xb5"
 import a
 import b
 s = "\xb5"
-""".replace(b"\r", b""),  # git on windows again
+""".replace(
+                    b"\r", b""
+                ),  # git on windows again
                 (Path(dtmp) / "sample.py").read_bytes(),
             )
