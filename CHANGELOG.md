@@ -1,3 +1,14 @@
+# 1.1.1
+- Adds new option, preserve_inline_comments, to keep inline comments when consolidating imports (#344)
+
+```shell-session
+$ git shortlog -sn v1.1.0...
+     7     Maggie Moss
+     2     Bowie Chen
+     1     Cristian Le
+
+```
+
 ## 1.1.0
 
 - In addition to changes in 1.1.0b1 and 1.1.0b2, this release drops support for Python versions below 3.9.
