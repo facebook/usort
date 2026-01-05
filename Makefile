@@ -21,7 +21,9 @@ distclean:
 .PHONY: install
 install:
 	$(PYTHON) -m pip install -U pip setuptools
-	$(PYTHON) -m pip install -e .[dev,docs]
+	$(PYTHON) -m pip install -e .
+	$(PYTHON) -m pip install black==25.9.0 coverage==7.11.0 flake8==7.3.0 hatch==1.15.1 mypy==1.18.2 pessimist==0.9.3 volatile==2.1.0 sphinx==7.4.7 sphinx-mdinclude==0.6.2 tomlkit>=0.7.2 typing-extensions>=4.0
+	$(PYTHON) -m pip install --no-deps ufmt==2.8.0
 
 .PHONY: test
 test:
