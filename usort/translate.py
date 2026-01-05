@@ -212,8 +212,13 @@ def import_from_node(node: cst.SimpleStatementLine, config: Config) -> SortableI
 
             # If preserving inline comments and this is a single-line import with
             # one item, move first_inline comments to the item's inline comments
-            if (config.preserve_inline_comments and is_single_line and
-                single_item_count == 1 and idx == 0 and comments.first_inline):
+            if (
+                config.preserve_inline_comments
+                and is_single_line
+                and single_item_count == 1
+                and idx == 0
+                and comments.first_inline
+            ):
                 items[-1].comments.inline.extend(comments.first_inline)
                 comments.first_inline.clear()
 

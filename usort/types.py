@@ -146,8 +146,7 @@ class SortableImport:
     def __repr__(self) -> str:
         items = indent(("\n".join(f"{item!r}," for item in self.items)), "        ")
         return (
-            dedent(
-                """
+            dedent("""
                     SortableImport(
                         # sort_key = {sort_key!r},
                         stem = {stem!r},
@@ -157,8 +156,7 @@ class SortableImport:
                         comments = {comments!r},
                         indent = {indent!r},
                     )
-                """
-            )
+                """)
             .strip()
             .format(
                 sort_key=self.sort_key,
@@ -263,8 +261,7 @@ class SortableBlock:
     def __repr__(self) -> str:
         imports = indent("\n".join(f"{imp!r}," for imp in self.imports), "        ")
         return (
-            dedent(
-                """
+            dedent("""
                     SortableBlock(
                         start_idx = {start_idx!r},
                         end_idx = {end_idx!r},
@@ -273,8 +270,7 @@ class SortableBlock:
                         ],
                         imported_names = {imported_names!r},
                     )
-                """
-            )
+                """)
             .strip()
             .format(
                 start_idx=self.start_idx,

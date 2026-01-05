@@ -17,24 +17,20 @@ class ConfigTest(unittest.TestCase):
             # Defaults should not know about this module.
             # This is a silly value for default_category but this makes it more
             # obvious when it's in use.
-            (Path(d) / "pyproject.toml").write_text(
-                """\
+            (Path(d) / "pyproject.toml").write_text("""\
 [tool.usort]
 default_category = "future"
-"""
-            )
+""")
             conf = Config.find(Path(d))
             self.assertNotIn("psutil", conf.known)
             self.assertEqual(CAT_FUTURE, conf.category("psutil.cpu_times"))
 
             # "legacy" naming
-            (Path(d) / "pyproject.toml").write_text(
-                """\
+            (Path(d) / "pyproject.toml").write_text("""\
 [tool.usort]
 default_category = "future"
 known_third_party = ["psutil", "cocoa"]
-"""
-            )
+""")
 
             conf = Config.find(Path(d))
             self.assertEqual(CAT_THIRD_PARTY, conf.known["cocoa"])
@@ -48,14 +44,12 @@ known_third_party = ["psutil", "cocoa"]
             self.assertEqual(CAT_THIRD_PARTY, conf.category("psutil.cpu_times"))
 
             # New naming
-            (Path(d) / "pyproject.toml").write_text(
-                """\
+            (Path(d) / "pyproject.toml").write_text("""\
 [tool.usort]
 default_category = "future"
 [tool.usort.known]
 third_party = ["psutil", "cocoa"]
-"""
-            )
+""")
 
             new_conf = Config.find(Path(d))
             self.assertEqual(conf, new_conf)
@@ -88,37 +82,31 @@ third_party = ["psutil", "cocoa"]
             conf = Config.find(f)
             self.assertEqual(CAT_FIRST_PARTY, conf.known["b"])
 
-            (Path(d) / "pyproject.toml").write_text(
-                """\
+            (Path(d) / "pyproject.toml").write_text("""\
 [tool.usort]
 first_party_detection = false
-"""
-            )
+""")
 
             conf = Config.find(f)
             self.assertNotIn("b", conf.known)
 
     def test_new_category_names(self) -> None:
         with tempfile.TemporaryDirectory() as d:
-            (Path(d) / "pyproject.toml").write_text(
-                """\
+            (Path(d) / "pyproject.toml").write_text("""\
 [tool.usort]
 categories = ["future", "standard_library", "numpy", "third_party", "first_party"]
 [tool.usort.known]
 numpy = ["numpy", "pandas"]
-"""
-            )
+""")
             conf = Config.find(Path(d) / "sample.py")
             self.assertEqual("numpy", conf.known["pandas"])
 
     def test_new_category_names_invalid(self) -> None:
         with tempfile.TemporaryDirectory() as d:
-            (Path(d) / "pyproject.toml").write_text(
-                """\
+            (Path(d) / "pyproject.toml").write_text("""\
 [tool.usort.known]
 foo = ["numpy", "pandas"]
-"""
-            )
+""")
             with self.assertRaisesRegex(ValueError, "Known set for foo"):
                 Config.find(Path(d) / "sample.py")
 
@@ -183,12 +171,10 @@ foo = ["numpy", "pandas"]
                 self.assertFalse(conf.magic_commas)
 
             with self.subTest("enabled"):
-                (d_path / "foo" / "pyproject.toml").write_text(
-                    """\
+                (d_path / "foo" / "pyproject.toml").write_text("""\
 [tool.usort]
 magic_commas = true
-"""
-                )
+""")
                 conf = Config.find(d_path / "foo" / "bar.py")
                 self.assertTrue(conf.magic_commas)
 
@@ -204,12 +190,10 @@ magic_commas = true
                 self.assertTrue(conf.merge_imports)
 
             with self.subTest("disabled"):
-                (d_path / "foo" / "pyproject.toml").write_text(
-                    """\
+                (d_path / "foo" / "pyproject.toml").write_text("""\
 [tool.usort]
 merge_imports = false
-"""
-                )
+""")
                 conf = Config.find(d_path / "foo" / "bar.py")
                 self.assertFalse(conf.merge_imports)
 
@@ -225,15 +209,13 @@ merge_imports = false
                 self.assertEqual([], conf.excludes)
 
             with self.subTest("with black config"):
-                (d_path / "foo" / "pyproject.toml").write_text(
-                    """\
+                (d_path / "foo" / "pyproject.toml").write_text("""\
 [tool.usort]
 excludes = [
     "fixtures/",
     "*generated.py",
 ]
-"""
-                )
+""")
                 conf = Config.find(d_path / "foo" / "bar.py")
                 expected = ["fixtures/", "*generated.py"]
                 self.assertEqual(expected, conf.excludes)
@@ -250,12 +232,10 @@ excludes = [
                 self.assertEqual(Config.line_length, conf.line_length)
 
             with self.subTest("with black config"):
-                (d_path / "foo" / "pyproject.toml").write_text(
-                    """\
+                (d_path / "foo" / "pyproject.toml").write_text("""\
 [tool.black]
 line-length = 120
-"""
-                )
+""")
                 conf = Config.find(d_path / "foo" / "bar.py")
                 self.assertEqual(120, conf.line_length)
 
@@ -267,12 +247,10 @@ line-length = 120
             (d_path / "a" / "__init__.py").write_text("")
 
             (d_path / "b").mkdir(parents=True)
-            (d_path / "b" / "pyproject.toml").write_text(
-                """\
+            (d_path / "b" / "pyproject.toml").write_text("""\
 [tool.usort.known]
 first_party = ["x"]
-"""
-            )
+""")
             (d_path / "b" / "c").mkdir(parents=True)
             (d_path / "b" / "c" / "d").symlink_to(d_path / "a")
 
