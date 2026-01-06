@@ -35,7 +35,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
-    "click==8.1.8",  # pinning until mypy issues blow over
+    "click==8.3.1",  # pinning until mypy issues blow over
     "black==25.9.0",
     "coverage==7.11.0",
     "flake8==7.3.0",
