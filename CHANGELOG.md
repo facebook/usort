@@ -1,3 +1,13 @@
+# 1.1.2
+- Fixes bug that splits one line import statements with comments
+
+```shell-session
+$ git shortlog -sn v1.1.1...
+     1     Maggie Moss
+```
+
+
+
 # 1.1.1
 - Adds new option, preserve_inline_comments, to keep inline comments when consolidating imports (#344)
 
