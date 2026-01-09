@@ -331,6 +331,18 @@ numpy = ["numpy", "pandas"]
                     from something import nothing
             """,
         )
+    
+    def test_white_space_pytorch_example(self) -> None:
+        config = replace(DEFAULT_CONFIG, preserve_inline_comments=True)
+        self.assertUsortResult(
+            """
+            from package.test_save_load import TestSaveLoad  # noqa: F401
+            """, 
+            """
+            from package.test_save_load import TestSaveLoad  # noqa: F401
+            """,
+            config
+        )
 
     def test_case_insensitive_sorting(self) -> None:
         content = """
