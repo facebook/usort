@@ -258,9 +258,10 @@ def import_to_node(
     if config.magic_commas and imp.stem and imp.trailing_comma:
         return import_to_node_multi(imp, module)
 
-    # If preserve_inline_comments is enabled and any item has inline comments,
-    # use multi-line format to preserve them
-    if config.preserve_inline_comments and imp.stem:
+    # If preserve_inline_comments is enabled and multiple items have inline comments,
+    # use multi-line format to preserve them. Single-item imports can keep comments
+    # on the same line.
+    if config.preserve_inline_comments and imp.stem and len(imp.items) > 1:
         has_item_comments = any(item.comments.inline for item in imp.items)
         if has_item_comments:
             return import_to_node_multi(imp, module)
