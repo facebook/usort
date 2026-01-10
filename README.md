@@ -69,32 +69,43 @@ $ pip install usort
 To format one or more files or directories in-place:
 
 ```shell-session
-$ usort format <path> [<path> ...]
+$ usort format [--config config/usort.toml] <path> [<path> ...]
 ```
 
 To generate a diff of changes without modifying files:
 
 ```shell-session
-$ usort diff <path>
+$ usort diff [--config config/usort.toml] <path>
 ```
 
 To just validate that files are formatted correctly, like during CI:
 
 ```shell-session
-$ usort check <path>
+$ usort check [--config config/usort.toml] <path>
+```
+
+### Explicit configuration files
+
+All CLI commands accept `--config` to point at an alternate TOML configuration file.
+If omitted µsort falls back to the discovery of the nearest `pyproject.toml`.
+
+```shell-session
+$ usort format --config config/usort.toml <path>
 ```
 
 ### pre-commit
 
 µsort provides a [pre-commit](https://pre-commit.com/) hook. To enforce sorted
 imports before every commit, add the following to your `.pre-commit-config.yaml`
-file:
+file. If you keep µsort settings in a custom TOML file, pass the same
+`--config` flag via `args`:
 
 ```yaml
 - repo: https://github.com/facebook/usort
   rev: v1.0.7
   hooks:
     - id: usort
+      args: ["--config", "config/usort.toml"]
 ```
 
 ## License

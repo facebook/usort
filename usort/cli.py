@@ -7,12 +7,12 @@ import logging
 import sys
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, List, Sequence
+from typing import Any, Callable, List, Optional, Sequence
 
 import click
 from moreorless.click import echo_color_unified_diff
-
 from usort.translate import render_node
+
 from . import __version__
 from .api import usort_path, usort_stdin
 from .config import Config
@@ -43,6 +43,15 @@ def usort_command(fn: Callable[..., int]) -> Callable[..., None]:
     return wrapper
 
 
+def _load_config(config_path: Optional[Path]) -> Optional[Config]:
+    if config_path is None:
+        return None
+    try:
+        return Config.load(config_path)
+    except Exception as e:
+        raise click.ClickException(str(e))
+
+
 @click.group()
 @click.pass_context
 @click.version_option(__version__, "--version", "-V")
@@ -70,17 +79,32 @@ def main(ctx: click.Context, benchmark: bool, debug: bool, native: bool) -> None
 @main.command()
 @click.option("--multiples", is_flag=True, help="Only show files with multiple blocks")
 @click.option("--debug", is_flag=True, help="Show internal information")
+@click.option(
+    "--config",
+    "config_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Explicit TOML config file path",
+)
 @click.argument("paths", nargs=-1, type=click.Path(dir_okay=False, path_type=Path))
 @usort_command
-def list_imports(multiples: bool, debug: bool, paths: List[Path]) -> int:
+def list_imports(
+    multiples: bool, debug: bool, config_path: Optional[Path], paths: List[Path]
+) -> int:
     """
     Troubleshoot sorting behavior and show import blocks
     """
     # This is used to debug the sort keys on the various lines, and understand
     # where the barriers are that produce different blocks.
 
+    explicit_config = _load_config(config_path)
+
     for path in paths:
-        config = Config.find(path)
+        config = explicit_config or Config.find(path)
+
+        # Apply first-party detection when enabled
+        if config.first_party_detection:
+            config = config.with_first_party(Path.cwd() / path)
+
         mod = try_parse(path)
         try:
             sorter = ImportSorter(module=mod, path=path, config=config)
@@ -114,9 +138,15 @@ def list_imports(multiples: bool, debug: bool, paths: List[Path]) -> int:
 
 
 @main.command()
+@click.option(
+    "--config",
+    "config_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Explicit TOML config file path",
+)
 @click.argument("paths", nargs=-1, type=click.Path(path_type=Path))
 @usort_command
-def check(paths: List[Path]) -> int:
+def check(paths: List[Path], config_path: Optional[Path]) -> int:
     """
     Check imports for one or more path
     """
@@ -124,7 +154,8 @@ def check(paths: List[Path]) -> int:
         raise click.ClickException("Provide some filenames")
 
     return_code = 0
-    for result in usort_path(paths, write=False):
+    config = _load_config(config_path)
+    for result in usort_path(paths, write=False, config=config):
         if result.error:
             click.echo(f"Error sorting {result.path}: {result.error}")
             return_code |= 1
@@ -142,10 +173,16 @@ def check(paths: List[Path]) -> int:
 
 
 @main.command()
+@click.option(
+    "--config",
+    "config_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Explicit TOML config file path",
+)
 @click.pass_context
 @click.argument("paths", nargs=-1, type=click.Path(path_type=Path))
 @usort_command
-def diff(ctx: click.Context, paths: List[Path]) -> int:
+def diff(ctx: click.Context, config_path: Optional[Path], paths: List[Path]) -> int:
     """
     Output diff of changes for one or more path
     """
@@ -153,7 +190,8 @@ def diff(ctx: click.Context, paths: List[Path]) -> int:
         raise click.ClickException("Provide some filenames")
 
     return_code = 0
-    for result in usort_path(paths, write=False):
+    config = _load_config(config_path)
+    for result in usort_path(paths, write=False, config=config):
         if result.error:
             click.echo(f"Error sorting {result.path}: {result.error}")
             if ctx.obj.debug:
@@ -178,9 +216,15 @@ def diff(ctx: click.Context, paths: List[Path]) -> int:
 
 
 @main.command()
+@click.option(
+    "--config",
+    "config_path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    help="Explicit TOML config file path",
+)
 @click.argument("paths", nargs=-1, type=click.Path(allow_dash=True, path_type=Path))
 @usort_command
-def format(paths: List[Path]) -> int:
+def format(paths: List[Path], config_path: Optional[Path]) -> int:
     """
     Format one or more paths
 
@@ -191,12 +235,13 @@ def format(paths: List[Path]) -> int:
     if not paths:
         raise click.ClickException("Provide some filenames")
 
+    config = _load_config(config_path)
     if paths[0] == Path("-"):
-        success = usort_stdin()
+        success = usort_stdin(config=config)
         return 0 if success else 1
 
     return_code = 0
-    for result in usort_path(paths, write=True):
+    for result in usort_path(paths, write=True, config=config):
         if result.error:
             click.echo(f"Error sorting {result.path}: {result.error}")
             return_code |= 1
