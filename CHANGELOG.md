@@ -1,3 +1,17 @@
+# 1.2.0
+
+Feature release
+
+- New `collapse_blank_lines_in_category` option to control blank line behavior within import categories (#350)
+  - Default `true`: collapses blank lines within a category (current behavior)
+  - Set to `false`: preserves one blank line within a category (pre-1.1.0 behavior)
+
+```shell-session
+$ git shortlog -sn v1.1.2...
+     4  Maggie Moss
+```
+
+
 # 1.1.2
 - Fixes bug that splits one line import statements with comments
 
