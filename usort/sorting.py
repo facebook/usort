@@ -238,7 +238,11 @@ class ImportSorter:
             elif imp.sort_key.category_index != cur_category:
                 blanks = ("",)
             else:
-                blanks = ()
+                # Apply the config option for blank line behavior within categories
+                if self.config.collapse_blank_lines_in_category:
+                    blanks = ()
+                else:
+                    blanks = _old_blanks[:1]
 
             imp.comments.before = [*blanks, *old_comments]
 

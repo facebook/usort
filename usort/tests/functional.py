@@ -1204,6 +1204,79 @@ excludes = [
             config,
         )
 
+    def test_collapse_blank_lines_in_category_enabled(self) -> None:
+        """Test with collapse_blank_lines_in_category=True (default, post-commit 58c01556 behavior)"""
+        config = replace(DEFAULT_CONFIG, collapse_blank_lines_in_category=True)
+        self.assertUsortResult(
+            """
+                import math
+
+                import gamma
+
+                import alpha
+
+
+                # special
+                import beta
+
+                from . import foo
+
+                import zeta
+
+            """,
+            """
+                import math
+
+                import alpha
+                # special
+                import beta
+                import gamma
+                import zeta
+
+                from . import foo
+
+            """,
+            config,
+        )
+
+    def test_collapse_blank_lines_in_category_disabled(self) -> None:
+        """Test with collapse_blank_lines_in_category=False (pre-commit 58c01556 behavior)"""
+        config = replace(DEFAULT_CONFIG, collapse_blank_lines_in_category=False)
+        self.assertUsortResult(
+            """
+                import math
+
+                import gamma
+
+                import alpha
+
+
+                # special
+                import beta
+
+                from . import foo
+
+                import zeta
+
+            """,
+            """
+                import math
+
+                import alpha
+
+                # special
+                import beta
+
+                import gamma
+
+                import zeta
+
+                from . import foo
+
+            """,
+            config,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
