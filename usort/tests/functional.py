@@ -11,7 +11,7 @@ from textwrap import dedent
 from typing import Optional
 
 from ..api import usort, usort_path
-from ..config import Config
+from ..config import CAT_FIRST_PARTY, Config
 from ..translate import import_from_node
 from ..util import parse_import
 
@@ -1276,6 +1276,53 @@ excludes = [
             """,
             config,
         )
+
+    def test_collapse_blank_lines_in_category_default(self) -> None:
+        # Configure torch as first_party so both imports are in the same category
+        known = DEFAULT_CONFIG.known.copy()
+        known["torch"] = CAT_FIRST_PARTY
+        config = replace(
+            DEFAULT_CONFIG,
+            collapse_blank_lines_in_category=True,
+            known=known,
+        )
+        self.assertUsortResult(
+            """
+                import torch
+
+                from .runner import get_nn_runners
+            """,
+            """
+                import torch
+                from .runner import get_nn_runners
+            """,
+            config,
+        )
+
+    def test_collapse_blank_lines_in_category_false(self) -> None:
+        # Configure torch as first_party so both imports are in the same category
+        known = DEFAULT_CONFIG.known.copy()
+        known["torch"] = CAT_FIRST_PARTY
+        config = replace(
+            DEFAULT_CONFIG,
+            collapse_blank_lines_in_category=False,
+            known=known,
+        )
+        self.assertUsortResult(
+            """
+                import torch
+
+                from .runner import get_runners
+            """,
+            """
+                import torch
+
+                from .runner import get_runners
+            """,
+            config,
+        )
+
+
 
 
 if __name__ == "__main__":
