@@ -11,7 +11,7 @@ from textwrap import dedent
 from typing import Optional
 
 from ..api import usort, usort_path
-from ..config import Config
+from ..config import CAT_FIRST_PARTY, Config
 from ..translate import import_from_node
 from ..util import parse_import
 
@@ -1200,6 +1200,124 @@ excludes = [
             """,
             """
                 from torch._C import _add_docstr, _linalg  # pyrefly:
+            """,
+            config,
+        )
+
+    def test_collapse_blank_lines_in_category_enabled(self) -> None:
+        """Test with collapse_blank_lines_in_category=True (default, post-commit 58c01556 behavior)"""
+        config = replace(DEFAULT_CONFIG, collapse_blank_lines_in_category=True)
+        self.assertUsortResult(
+            """
+                import math
+
+                import gamma
+
+                import alpha
+
+
+                # special
+                import beta
+
+                from . import foo
+
+                import zeta
+
+            """,
+            """
+                import math
+
+                import alpha
+                # special
+                import beta
+                import gamma
+                import zeta
+
+                from . import foo
+
+            """,
+            config,
+        )
+
+    def test_collapse_blank_lines_in_category_disabled(self) -> None:
+        """Test with collapse_blank_lines_in_category=False (pre-commit 58c01556 behavior)"""
+        config = replace(DEFAULT_CONFIG, collapse_blank_lines_in_category=False)
+        self.assertUsortResult(
+            """
+                import math
+
+                import gamma
+
+                import alpha
+
+
+                # special
+                import beta
+
+                from . import foo
+
+                import zeta
+
+            """,
+            """
+                import math
+
+                import alpha
+
+                # special
+                import beta
+
+                import gamma
+
+                import zeta
+
+                from . import foo
+
+            """,
+            config,
+        )
+
+    def test_collapse_blank_lines_in_category_default(self) -> None:
+        # Configure torch as first_party so both imports are in the same category
+        known = DEFAULT_CONFIG.known.copy()
+        known["torch"] = CAT_FIRST_PARTY
+        config = replace(
+            DEFAULT_CONFIG,
+            collapse_blank_lines_in_category=True,
+            known=known,
+        )
+        self.assertUsortResult(
+            """
+                import torch
+
+                from .runner import get_nn_runners
+            """,
+            """
+                import torch
+                from .runner import get_nn_runners
+            """,
+            config,
+        )
+
+    def test_collapse_blank_lines_in_category_false(self) -> None:
+        # Configure torch as first_party so both imports are in the same category
+        known = DEFAULT_CONFIG.known.copy()
+        known["torch"] = CAT_FIRST_PARTY
+        config = replace(
+            DEFAULT_CONFIG,
+            collapse_blank_lines_in_category=False,
+            known=known,
+        )
+        self.assertUsortResult(
+            """
+                import torch
+
+                from .runner import get_runners
+            """,
+            """
+                import torch
+
+                from .runner import get_runners
             """,
             config,
         )

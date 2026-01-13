@@ -68,6 +68,11 @@ class Config:
     # Whether to preserve inline comments on individual imports when sorting
     preserve_inline_comments: bool = False
 
+    # Whether to collapse blank lines within a single import category
+    # Default True matches current behavior (collapse blank lines within categories)
+    # Set to False to preserve one blank line within categories (pre-commit 58c01556 behavior)
+    collapse_blank_lines_in_category: bool = True
+
     # gitignore-style filename patterns to exclude when sorting entire directories
     excludes: List[str] = field(default_factory=list)
 
@@ -172,6 +177,10 @@ class Config:
             self.merge_imports = bool(tbl["merge_imports"])
         if "preserve_inline_comments" in tbl:
             self.preserve_inline_comments = bool(tbl["preserve_inline_comments"])
+        if "collapse_blank_lines_in_category" in tbl:
+            self.collapse_blank_lines_in_category = bool(
+                tbl["collapse_blank_lines_in_category"]
+            )
         if "excludes" in tbl:
             self.excludes = tbl["excludes"]
 
