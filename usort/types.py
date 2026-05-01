@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import sys
-import traceback
 from pathlib import Path
 from textwrap import dedent, indent
 from typing import Dict, List, Optional, Sequence
@@ -47,12 +45,6 @@ class Result:
     trace: str = ""
     timings: Sequence[Timing] = ()
     warnings: Sequence[SortWarning] = ()
-
-    def __attrs_post_init__(self) -> None:
-        if self.error:
-            exc_type, exc, tb = sys.exc_info()
-            if exc_type is not None:
-                self.trace = "".join(traceback.format_exception(exc_type, exc, tb))
 
 
 @dataclass
