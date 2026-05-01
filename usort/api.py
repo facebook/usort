@@ -103,7 +103,7 @@ def usort_file(path: Path, *, write: bool = False) -> Result:
         data = path.read_bytes()
         result = usort(data, config, path)
 
-        if result.output and write:
+        if result.error is None and write:
             path.write_bytes(result.output)
 
         return result
