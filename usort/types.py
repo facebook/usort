@@ -120,7 +120,7 @@ class SortableImportItem:
         if not isinstance(other, SortableImportItem):
             return NotImplemented
 
-        if self.name != other.name and self.asname != other.asname:
+        if self.name != other.name or self.asname != other.asname:
             raise ValueError("name and asname must match")
 
         return SortableImportItem(
@@ -173,7 +173,7 @@ class SortableImport:
         if not isinstance(other, SortableImport):
             return NotImplemented
 
-        if self.sort_key != other.sort_key and self.stem != other.stem:
+        if self.sort_key != other.sort_key or self.stem != other.stem:
             raise ValueError("sort_key and stem must match")
 
         # Combine the items from the other import statement with items from this import.

@@ -116,6 +116,26 @@ class TypesTest(unittest.TestCase):
             ):
                 a += 10  # type: ignore
 
+    def test_sortable_import_item_add_name_mismatch_raises(self) -> None:
+        # `bar` and `baz` are different names — adding must raise even when asnames match.
+        # The AND bug allowed this silently: (name!=name=True) AND (asname!=asname=False) = False.
+        a = types.SortableImportItem(name="bar", asname="")
+        b = types.SortableImportItem(name="baz", asname="")
+        self.assertEqual(
+            a.asname, b.asname
+        )  # confirm same asname (the AND bug trigger)
+        with self.assertRaises(ValueError):
+            _ = a + b
+
+    def test_sortable_import_item_add_asname_mismatch_raises(self) -> None:
+        # `bar as x` and `bar as y` are distinct aliases — adding must raise even when names match.
+        # The AND bug allowed this silently: (name!=name=False) AND (asname!=asname=True) = False.
+        a = types.SortableImportItem(name="bar", asname="x")
+        b = types.SortableImportItem(name="bar", asname="y")
+        self.assertEqual(a.name, b.name)  # confirm same name (the AND bug trigger)
+        with self.assertRaises(ValueError):
+            _ = a + b
+
     def test_sortable_import_add(self) -> None:
         a = types.SortableImport(
             stem="foo",
@@ -213,6 +233,25 @@ class TypesTest(unittest.TestCase):
                 TypeError, "unsupported.+'SortableImport'.+'int'"
             ):
                 a += 10  # type: ignore
+
+    def test_sortable_import_add_stem_mismatch_raises(self) -> None:
+        # `from os import ...` and `from sys import ...` have the same sort_key (both
+        # are stdlib from-imports) but different stems — adding must raise.
+        # The AND bug allowed this silently: (key!=key=False) AND (stem!=stem=True) = False.
+        a = types.SortableImport(
+            stem="os",
+            items=[types.SortableImportItem(name="path", asname="")],
+        )
+        b = types.SortableImport(
+            stem="sys",
+            items=[types.SortableImportItem(name="argv", asname="")],
+        )
+        self.assertEqual(
+            a.sort_key, b.sort_key
+        )  # confirm same sort_key (the AND bug trigger)
+        self.assertNotEqual(a.stem, b.stem)
+        with self.assertRaises(ValueError):
+            _ = a + b
 
     def test_sortable_import_trailing_comma(self) -> None:
         imp = types.SortableImport(
