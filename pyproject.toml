@@ -9,8 +9,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {file="LICENSE"}
 authors = [
-    {name="Tim Hatch", email="thatch@fb.com"},
-    {name="Amethyst Reese", email="amethyst@fb.com"},
+    {name="Tim Hatch", email="tim@timhatch.com"},
+    {name="Amethyst Reese", email="amy@n7.gg"},
     {name="Meta"},
 ]
 keywords = ["imports", "usort", "isort"]
@@ -41,7 +41,6 @@ dev = [
     "flake8==7.3.0",
     "hatch==1.15.1",
     "mypy==1.18.2",
-    "pessimist==0.9.3",
     "ufmt==2.8.0",
     "volatile==2.1.0",
 ]

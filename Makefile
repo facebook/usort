@@ -1,9 +1,18 @@
 PYTHON?=python
 SOURCES=usort
 
+UV:=$(shell uv --version)
+ifdef UV
+	VENV:=uv venv
+	PIP:=uv pip
+else
+	VENV:=$(PYTHON) -m venv
+	PIP:=$(PYTHON) -m pip
+endif
+
 .PHONY: venv
 venv:
-	$(PYTHON) -m venv --clear .venv
+	$(VENV) --clear .venv
 	source .venv/bin/activate && make install
 	@echo 'run `source .venv/bin/activate` to use virtualenv'
 
@@ -20,8 +29,7 @@ distclean:
 
 .PHONY: install
 install:
-	$(PYTHON) -m pip install -U pip setuptools
-	$(PYTHON) -m pip install -e .[dev,docs]
+	$(PIP) install -e .[dev,docs]
 
 .PHONY: test
 test:
@@ -38,10 +46,6 @@ lint:
 	$(PYTHON) -m ufmt check $(SOURCES)
 	$(PYTHON) -m flake8 $(SOURCES)
 	/bin/bash check_copyright.sh
-
-.PHONY: deps
-deps:
-	$(PYTHON) -m pessimist --requirements= -c "python -m usort --help" .
 
 .PHONY: backcompat
 backcompat:
