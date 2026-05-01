@@ -7,6 +7,7 @@ import logging
 import os
 import unittest
 from contextlib import contextmanager
+from io import BytesIO
 from pathlib import Path
 from textwrap import dedent
 from typing import AnyStr, Generator
@@ -15,6 +16,7 @@ from unittest.mock import Mock, patch
 import volatile
 from click.testing import CliRunner
 
+from ..api import usort_stdin
 from ..cli import main
 
 
@@ -372,3 +374,30 @@ s = "\xb5"
                 ),  # git on windows again
                 (Path(dtmp) / "sample.py").read_bytes(),
             )
+
+
+class StdinTest(unittest.TestCase):
+    def _sort_stdin(self, data: bytes) -> bytes:
+        out = BytesIO()
+        with (
+            patch("usort.api.sys.stdin") as mock_stdin,
+            patch("usort.api.sys.stdout") as mock_stdout,
+        ):
+            mock_stdin.isatty.return_value = False
+            mock_stdin.buffer.read.return_value = data
+            mock_stdout.buffer = out
+            usort_stdin()
+        return out.getvalue()
+
+    def test_stdin_sorts(self) -> None:
+        result = self._sort_stdin(b"import b\nimport a\n")
+        self.assertEqual(b"import a\nimport b\n", result)
+
+    def test_stdin_preserves_encoding(self) -> None:
+        # A latin-1 file must come back as latin-1 bytes, not UTF-8.
+        # \xb5 is µ in latin-1; its UTF-8 encoding would be \xc2\xb5.
+        data = b'# -*- coding: latin-1 -*-\nimport b\nimport a\ns = "\xb5"\n'
+        result = self._sort_stdin(data)
+        expected = b'# -*- coding: latin-1 -*-\nimport a\nimport b\ns = "\xb5"\n'
+        self.assertEqual(expected, result)
+        self.assertNotIn(b"\xc2\xb5", result)  # no UTF-8 re-encoding of µ

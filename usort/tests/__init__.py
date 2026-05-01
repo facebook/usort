@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from .cli import CliTest
+from .cli import CliTest, StdinTest
 from .config import ConfigTest
 from .functional import BasicOrderingTest, UsortStringFunctionalTest
 from .sorting import SplitTest
@@ -14,6 +14,7 @@ from .util import UtilTest
 
 __all__ = [
     "CliTest",
+    "StdinTest",
     "ConfigTest",
     "BasicOrderingTest",
     "UsortStringFunctionalTest",

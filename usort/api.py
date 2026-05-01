@@ -162,9 +162,11 @@ def usort_stdin() -> bool:
 
     try:
         config = Config.find()
-        data = sys.stdin.read()
-        result = usort_string(data, config, Path("<stdin>"))
-        sys.stdout.write(result)
+        data = sys.stdin.buffer.read()
+        result = usort(data, config, Path("<stdin>"))
+        if result.error:
+            raise result.error
+        sys.stdout.buffer.write(result.output)
         return True
 
     except Exception as e:
